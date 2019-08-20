@@ -1,2 +1,7 @@
-# crashplan-ffs-puller
-A golang application used for pulling Code 42 Crashplan File Forensic Search logs from their API. Either to a file (JSON or CSV), or directly to a JSON accepting API.
+#crashplan-ffs-puller
+
+A Golang application used for pulling Code42's Crashplan File Forensic Search (FFS) logs from their API.
+
+#TODOs
+
+1. 
