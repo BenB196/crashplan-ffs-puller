@@ -30,10 +30,12 @@ func main() {
 	}
 
 	//Quick lazy test
-	log.Println(configuration.Username)
-	log.Println(configuration.Password)
 	log.Println(configuration.AuthURI)
 	log.Println(configuration.FFSURI)
-	log.Println(configuration.QueryInterval)
-	log.Println(configuration.FFSQueries)
+	for _, query := range configuration.FFSQueries {
+		log.Println(query.Username)
+		log.Println(query.Password)
+		log.Println(query.QueryInterval)
+		log.Println(query.Query)
+	}
 }

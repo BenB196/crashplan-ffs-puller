@@ -9,15 +9,20 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 )
 
 type Config struct {
-	Username 		string			`json:"username"`
-	Password 		string 			`json:"password"`
 	AuthURI  		string 			`json:"authURI"`
 	FFSURI   		string 			`json:"ffsURI"`
+	FFSQueries		[]FFSQuery		`json:"ffsQueries"`
+}
+
+type FFSQuery struct {
+	Username 		string			`json:"username"`
+	Password 		string 			`json:"password"`
 	QueryInterval	string			`json:"queryInterval"`
-	FFSQueries		[]string 		`json:"ffsQueries"`
+	Query			string 			`json:"ffsQueries"`
 }
 
 //Read the configuration file and return the Config struct
@@ -76,21 +81,6 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 	}
 
 	//Validate JSON fields
-	//Validate username: check if empty and is valid email
-	if config.Username == "" {
-		return config, errors.New("error, username in configuration file is blank")
-	} else {
-		err = utils.ValidateUsernameRegexp(config.Username)
-		if err != nil {
-			return config, err
-		}
-	}
-
-	//Validate password: check if empty
-	if config.Password == "" {
-		return config, errors.New("error: password cannot be blank")
-	}
-
 	//Validate AuthURI: check if empty and is valid request uri
 	if config.AuthURI == "" {
 		return config, errors.New("error: authURI cannot be blank")
@@ -111,9 +101,30 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 		}
 	}
 
-	//TODO see if query interval needs to actually be validated or if it will be handled on unmarshal
+	if config.FFSQueries == nil {
+		return config, errors.New("error: no ffs queries provided")
+	} else {
+		for queryNumber, query := range config.FFSQueries {
+			//Validate username: check if empty and is valid email
+			if query.Username == "" {
+				return config, errors.New("error, username in configuration file ffs query: " + strconv.Itoa(queryNumber) + ", is blank")
+			} else {
+				err = utils.ValidateUsernameRegexp(query.Username)
+				if err != nil {
+					return config, errors.New("error in ffs query: " + strconv.Itoa(queryNumber) + ", " + err.Error())
+				}
+			}
 
-	//TODO figure out how to best validate FFSQueries
+			//Validate password: check if empty
+			if query.Password == "" {
+				return config, errors.New("error: password in configuration file ffs query: " + strconv.Itoa(queryNumber) + ", is blank")
+			}
+
+			//TODO validate queryInterval as duration
+
+			//TODO figure out how to best validate FFSQueries
+		}
+	}
 
 	return config, nil
 }
