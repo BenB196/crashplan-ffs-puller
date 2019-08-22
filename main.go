@@ -51,26 +51,44 @@ func main() {
 
 		//Get initial authData
 		authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+		//Init goroutine for getting authData ever 55 minutes
 		wg.Add(1)
 		go func() {
 			for {
 				select {
 				case <- authTimeTicker.C:
 					authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+
+					if err != nil {
+						log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
+						panic(err)
+					}
 				}
 				defer wg.Done()
 			}
 		}()
 
-		if err != nil {
-			log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
-			panic(err)
-		}
+		queryInterval, _ := time.ParseDuration(query.QueryInterval)
+		queryIntervalTimeTicker := time.NewTicker(queryInterval)
+		go func() {
+			for {
+				select {
+				case <- queryIntervalTimeTicker.C:
+					fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
-		for {
-			log.Println(authData.Data.V3UserToken)
-			time.Sleep(apiTokenRefreshInterval)
-		}
+					if err != nil {
+						log.Println("error getting file events for ffs query: " + strconv.Itoa(queryNumber))
+						panic(err)
+					}
+
+					for _, event := range fileEvents {
+						log.Println(event.EventId)
+					}
+				}
+			}
+		}()
+
+		wg.Wait()
 	}
 
 }

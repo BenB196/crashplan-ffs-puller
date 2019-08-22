@@ -22,7 +22,7 @@ type FFSQuery struct {
 	Username 		string			`json:"username"`
 	Password 		string 			`json:"password"`
 	QueryInterval	string			`json:"queryInterval"`
-	Query			string 			`json:"ffsQueries"`
+	Query			string 			`json:"query"`
 }
 
 //Read the configuration file and return the Config struct
