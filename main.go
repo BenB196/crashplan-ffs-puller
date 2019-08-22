@@ -1,9 +1,13 @@
 package main
 
 import (
-	config "crashplan-ffs-puller/config"
+	ffs "crashplan-ffs-go-pkg"
+	"crashplan-ffs-puller/config"
 	"flag"
 	"log"
+	"strconv"
+	"sync"
+	"time"
 )
 
 func main() {
@@ -29,13 +33,44 @@ func main() {
 		panic(err)
 	}
 
+	var wg sync.WaitGroup
+
 	//Quick lazy test
 	log.Println(configuration.AuthURI)
 	log.Println(configuration.FFSURI)
-	for _, query := range configuration.FFSQueries {
+	//TODO this should spawn go routines?
+	for queryNumber, query := range configuration.FFSQueries {
 		log.Println(query.Username)
 		log.Println(query.Password)
 		log.Println(query.QueryInterval)
 		log.Println(query.Query)
+
+		//Handle getting API AuthTokens every 55 minutes
+		apiTokenRefreshInterval := 55 * time.Minute
+		authTimeTicker := time.NewTicker(apiTokenRefreshInterval)
+
+		//Get initial authData
+		authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+		wg.Add(1)
+		go func() {
+			for {
+				select {
+				case <- authTimeTicker.C:
+					authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+				}
+				defer wg.Done()
+			}
+		}()
+
+		if err != nil {
+			log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
+			panic(err)
+		}
+
+		for {
+			log.Println(authData.Data.V3UserToken)
+			time.Sleep(apiTokenRefreshInterval)
+		}
 	}
+
 }
