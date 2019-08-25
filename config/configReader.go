@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"time"
 )
 
@@ -21,10 +20,12 @@ type Config struct {
 }
 
 type FFSQuery struct {
+	Name			string			`json:"name"`
 	Username 		string			`json:"username"`
 	Password 		string 			`json:"password"`
 	QueryInterval	string			`json:"queryInterval"`
 	Query			ffs.Query 		`json:"query"`
+	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
 }
 
@@ -104,63 +105,92 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 		}
 	}
 
+	//Create queryName slice
+	var queryNames []string
+
+	//Validate FFS Queries
 	if config.FFSQueries == nil {
 		return config, errors.New("error: no ffs queries provided")
 	} else {
-		for queryNumber, query := range config.FFSQueries {
-			//convert queryNumber to string
-			queryNumberString := strconv.Itoa(queryNumber)
+		for i, query := range config.FFSQueries {
+
+			//Validate queryName
+			if query.Name == "" {
+				return config, errors.New("error: query name is empty")
+			} else {
+				//Check if query name is unique
+				if len(queryNames) > 0 {
+					for _, name := range queryNames {
+						if name == query.Name {
+							return config, errors.New("error: duplicate query names provided, query names must be unique")
+						}
+					}
+				} else {
+					queryNames = append(queryNames, query.Name)
+				}
+			}
 
 			//Validate username: check if empty and is valid email
 			if query.Username == "" {
-				return config, errors.New("error, username in configuration file ffs query: " + queryNumberString + ", is blank")
+				return config, errors.New("error: username in ffs query: " + query.Name + ", is blank")
 			} else {
 				err = utils.ValidateUsernameRegexp(query.Username)
 				if err != nil {
-					return config, errors.New("error in ffs query: " + queryNumberString + ", " + err.Error())
+					return config, errors.New("error: in ffs query: " + query.Name + ", " + err.Error())
 				}
 			}
 
 			//Validate password: check if empty
 			if query.Password == "" {
-				return config, errors.New("error: password in configuration file ffs query: " + queryNumberString + ", is blank")
+				return config, errors.New("error: password in ffs query: " + query.Name + ", is blank")
 			}
 
 			if query.QueryInterval == "" {
-				return config, errors.New("error: query interval in configuration file ffs query: " + queryNumberString + ", is blank")
+				return config, errors.New("error: query interval in ffs query: " + query.Name + ", is blank")
 			} else {
 				_, err := time.ParseDuration(query.QueryInterval)
 				if err != nil {
-					return config, errors.New("error: invalid duration provide in ffs query: " + queryNumberString)
+					return config, errors.New("error: invalid duration provide in ffs query: " + query.Name)
 				}
 			}
 
 			//TODO figure out how to best validate FFSQueries
 
-			if query.OutputLocation == "" {
-				//Get working directory and set as output location
-				dir, err := os.Getwd()
-				if err != nil {
-					return config, errors.New("error: unable to get working directory for ffs query: " + queryNumberString)
-				}
-				err = utils.IsWritable(dir)
-				if err != nil {
-					return config, err
-				}
-				config.FFSQueries[queryNumber].OutputLocation = dir + utils.DirPath
+			//Validate Output Type
+			if query.OutputType == "" {
+				return config, errors.New("error: output type ")
 			} else {
-				//Validate that output location is a valid path
-				err = utils.IsWritable(query.OutputLocation)
-				if err != nil {
-					return config, err
-				}
+				switch query.OutputType {
+				case "file":
+					//Validate Output Location
+					if query.OutputLocation == "" {
+						//Get working directory and set as output location
+						dir, err := os.Getwd()
+						if err != nil {
+							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+						}
+						err = utils.IsWritable(dir)
+						if err != nil {
+							return config, err
+						}
+						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
+					} else {
+						//Validate that output location is a valid path
+						err = utils.IsWritable(query.OutputLocation)
+						if err != nil {
+							return config, err
+						}
 
-				//Append a / or \\ to end of path if not there
-				lastChar := query.OutputLocation[len(query.OutputLocation)-1:]
-				if lastChar != utils.DirPath {
-					config.FFSQueries[queryNumber].OutputLocation = query.OutputLocation + utils.DirPath
-				}
+						//Append a / or \\ to end of path if not there
+						lastChar := query.OutputLocation[len(query.OutputLocation)-1:]
+						if lastChar != utils.DirPath {
+							config.FFSQueries[i].OutputLocation = query.OutputLocation + utils.DirPath
+						}
+					}
 				//TODO add support for outputting to other things then just file, ie: elasticsearch
+				default:
+					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
+				}
 			}
 		}
 	}
