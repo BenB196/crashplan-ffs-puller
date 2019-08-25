@@ -3,6 +3,7 @@ package main
 import (
 	ffs "crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/config"
+	"crashplan-ffs-puller/eventOutput"
 	"crashplan-ffs-puller/ffsEvent"
 	"flag"
 	"log"
@@ -102,6 +103,15 @@ func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuer
 					ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
 				}
 				log.Println("Number of events: " + strconv.Itoa(len(ffsEvents)))
+
+				//Write events
+				if len(ffsEvents) > 0 {
+					err := eventOutput.WriteEvents(ffsEvents, query.OutputLocation, query.Query)
+
+					if err != nil {
+						panic(err)
+					}
+				}
 			}
 		}
 	}()

@@ -147,12 +147,18 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 				if err != nil {
 					return config, err
 				}
-				config.FFSQueries[queryNumber].OutputLocation = dir
+				config.FFSQueries[queryNumber].OutputLocation = dir + utils.DirPath
 			} else {
 				//Validate that output location is a valid path
 				err = utils.IsWritable(query.OutputLocation)
 				if err != nil {
 					return config, err
+				}
+
+				//Append a / or \\ to end of path if not there
+				lastChar := query.OutputLocation[len(query.OutputLocation)-1:]
+				if lastChar != utils.DirPath {
+					config.FFSQueries[queryNumber].OutputLocation = query.OutputLocation + utils.DirPath
 				}
 				//TODO add support for outputting to other things then just file, ie: elasticsearch
 			}
