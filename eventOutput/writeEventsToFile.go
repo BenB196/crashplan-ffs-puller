@@ -2,7 +2,7 @@ package eventOutput
 
 import (
 	"bufio"
-	ffs "crashplan-ffs-go-pkg"
+	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/ffsEvent"
 	"encoding/json"
 	"errors"
@@ -10,14 +10,14 @@ import (
 	"time"
 )
 
-func WriteEvents (ffsEvents []ffsEvent.FFSEvent, outputLocation string, query ffs.Query) error {
+func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	//Error if ffsEvents is nil, this should not be called if there are no ffsEvents
 	if ffsEvents == nil {
 		return errors.New("error: ffsEvents is nil")
 	}
 
 	//Check if outputLocation is provided
-	if outputLocation == "" {
+	if query.OutputLocation == "" {
 		return errors.New("error: no output location provided")
 	}
 
@@ -30,16 +30,16 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, outputLocation string, query ff
 	}
 
 	//Create output file
-	file, err := os.Create(outputLocation + fileName)
+	file, err := os.Create(fileName)
 
 	defer func() {
 		if err := file.Close(); err != nil {
-			 panic(errors.New("error: closing file: " + outputLocation + fileName + " " + err.Error()))
+			 panic(errors.New("error: closing file: " + fileName + " " + err.Error()))
 		}
 	}()
 
 	if err != nil {
-		return errors.New("error: creating file: " + outputLocation + fileName + " " + err.Error())
+		return errors.New("error: creating file: " + fileName + " " + err.Error())
 	}
 
 	//Create buffer writer
@@ -62,29 +62,29 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, outputLocation string, query ff
 		_, err := w.WriteString(ffsEventsString)
 
 		if err != nil {
-			return errors.New("error: writing events to file: " + outputLocation + fileName + " " + err.Error())
+			return errors.New("error: writing events to file: " + fileName + " " + err.Error())
 		}
 	}
 
 	err = w.Flush()
 
 	if err != nil {
-		return errors.New("error: flushing file: " + outputLocation + fileName + " " + err.Error())
+		return errors.New("error: flushing file: " + fileName + " " + err.Error())
 	}
 
 	return nil
 }
 
-func generateFileName(query ffs.Query) (string, error) {
+func generateFileName(query config.FFSQuery) (string, error) {
 	//Check if query.Groups is not 0, will need to generate filename
-	if len(query.Groups) == 0 {
+	if len(query.Query.Groups) == 0 {
 		return "", errors.New("error: no groups provided")
 	}
 
 	//Create filename var
 	var fileName string
 
-	for _, groups := range query.Groups {
+	for _, groups := range query.Query.Groups {
 		//Check if groups.Filters is not 0, will need to generate filename
 		if len(groups.Filters) == 0 {
 			return "", errors.New("error: no filters provided")
@@ -108,6 +108,8 @@ func generateFileName(query ffs.Query) (string, error) {
 		}
 	}
 
+	fileName = query.Name + fileName
+
 	//Validate that a filename was generated
 	if fileName == "" {
 		return "", errors.New("failed to generate file name properly")
@@ -118,7 +120,7 @@ func generateFileName(query ffs.Query) (string, error) {
 
 	//Add file extension
 	//TODO add support for other outputs?
-	fileName = fileName + ".json"
+	fileName = query.OutputLocation + fileName + ".json"
 
 	return fileName, nil
 }

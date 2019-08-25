@@ -117,6 +117,8 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			//Validate queryName
 			if query.Name == "" {
 				return config, errors.New("error: query name is empty")
+			} else if len(query.Name) > 100 {
+				return config, errors.New("error: query name: " + query.Name + ", is greater than 100 characters")
 			} else {
 				//Check if query name is unique
 				if len(queryNames) > 0 {

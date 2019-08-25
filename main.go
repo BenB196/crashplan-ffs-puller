@@ -41,15 +41,15 @@ func main() {
 
 	//Spawn goroutines for each ffs query provided
 	var wg sync.WaitGroup
-	for queryNumber, query := range configuration.FFSQueries {
+	for _, query := range configuration.FFSQueries {
 		wg.Add(1)
-		go ffsQuery(configuration, queryNumber, query)
+		go ffsQuery(configuration, query)
 	}
 
 	wg.Wait()
 }
 
-func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuery) {
+func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -75,7 +75,7 @@ func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuer
 				authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
 
 				if err != nil {
-					log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
+					log.Println("error with getting authentication data for ffs query: " + query.Name)
 					panic(err)
 				}
 			}
@@ -92,7 +92,7 @@ func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuer
 				fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
 				if err != nil {
-					log.Println("error getting file events for ffs query: " + strconv.Itoa(queryNumber))
+					log.Println("error getting file events for ffs query: " + query.Name)
 					panic(err)
 				}
 
@@ -102,14 +102,16 @@ func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuer
 				for _, event := range fileEvents {
 					ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
 				}
-				log.Println("Number of events: " + strconv.Itoa(len(ffsEvents)))
+				log.Println("Number of events for query: " + query.Name + " : " + strconv.Itoa(len(ffsEvents)))
 
 				//Write events
 				if len(ffsEvents) > 0 {
-					err := eventOutput.WriteEvents(ffsEvents, query.OutputLocation, query.Query)
+					if query.OutputType == "file" {
+						err := eventOutput.WriteEvents(ffsEvents, query)
 
-					if err != nil {
-						panic(err)
+						if err != nil {
+							panic(err)
+						}
 					}
 				}
 			}
