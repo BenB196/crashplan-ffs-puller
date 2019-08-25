@@ -33,17 +33,20 @@ func main() {
 		panic(err)
 	}
 
-	var wg sync.WaitGroup
-
 	//Quick lazy test
 	log.Println(configuration.AuthURI)
 	log.Println(configuration.FFSURI)
 	//TODO this should spawn go routines?
 	for queryNumber, query := range configuration.FFSQueries {
+
+		//Initialize query waitGroup
+		var wgQuery sync.WaitGroup
+
 		log.Println(query.Username)
 		log.Println(query.Password)
 		log.Println(query.QueryInterval)
-		log.Println(query.Query)
+		//Don't print its not formatted correctly
+		//log.Println(query.Query)
 
 		//Handle getting API AuthTokens every 55 minutes
 		apiTokenRefreshInterval := 55 * time.Minute
@@ -52,7 +55,7 @@ func main() {
 		//Get initial authData
 		authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
 		//Init goroutine for getting authData ever 55 minutes
-		wg.Add(1)
+		wgQuery.Add(1)
 		go func() {
 			for {
 				select {
@@ -64,7 +67,7 @@ func main() {
 						panic(err)
 					}
 				}
-				defer wg.Done()
+				defer wgQuery.Done()
 			}
 		}()
 
@@ -89,7 +92,7 @@ func main() {
 			}
 		}()
 
-		wg.Wait()
+		wgQuery.Wait()
 	}
 
 }

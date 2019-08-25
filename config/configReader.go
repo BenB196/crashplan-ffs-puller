@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 type Config struct {
@@ -106,22 +107,32 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 		return config, errors.New("error: no ffs queries provided")
 	} else {
 		for queryNumber, query := range config.FFSQueries {
+			//convert queryNumber to string
+			queryNumberString := strconv.Itoa(queryNumber)
+
 			//Validate username: check if empty and is valid email
 			if query.Username == "" {
-				return config, errors.New("error, username in configuration file ffs query: " + strconv.Itoa(queryNumber) + ", is blank")
+				return config, errors.New("error, username in configuration file ffs query: " + queryNumberString + ", is blank")
 			} else {
 				err = utils.ValidateUsernameRegexp(query.Username)
 				if err != nil {
-					return config, errors.New("error in ffs query: " + strconv.Itoa(queryNumber) + ", " + err.Error())
+					return config, errors.New("error in ffs query: " + queryNumberString + ", " + err.Error())
 				}
 			}
 
 			//Validate password: check if empty
 			if query.Password == "" {
-				return config, errors.New("error: password in configuration file ffs query: " + strconv.Itoa(queryNumber) + ", is blank")
+				return config, errors.New("error: password in configuration file ffs query: " + queryNumberString + ", is blank")
 			}
 
-			//TODO validate queryInterval as duration
+			if query.QueryInterval == "" {
+				return config, errors.New("error: query interval in configuration file ffs query: " + queryNumberString + ", is blank")
+			} else {
+				_, err := time.ParseDuration(query.QueryInterval)
+				if err != nil {
+					return config, errors.New("error: invalid duration provide in ffs query: " + queryNumberString)
+				}
+			}
 
 			//TODO figure out how to best validate FFSQueries
 		}
