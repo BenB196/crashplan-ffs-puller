@@ -25,6 +25,7 @@ type FFSQuery struct {
 	Password 		string 			`json:"password"`
 	QueryInterval	string			`json:"queryInterval"`
 	Query			ffs.Query 		`json:"query"`
+	OutputLocation  string			`json:"outputLocation,omitempty"`
 }
 
 //Read the configuration file and return the Config struct
@@ -135,6 +136,8 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			}
 
 			//TODO figure out how to best validate FFSQueries
+
+			//TODO valid outputLocation
 		}
 	}
 

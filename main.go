@@ -3,6 +3,7 @@ package main
 import (
 	ffs "crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/config"
+	"crashplan-ffs-puller/ffsEvent"
 	"flag"
 	"log"
 	"strconv"
@@ -41,13 +42,13 @@ func main() {
 	var wg sync.WaitGroup
 	for queryNumber, query := range configuration.FFSQueries {
 		wg.Add(1)
-		go queryFFS(configuration, queryNumber, query)
+		go ffsQuery(configuration, queryNumber, query)
 	}
 
 	wg.Wait()
 }
 
-func queryFFS (configuration config.Config,queryNumber int, query config.FFSQuery) {
+func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuery) {
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -93,10 +94,13 @@ func queryFFS (configuration config.Config,queryNumber int, query config.FFSQuer
 					panic(err)
 				}
 
-				//for _, event := range fileEvents {
-				//	log.Println(event.EventId)
-				//}
-				log.Println("Number of events: " + strconv.Itoa(len(fileEvents)))
+				//TODO this is where the data should be enriched
+				var ffsEvents []ffsEvent.FFSEvent
+
+				for _, event := range fileEvents {
+					ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
+				}
+				log.Println("Number of events: " + strconv.Itoa(len(ffsEvents)))
 			}
 		}
 	}()
