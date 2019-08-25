@@ -137,7 +137,6 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 
 			//TODO figure out how to best validate FFSQueries
 
-			//TODO valid outputLocation
 			if query.OutputLocation == "" {
 				//Get working directory and set as output location
 				dir, err := os.Getwd()
