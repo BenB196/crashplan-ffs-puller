@@ -81,9 +81,10 @@ func main() {
 						panic(err)
 					}
 
-					for _, event := range fileEvents {
-						log.Println(event.EventId)
-					}
+					//for _, event := range fileEvents {
+					//	log.Println(event.EventId)
+					//}
+					log.Println("Number of events: " + strconv.Itoa(len(fileEvents)))
 				}
 			}
 		}()

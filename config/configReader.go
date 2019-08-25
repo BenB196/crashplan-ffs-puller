@@ -1,6 +1,7 @@
 package config
 
 import (
+	ffs "crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/utils"
 	"encoding/json"
 	"errors"
@@ -22,7 +23,7 @@ type FFSQuery struct {
 	Username 		string			`json:"username"`
 	Password 		string 			`json:"password"`
 	QueryInterval	string			`json:"queryInterval"`
-	Query			string 			`json:"query"`
+	Query			ffs.Query 		`json:"query"`
 }
 
 //Read the configuration file and return the Config struct
