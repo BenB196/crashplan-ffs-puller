@@ -33,66 +33,73 @@ func main() {
 		panic(err)
 	}
 
-	//Quick lazy test
+	//Print Auth and FFS URIs for debugging
 	log.Println(configuration.AuthURI)
 	log.Println(configuration.FFSURI)
-	//TODO this should spawn go routines?
+
+	//Spawn goroutines for each ffs query provided
+	var wg sync.WaitGroup
 	for queryNumber, query := range configuration.FFSQueries {
-
-		//Initialize query waitGroup
-		var wgQuery sync.WaitGroup
-
-		log.Println(query.Username)
-		log.Println(query.Password)
-		log.Println(query.QueryInterval)
-		//Don't print its not formatted correctly
-		//log.Println(query.Query)
-
-		//Handle getting API AuthTokens every 55 minutes
-		apiTokenRefreshInterval := 55 * time.Minute
-		authTimeTicker := time.NewTicker(apiTokenRefreshInterval)
-
-		//Get initial authData
-		authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
-		//Init goroutine for getting authData ever 55 minutes
-		wgQuery.Add(1)
-		go func() {
-			for {
-				select {
-				case <- authTimeTicker.C:
-					authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
-
-					if err != nil {
-						log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
-						panic(err)
-					}
-				}
-				defer wgQuery.Done()
-			}
-		}()
-
-		queryInterval, _ := time.ParseDuration(query.QueryInterval)
-		queryIntervalTimeTicker := time.NewTicker(queryInterval)
-		go func() {
-			for {
-				select {
-				case <- queryIntervalTimeTicker.C:
-					fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
-
-					if err != nil {
-						log.Println("error getting file events for ffs query: " + strconv.Itoa(queryNumber))
-						panic(err)
-					}
-
-					//for _, event := range fileEvents {
-					//	log.Println(event.EventId)
-					//}
-					log.Println("Number of events: " + strconv.Itoa(len(fileEvents)))
-				}
-			}
-		}()
-
-		wgQuery.Wait()
+		wg.Add(1)
+		go queryFFS(configuration, queryNumber, query)
 	}
 
+	wg.Wait()
+}
+
+func queryFFS (configuration config.Config,queryNumber int, query config.FFSQuery) {
+	//Initialize query waitGroup
+	var wgQuery sync.WaitGroup
+
+	log.Println(query.Username)
+	log.Println(query.Password)
+	log.Println(query.QueryInterval)
+	//Don't print its not formatted correctly
+	//log.Println(query.Query)
+
+	//Handle getting API AuthTokens every 55 minutes
+	apiTokenRefreshInterval := 55 * time.Minute
+	authTimeTicker := time.NewTicker(apiTokenRefreshInterval)
+
+	//Get initial authData
+	authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+	//Init goroutine for getting authData ever 55 minutes
+	wgQuery.Add(1)
+	go func() {
+		for {
+			select {
+			case <- authTimeTicker.C:
+				authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+
+				if err != nil {
+					log.Println("error with getting authentication data for ffs query: " + strconv.Itoa(queryNumber))
+					panic(err)
+				}
+			}
+			defer wgQuery.Done()
+		}
+	}()
+
+	queryInterval, _ := time.ParseDuration(query.QueryInterval)
+	queryIntervalTimeTicker := time.NewTicker(queryInterval)
+	go func() {
+		for {
+			select {
+			case <- queryIntervalTimeTicker.C:
+				fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
+
+				if err != nil {
+					log.Println("error getting file events for ffs query: " + strconv.Itoa(queryNumber))
+					panic(err)
+				}
+
+				//for _, event := range fileEvents {
+				//	log.Println(event.EventId)
+				//}
+				log.Println("Number of events: " + strconv.Itoa(len(fileEvents)))
+			}
+		}
+	}()
+
+	wgQuery.Wait()
 }
