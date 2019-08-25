@@ -138,6 +138,25 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			//TODO figure out how to best validate FFSQueries
 
 			//TODO valid outputLocation
+			if query.OutputLocation == "" {
+				//Get working directory and set as output location
+				dir, err := os.Getwd()
+				if err != nil {
+					return config, errors.New("error: unable to get working directory for ffs query: " + queryNumberString)
+				}
+				err = utils.IsWritable(dir)
+				if err != nil {
+					return config, err
+				}
+				config.FFSQueries[queryNumber].OutputLocation = dir
+			} else {
+				//Validate that output location is a valid path
+				err = utils.IsWritable(query.OutputLocation)
+				if err != nil {
+					return config, err
+				}
+				//TODO add support for outputting to other things then just file, ie: elasticsearch
+			}
 		}
 	}
 

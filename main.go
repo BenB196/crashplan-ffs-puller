@@ -57,6 +57,7 @@ func ffsQuery (configuration config.Config,queryNumber int, query config.FFSQuer
 	log.Println(query.QueryInterval)
 	//Don't print its not formatted correctly
 	//log.Println(query.Query)
+	log.Println(query.OutputLocation)
 
 	//Handle getting API AuthTokens every 55 minutes
 	apiTokenRefreshInterval := 55 * time.Minute

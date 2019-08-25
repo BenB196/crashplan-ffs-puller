@@ -11,7 +11,6 @@ import (
 var DirPath = "/"
 
 func IsWritable(path string) error {
-
 	//Check if path exists
 	info, err := os.Stat(path)
 	if err != nil {
