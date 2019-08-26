@@ -157,6 +157,7 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			}
 
 			//TODO figure out how to best validate FFSQueries
+			//TODO need to validate that both ON_OR_AFTER and ON_OR_BEFORE exist once
 
 			//Validate Output Type
 			if query.OutputType == "" {

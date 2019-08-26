@@ -6,7 +6,9 @@ import (
 	"crashplan-ffs-puller/ffsEvent"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -22,7 +24,7 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	}
 
 	//Generate filename
-	fileName, err := generateFileName(query)
+	fileName, err := generateEventFileName(query)
 
 	//handle errs
 	if err != nil {
@@ -75,7 +77,7 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	return nil
 }
 
-func generateFileName(query config.FFSQuery) (string, error) {
+func generateEventFileName(query config.FFSQuery) (string, error) {
 	//Check if query.Groups is not 0, will need to generate filename
 	if len(query.Query.Groups) == 0 {
 		return "", errors.New("error: no groups provided")
@@ -123,4 +125,93 @@ func generateFileName(query config.FFSQuery) (string, error) {
 	fileName = query.OutputLocation + fileName + ".json"
 
 	return fileName, nil
+}
+
+//In progress query struct
+type InProgressQuery struct {
+	OnOrAfter	time.Time
+	OnOrBefore	time.Time
+}
+
+//In progress query struct using strings
+type InProgressQueryString struct {
+	OnOrAfter	string
+	OnOrBefore	string
+}
+
+func WriteInProgressQueries(query config.FFSQuery, inProgressQueries []InProgressQuery) error {
+	fileName := query.OutputLocation + query.Name + "inProgressQueries.json"
+	file, err := os.Create(fileName)
+
+	if err != nil {
+		return errors.New("error: creating file for in progress queries for ffs query: " + query.Name + " : " + err.Error())
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(errors.New("error: closing file: " + fileName + " " + err.Error()))
+		}
+	}()
+
+	w := bufio.NewWriter(file)
+
+	inProgressQueriesBytes, err := json.Marshal(inProgressQueries)
+
+	if err != nil {
+		return errors.New("error: marshaling in progress queries for ffs query: " + query.Name)
+	}
+
+	_, err = w.Write(inProgressQueriesBytes)
+
+	if err != nil {
+		return errors.New("error: writing in progress queries to file: " + fileName + " " + err.Error())
+	}
+
+	err = w.Flush()
+
+	if err != nil {
+		return errors.New("error: flushing file: " + fileName + " " + err.Error())
+	}
+
+	return nil
+}
+
+func ReadInProgressQueries(query config.FFSQuery) ([]InProgressQuery, error) {
+	fileName := query.OutputLocation + query.Name + "inProgressQueries.json"
+	inProgressQueryData, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		if strings.Contains(err.Error(), "The system cannot find the file specified") || strings.Contains(err.Error(), "no such file or directory") {
+			err = WriteInProgressQueries(query, nil)
+			return nil, err
+		}
+		return nil, err
+	}
+
+	var inProgressQueryStrings []InProgressQueryString
+
+	err = json.Unmarshal(inProgressQueryData, &inProgressQueryStrings)
+
+	if err != nil {
+		return nil, errors.New("error: parsing in progress queries from: " + fileName + " " + err.Error())
+	}
+
+	var inProgressQueries []InProgressQuery
+
+	for _, inProgressQueryString := range inProgressQueryStrings {
+		onOrAfter, err := time.Parse(time.RFC3339Nano, inProgressQueryString.OnOrAfter)
+		if err != nil {
+			return nil, errors.New("error: parsing on or after from in progress queries in file: " + fileName)
+		}
+
+		onOrBefore, err := time.Parse(time.RFC3339Nano, inProgressQueryString.OnOrBefore)
+		if err != nil {
+			return nil, errors.New("error: parsing on or before from in progress queries in file: " + fileName)
+		}
+
+		inProgressQueries = append(inProgressQueries, InProgressQuery{
+			OnOrAfter:  onOrAfter,
+			OnOrBefore: onOrBefore,
+		})
+	}
+	return inProgressQueries, nil
 }

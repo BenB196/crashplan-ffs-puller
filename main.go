@@ -5,7 +5,9 @@ import (
 	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/eventOutput"
 	"crashplan-ffs-puller/ffsEvent"
+	"errors"
 	"flag"
+	"github.com/google/go-cmp/cmp"
 	"log"
 	"strconv"
 	"sync"
@@ -60,6 +62,16 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	//log.Println(query.Query)
 	log.Println(query.OutputLocation)
 
+	//Keep track of in progress queries by storing their ON_OR_AFTER and ON_OR_BEFORE times
+	//Load saved in progress queries from last program stop
+	var inProgressQueries []eventOutput.InProgressQuery
+	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
+
+	if err != nil {
+		log.Println("error getting old in progress queries")
+		panic(err)
+	}
+
 	//Handle getting API AuthTokens every 55 minutes
 	apiTokenRefreshInterval := 55 * time.Minute
 	authTimeTicker := time.NewTicker(apiTokenRefreshInterval)
@@ -83,12 +95,40 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		}
 	}()
 
+	//Write in progress queries every 5 seconds to file
+	inProgressQueryWriteInterval := 5 * time.Second
+	inProgressQueryWriteTimeTicker := time.NewTicker(inProgressQueryWriteInterval)
+	go func() {
+		for {
+			select {
+			case <- inProgressQueryWriteTimeTicker.C:
+				err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
+
+				if err != nil {
+					panic(err)
+				}
+			}
+			defer wgQuery.Done()
+		}
+	}()
+
+	if len(inProgressQueries) > 0 {
+		//TODO handle in progress queries
+	}
+
 	queryInterval, _ := time.ParseDuration(query.QueryInterval)
 	queryIntervalTimeTicker := time.NewTicker(queryInterval)
 	go func() {
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
+				//Add query interval to in progress query list
+				inProgressQuery, err := getOnOrBeforeAndAfter(query)
+				if err != nil {
+					panic(err)
+				}
+				inProgressQueries = append(inProgressQueries,inProgressQuery)
+
 				fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
 				if err != nil {
@@ -102,7 +142,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 				for _, event := range fileEvents {
 					ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
 				}
-				log.Println("Number of events for query: " + query.Name + " : " + strconv.Itoa(len(ffsEvents)))
+				log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
 
 				//Write events
 				if len(ffsEvents) > 0 {
@@ -114,9 +154,60 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 						}
 					}
 				}
+
+				//Remove from in progress query slice
+				tempInProgress := inProgressQueries[:0]
+				for _, query := range inProgressQueries {
+					if !cmp.Equal(query, inProgressQuery) {
+						tempInProgress = append(tempInProgress,query)
+					}
+				}
+				inProgressQueries = tempInProgress
 			}
 		}
 	}()
-
 	wgQuery.Wait()
+}
+
+func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
+	if beforeAfter == "before" {
+		for _, group := range query.Groups {
+			for _, filter := range group.Filters {
+				if filter.Operator == "ON_OR_BEFORE" {
+					return time.Parse(time.RFC3339Nano,filter.Value)
+				}
+			}
+		}
+	}
+
+	if beforeAfter == "after" {
+		for _, group := range query.Groups {
+			for _, filter := range group.Filters {
+				if filter.Operator == "ON_OR_AFTER" {
+					return time.Parse(time.RFC3339Nano,filter.Value)
+				}
+			}
+		}
+	}
+
+	return time.Time{}, nil
+}
+
+func getOnOrBeforeAndAfter(query config.FFSQuery) (eventOutput.InProgressQuery,error) {
+	onOrAfter, err := getOnOrTime("after", query.Query)
+
+	if err != nil {
+		return eventOutput.InProgressQuery{}, errors.New("error parsing onOrAfter time for ffs query: " + query.Name + " " + err.Error())
+	}
+
+	onOrBefore, err := getOnOrTime("before", query.Query)
+
+	if err != nil {
+		return eventOutput.InProgressQuery{}, errors.New("error parsing onOrBefore time for ffs query: " + query.Name + " " + err.Error())
+	}
+
+	 return eventOutput.InProgressQuery{
+		OnOrAfter:  onOrAfter,
+		OnOrBefore: onOrBefore,
+	}, nil
 }
