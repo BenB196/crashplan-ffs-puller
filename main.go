@@ -67,12 +67,17 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	var inProgressQueries []eventOutput.InProgressQuery
 	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
 
-	//Keep track of the last successfully completed query
-	var lastCompletedQuery eventOutput.InProgressQuery
-
-
 	if err != nil {
 		log.Println("error getting old in progress queries")
+		panic(err)
+	}
+
+	//Keep track of the last successfully completed query
+	var lastCompletedQuery eventOutput.InProgressQuery
+	lastCompletedQuery, err = eventOutput.ReadLastCompletedQuery(query)
+
+	if err != nil {
+		log.Println("error getting old last completed query")
 		panic(err)
 	}
 
@@ -120,6 +125,28 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		//TODO handle in progress queries
 	}
 
+	//Write last completed query every 5 seconds to file
+	lastCompletedQueryWriteInterval := 5 * time.Second
+	lastCompletedQueryWriteTimeTicker := time.NewTicker(lastCompletedQueryWriteInterval)
+	go func() {
+		for {
+			select {
+			case <- lastCompletedQueryWriteTimeTicker.C:
+				err := eventOutput.WriteLastCompletedQuery(query, lastCompletedQuery)
+
+				if err != nil {
+					panic(err)
+				}
+			}
+			defer wgQuery.Done()
+		}
+	}()
+
+	//Handle setting the initial ON_OR_BEFORE and ON_OR_AFTER depending on the saved lastCompletedQuery
+	if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
+		//TODO handle setting correct times
+	}
+
 	queryInterval, _ := time.ParseDuration(query.QueryInterval)
 	queryIntervalTimeTicker := time.NewTicker(queryInterval)
 	go func() {
@@ -157,6 +184,11 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 							panic(err)
 						}
 					}
+				}
+
+				//Check if this query is the newest completed query, if it is, set last completed query to query times
+				if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
+					lastCompletedQuery = inProgressQuery
 				}
 
 				//Remove from in progress query slice
