@@ -122,7 +122,12 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	}()
 
 	if len(inProgressQueries) > 0 {
-		//TODO handle in progress queries
+		go func() {
+			for _, inProgressQuery := range inProgressQueries {
+				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery)
+			}
+		}()
 	}
 
 	//Write last completed query every 5 seconds to file
@@ -257,7 +262,9 @@ func setOnOrTime(beforeAfter string, query ffs.Query, time time.Time) ffs.Query 
 	return query
 }
 
-func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTime time.Time) {
+func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTime time.Time) config.FFSQuery {
 	query.Query = setOnOrTime("before", query.Query, beforeTime)
 	query.Query = setOnOrTime("after", query.Query, afterTime)
+
+	return query
 }
