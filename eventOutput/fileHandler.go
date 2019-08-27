@@ -215,3 +215,75 @@ func ReadInProgressQueries(query config.FFSQuery) ([]InProgressQuery, error) {
 	}
 	return inProgressQueries, nil
 }
+
+func WriteLastCompletedQuery(query config.FFSQuery, lastCompletedQuery InProgressQuery) error {
+	fileName := query.OutputLocation + query.Name + "lastCompletedQuery.json"
+	file, err := os.Create(fileName)
+
+	if err != nil {
+		return errors.New("error: creating file for last completed ffs query: " + query.Name + " : " + err.Error())
+	}
+
+	defer func() {
+		if err := file.Close(); err != nil {
+			panic(errors.New("error: closing file: " + fileName + " " + err.Error()))
+		}
+	}()
+
+	w := bufio.NewWriter(file)
+
+	lastCompletedQueryBytes, err := json.Marshal(lastCompletedQuery)
+
+	if err != nil {
+		return errors.New("error: marshaling last completed query for ffs query: " + query.Name)
+	}
+
+	_, err = w.Write(lastCompletedQueryBytes)
+
+	if err != nil {
+		return errors.New("error: writing last completed query to file: " + fileName + " " + err.Error())
+	}
+
+	err = w.Flush()
+
+	if err != nil {
+		return errors.New("error: flushing file: " + fileName + " " + err.Error())
+	}
+
+	return nil
+}
+
+func ReadLastCompletedQuery(query config.FFSQuery) (InProgressQuery, error) {
+	fileName := query.OutputLocation + query.Name + "lastCompletedQuery.json"
+	lastCompletedQueryData, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		if strings.Contains(err.Error(), "The system cannot find the file specified") || strings.Contains(err.Error(), "no such file or directory") {
+			err = WriteLastCompletedQuery(query, InProgressQuery{})
+			return InProgressQuery{}, err
+		}
+		return InProgressQuery{}, err
+	}
+
+	var lastCompletedQueryString InProgressQueryString
+
+	err = json.Unmarshal(lastCompletedQueryData, &lastCompletedQueryString)
+
+	if err != nil {
+		return InProgressQuery{}, errors.New("error: parsing last completed query from: " + fileName + " " + err.Error())
+	}
+
+	onOrAfter, err := time.Parse(time.RFC3339Nano, lastCompletedQueryString.OnOrAfter)
+	if err != nil {
+		return InProgressQuery{}, errors.New("error: parsing on or after from last completed query in file: " + fileName)
+	}
+
+	onOrBefore, err := time.Parse(time.RFC3339Nano, lastCompletedQueryString.OnOrBefore)
+	if err != nil {
+		return InProgressQuery{}, errors.New("error: parsing on or before from last completed in file: " + fileName)
+	}
+
+	return InProgressQuery{
+		OnOrAfter:  onOrAfter,
+		OnOrBefore: onOrBefore,
+	}, nil
+}

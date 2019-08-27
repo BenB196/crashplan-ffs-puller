@@ -67,6 +67,10 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	var inProgressQueries []eventOutput.InProgressQuery
 	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
 
+	//Keep track of the last successfully completed query
+	var lastCompletedQuery eventOutput.InProgressQuery
+
+
 	if err != nil {
 		log.Println("error getting old in progress queries")
 		panic(err)
