@@ -215,3 +215,8 @@ func setOnOrTime(beforeAfter string, query ffs.Query, time time.Time) ffs.Query 
 
 	return query
 }
+
+func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTime time.Time) {
+	query.Query = setOnOrTime("before", query.Query, beforeTime)
+	query.Query = setOnOrTime("after", query.Query, afterTime)
+}
