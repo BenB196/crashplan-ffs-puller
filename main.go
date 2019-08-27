@@ -133,7 +133,6 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 			select {
 			case <- lastCompletedQueryWriteTimeTicker.C:
 				err := eventOutput.WriteLastCompletedQuery(query, lastCompletedQuery)
-
 				if err != nil {
 					panic(err)
 				}
@@ -153,56 +152,62 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				//Add query interval to in progress query list
-				inProgressQuery, err := getOnOrBeforeAndAfter(query)
-				if err != nil {
-					panic(err)
-				}
-				inProgressQueries = append(inProgressQueries,inProgressQuery)
-
-				fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
-
-				if err != nil {
-					log.Println("error getting file events for ffs query: " + query.Name)
-					panic(err)
-				}
-
-				//TODO this is where the data should be enriched
-				var ffsEvents []ffsEvent.FFSEvent
-
-				for _, event := range fileEvents {
-					ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
-				}
-				log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
-
-				//Write events
-				if len(ffsEvents) > 0 {
-					if query.OutputType == "file" {
-						err := eventOutput.WriteEvents(ffsEvents, query)
-
-						if err != nil {
-							panic(err)
-						}
-					}
-				}
-
-				//Check if this query is the newest completed query, if it is, set last completed query to query times
-				if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
-					lastCompletedQuery = inProgressQuery
-				}
-
-				//Remove from in progress query slice
-				tempInProgress := inProgressQueries[:0]
-				for _, query := range inProgressQueries {
-					if !cmp.Equal(query, inProgressQuery) {
-						tempInProgress = append(tempInProgress,query)
-					}
-				}
-				inProgressQueries = tempInProgress
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery)
 			}
 		}
 	}()
 	wgQuery.Wait()
+}
+
+func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
+	//Add query interval to in progress query list
+	inProgressQuery, err := getOnOrBeforeAndAfter(query)
+	if err != nil {
+		panic(err)
+	}
+	inProgressQueries = append(inProgressQueries,inProgressQuery)
+
+	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
+
+	if err != nil {
+		log.Println("error getting file events for ffs query: " + query.Name)
+		panic(err)
+	}
+
+	//TODO this is where the data should be enriched
+	var ffsEvents []ffsEvent.FFSEvent
+
+	for _, event := range fileEvents {
+		ffsEvents = append(ffsEvents,ffsEvent.FFSEvent{FileEvent: event})
+	}
+	log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
+
+	//Write events
+	if len(ffsEvents) > 0 {
+		if query.OutputType == "file" {
+			err := eventOutput.WriteEvents(ffsEvents, query)
+
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	//Check if this query is the newest completed query, if it is, set last completed query to query times
+	if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
+		lastCompletedQuery = inProgressQuery
+	}
+
+	//Remove from in progress query slice
+	tempInProgress := inProgressQueries[:0]
+	for _, query := range inProgressQueries {
+		if !cmp.Equal(query, inProgressQuery) {
+			tempInProgress = append(tempInProgress,query)
+		}
+	}
+	inProgressQueries = tempInProgress
+
+	return lastCompletedQuery, inProgressQueries
 }
 
 func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
