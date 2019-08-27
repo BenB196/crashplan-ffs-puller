@@ -104,8 +104,8 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		}
 	}()
 
-	//Write in progress queries every 5 seconds to file
-	inProgressQueryWriteInterval := 5 * time.Second
+	//Write in progress queries every 1 seconds to file
+	inProgressQueryWriteInterval := 1 * time.Second
 	inProgressQueryWriteTimeTicker := time.NewTicker(inProgressQueryWriteInterval)
 	go func() {
 		for {
@@ -130,8 +130,8 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		}()
 	}
 
-	//Write last completed query every 5 seconds to file
-	lastCompletedQueryWriteInterval := 5 * time.Second
+	//Write last completed query every 1 seconds to file
+	lastCompletedQueryWriteInterval := 1 * time.Second
 	lastCompletedQueryWriteTimeTicker := time.NewTicker(lastCompletedQueryWriteInterval)
 	go func() {
 		for {
