@@ -23,7 +23,8 @@ type FFSQuery struct {
 	Name			string			`json:"name"`
 	Username 		string			`json:"username"`
 	Password 		string 			`json:"password"`
-	QueryInterval	string			`json:"queryInterval"`
+	Interval		string			`json:"interval"`
+	TimeGap			string			`json:"timeGap"`
 	Query			ffs.Query 		`json:"query"`
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
@@ -147,12 +148,23 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 				return config, errors.New("error: password in ffs query: " + query.Name + ", is blank")
 			}
 
-			if query.QueryInterval == "" {
-				return config, errors.New("error: query interval in ffs query: " + query.Name + ", is blank")
+			//Validate interval
+			if query.Interval == "" {
+				return config, errors.New("error: interval in ffs query: " + query.Name + ", is blank")
 			} else {
-				_, err := time.ParseDuration(query.QueryInterval)
+				_, err := time.ParseDuration(query.Interval)
 				if err != nil {
-					return config, errors.New("error: invalid duration provide in ffs query: " + query.Name)
+					return config, errors.New("error: invalid duration provide in ffs query for interval: " + query.Name)
+				}
+			}
+
+			//Validate time gap
+			if query.TimeGap == "" {
+				return config, errors.New("error: time gap in ffs query: " + query.Name + ", is blank")
+			} else {
+				_, err := time.ParseDuration(query.TimeGap)
+				if err != nil {
+					return config, errors.New("error: invalid duration provide in ffs query for time gap: " + query.Name)
 				}
 			}
 
