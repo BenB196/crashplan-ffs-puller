@@ -179,7 +179,17 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 				//else this is max time and should not be exceeded TODO save this to a "max time variable" that is checked only on program startup
 		//else set time based off of last completed query + time gap
 	//else get last inProgressQuery
-	//then set time based off of last in progress query + time gap
+	//then check if last completed query is set
+		//if last completed query is set
+		//then compare last in progress query to last completed query and see which is newer
+		//else set time based off of last in progress query + time gap
+
+	//Increment time
+	query, err := calculateTimeStamps(inProgressQueries, lastCompletedQuery, query)
+
+	if err != nil {
+		panic(err)
+	}
 
 	//Add query interval to in progress query list
 	inProgressQuery, err := getOnOrBeforeAndAfter(query)
@@ -235,9 +245,17 @@ func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
 	for _, group := range query.Groups {
 		for _, filter := range group.Filters {
 			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
-				return time.Parse(time.RFC3339Nano,filter.Value)
+				if filter.Value == "" {
+					return time.Time{}, nil
+				} else {
+					return time.Parse(time.RFC3339Nano,filter.Value)
+				}
 			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
-				return time.Parse(time.RFC3339Nano,filter.Value)
+				if filter.Value == "" {
+					return time.Time{}, nil
+				} else {
+					return time.Parse(time.RFC3339Nano,filter.Value)
+				}
 			}
 		}
 	}
@@ -283,4 +301,86 @@ func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTim
 	query.Query = setOnOrTime("after", query.Query, afterTime)
 
 	return query
+}
+
+	//Logic for setting the correct times
+	//TODO make sure on or before never exceeds time.Now -15 minutes. This is what Code42 sets as expected time for logs to be ready for pulling
+	//If len(inProgressQueries) == 0
+		//then check last completed query
+		//If last completed query is "empty"
+			//then get ffs query times
+			//If ffs query on or after is empty
+				//then set to time.now
+				//else do nothing
+			//If ffs query on or before is empty
+				//then set to on or after + query time Interval
+				//else this is max time and should not be exceeded TODO save this to a "max time variable" that is checked only on program startup
+		//else set time based off of last completed query + time gap
+	//else get last inProgressQuery
+	//then check if last completed query is set
+		//if last completed query is set
+		//then compare last in progress query to last completed query and see which is newer
+		//else set time based off of last in progress query + time gap
+
+func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery, query config.FFSQuery) (config.FFSQuery, error) {
+	//Create variable which will be used to store the latest query to have run
+	var lastQueryInterval eventOutput.InProgressQuery
+
+	//Get time gap as a duration
+	timeGap, err := time.ParseDuration(query.TimeGap)
+	if err != nil {
+		return query, err
+	}
+
+	if len(inProgressQueries) == 0 {
+		if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
+			lastQueryInterval = lastCompletedQuery
+		} else {
+			currentQuery, err := getOnOrBeforeAndAfter(query)
+			if err != nil {
+				return query, err
+			}
+			if currentQuery.OnOrAfter == (time.Time{}) {
+				lastQueryInterval = eventOutput.InProgressQuery{
+					OnOrAfter:  time.Now().Add(-15 * time.Minute).Add(-timeGap),
+					OnOrBefore: time.Now().Add(-15 * time.Minute).Add(timeGap),
+				}
+			} else {
+				lastQueryInterval = eventOutput.InProgressQuery{
+					OnOrAfter:  currentQuery.OnOrAfter.Add(1 * time.Millisecond),
+					OnOrBefore: currentQuery.OnOrAfter.Add(1 * time.Millisecond).Add(timeGap),
+				}
+			}
+		}
+	} else {
+		lastInProgressQuery := inProgressQueries[len(inProgressQueries) - 1]
+		if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
+			lastQueryInterval = getNewerTimeQuery(lastInProgressQuery, lastCompletedQuery)
+		} else {
+			lastQueryInterval = lastInProgressQuery
+		}
+	}
+
+	//set time variables
+	newOnOrAfter := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond)
+	newOnOrBefore := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond).Add(timeGap)
+	timeNow := time.Now().Add(-15 * time.Minute)
+
+	//TODO implement a check for "max time"
+
+	//Truncate time if within the 15 minute no go window
+	if timeNow.Sub(newOnOrBefore) <= 0 {
+		newOnOrBefore = timeNow
+	}
+
+	//Increment time
+	return setOnOrBeforeAndAfter(query, newOnOrAfter, newOnOrBefore), nil
+}
+
+func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery) eventOutput.InProgressQuery {
+	if lastCompletedQuery.OnOrBefore.Sub(lastInProgressQuery.OnOrAfter) <= 0 {
+		return lastInProgressQuery
+	} else {
+		return lastCompletedQuery
+	}
 }
