@@ -245,13 +245,13 @@ func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
 	for _, group := range query.Groups {
 		for _, filter := range group.Filters {
 			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
-				if filter.Value == "" {
+				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
 					return time.Time{}, nil
 				} else {
 					return time.Parse(time.RFC3339Nano,filter.Value)
 				}
 			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
-				if filter.Value == "" {
+				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
 					return time.Time{}, nil
 				} else {
 					return time.Parse(time.RFC3339Nano,filter.Value)
@@ -282,13 +282,13 @@ func getOnOrBeforeAndAfter(query config.FFSQuery) (eventOutput.InProgressQuery,e
 	}, nil
 }
 
-func setOnOrTime(beforeAfter string, query ffs.Query, time time.Time) ffs.Query {
+func setOnOrTime(beforeAfter string, query ffs.Query, timeStamp time.Time) ffs.Query {
 	for k, group := range query.Groups {
 		for i, filter := range group.Filters {
 			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
-				query.Groups[k].Filters[i].Value = time.String()
+				query.Groups[k].Filters[i].Value = timeStamp.Format("2006-01-02T15:04:05.000Z")
 			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
-				query.Groups[k].Filters[i].Value = time.String()
+				query.Groups[k].Filters[i].Value = timeStamp.Format("2006-01-02T15:04:05.000Z")
 			}
 		}
 	}
@@ -374,7 +374,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	}
 
 	//Increment time
-	return setOnOrBeforeAndAfter(query, newOnOrAfter, newOnOrBefore), nil
+	return setOnOrBeforeAndAfter(query,newOnOrBefore,newOnOrAfter), nil
 }
 
 func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery) eventOutput.InProgressQuery {
