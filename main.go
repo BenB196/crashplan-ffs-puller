@@ -7,7 +7,6 @@ import (
 	"crashplan-ffs-puller/ffsEvent"
 	"errors"
 	"flag"
-	"github.com/google/go-cmp/cmp"
 	"log"
 	"strconv"
 	"sync"
@@ -45,13 +44,13 @@ func main() {
 	var wg sync.WaitGroup
 	for _, query := range configuration.FFSQueries {
 		wg.Add(1)
-		go ffsQuery(configuration, query)
+		go ffsQuery(configuration, query, wg)
 	}
 
 	wg.Wait()
 }
 
-func ffsQuery (configuration config.Config, query config.FFSQuery) {
+func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitGroup) {
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -62,10 +61,21 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 	//log.Println(query.Query)
 	log.Println(query.OutputLocation)
 
+	//Check if there is a "max" time and set
+	var maxTime time.Time
+	defaultQueryTimes, err := getOnOrBeforeAndAfter(query)
+
+	if err != nil {
+		log.Println("error getting default query times")
+		panic(err)
+	}
+
+	maxTime = defaultQueryTimes.OnOrBefore
+
 	//Keep track of in progress queries by storing their ON_OR_AFTER and ON_OR_BEFORE times
 	//Load saved in progress queries from last program stop
 	var inProgressQueries []eventOutput.InProgressQuery
-	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
+	inProgressQueries, err = eventOutput.ReadInProgressQueries(query)
 
 	if err != nil {
 		log.Println("error getting old in progress queries")
@@ -87,6 +97,12 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 
 	//Get initial authData
 	authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+
+	if err != nil {
+		log.Println("error getting auth data for ffs query: " + query.Name)
+		panic(err)
+	}
+
 	//Init goroutine for getting authData ever 55 minutes
 	wgQuery.Add(1)
 	go func() {
@@ -125,7 +141,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery)
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, nil, wg, wgQuery)
 			}
 		}()
 	}
@@ -157,19 +173,29 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery)
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery)
 			}
 		}
 	}()
 	wgQuery.Wait()
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
+func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
 	//Increment time
-	query, err := calculateTimeStamps(inProgressQueries, lastCompletedQuery, query)
+	query, done, err := calculateTimeStamps(inProgressQueries, lastCompletedQuery, query, maxTime)
 
 	if err != nil {
 		panic(err)
+	}
+
+	//Stop the goroutine if the max time is past
+	if done {
+		wg.Done()
+		wgQuery.Done()
+		if queryIntervalTimeTicker != nil {
+			queryIntervalTimeTicker.Stop()
+		}
+		return eventOutput.InProgressQuery{}, nil
 	}
 
 	//Add query interval to in progress query list
@@ -211,13 +237,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 	}
 
 	//Remove from in progress query slice
-	tempInProgress := inProgressQueries[:0]
-	for _, query := range inProgressQueries {
-		if !cmp.Equal(query, inProgressQuery) {
-			tempInProgress = append(tempInProgress,query)
-		}
-	}
-	inProgressQueries = tempInProgress
+	//tempInProgress := inProgressQueries[:0]
+	//for _, query := range inProgressQueries {
+	//	if !cmp.Equal(query, inProgressQuery) {
+	//		tempInProgress = append(tempInProgress,query)
+	//	}
+	//}
+	//inProgressQueries = tempInProgress
 
 	return lastCompletedQuery, inProgressQueries
 }
@@ -303,14 +329,14 @@ func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTim
 		//then compare last in progress query to last completed query and see which is newer
 		//else set time based off of last in progress query + time gap
 
-func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery, query config.FFSQuery) (config.FFSQuery, error) {
+func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery, query config.FFSQuery, maxTime time.Time) (config.FFSQuery, bool, error) {
 	//Create variable which will be used to store the latest query to have run
 	var lastQueryInterval eventOutput.InProgressQuery
 
 	//Get time gap as a duration
 	timeGap, err := time.ParseDuration(query.TimeGap)
 	if err != nil {
-		return query, err
+		return query, false, err
 	}
 
 	if len(inProgressQueries) == 0 {
@@ -319,7 +345,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 		} else {
 			currentQuery, err := getOnOrBeforeAndAfter(query)
 			if err != nil {
-				return query, err
+				return query, false, err
 			}
 			if currentQuery.OnOrAfter == (time.Time{}) {
 				lastQueryInterval = eventOutput.InProgressQuery{
@@ -348,6 +374,18 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	timeNow := time.Now().Add(-15 * time.Minute)
 
 	//TODO implement a check for "max time"
+	var done bool
+	if maxTime != (time.Time{}) {
+		if maxTime.Sub(newOnOrAfter) <= 0 {
+			done = true
+			log.Println("Triggered Done")
+			log.Println(done)
+		} else if maxTime.Sub(newOnOrBefore) <= 0 {
+			newOnOrBefore = maxTime
+			log.Println("Did not trigger Done")
+			log.Println(done)
+		}
+	}
 
 	//Truncate time if within the 15 minute no go window
 	if timeNow.Sub(newOnOrBefore) <= 0 {
@@ -355,7 +393,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	}
 
 	//Increment time
-	return setOnOrBeforeAndAfter(query,newOnOrBefore,newOnOrAfter), nil
+	return setOnOrBeforeAndAfter(query,newOnOrBefore,newOnOrAfter), done, nil
 }
 
 func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery) eventOutput.InProgressQuery {
