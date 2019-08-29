@@ -7,6 +7,7 @@ import (
 	"crashplan-ffs-puller/ffsEvent"
 	"errors"
 	"flag"
+	"github.com/google/go-cmp/cmp"
 	"log"
 	"strconv"
 	"sync"
@@ -141,7 +142,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, nil, wg, wgQuery)
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, nil, wg, wgQuery, true)
 			}
 		}()
 	}
@@ -173,29 +174,34 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery)
+				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false)
 			}
 		}
 	}()
 	wgQuery.Wait()
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
+func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
+	var done bool
+	var err error
 	//Increment time
-	query, done, err := calculateTimeStamps(inProgressQueries, lastCompletedQuery, query, maxTime)
+	//Only if it is not a catchup query (in progress queries when the app died)
+	if !cleanUpQuery {
+		query, done, err = calculateTimeStamps(inProgressQueries, lastCompletedQuery, query, maxTime)
 
-	if err != nil {
-		panic(err)
-	}
-
-	//Stop the goroutine if the max time is past
-	if done {
-		wg.Done()
-		wgQuery.Done()
-		if queryIntervalTimeTicker != nil {
-			queryIntervalTimeTicker.Stop()
+		if err != nil {
+			panic(err)
 		}
-		return eventOutput.InProgressQuery{}, nil
+
+		//Stop the goroutine if the max time is past
+		if done {
+			wg.Done()
+			wgQuery.Done()
+			if queryIntervalTimeTicker != nil {
+				queryIntervalTimeTicker.Stop()
+			}
+			return eventOutput.InProgressQuery{}, nil
+		}
 	}
 
 	//Add query interval to in progress query list
@@ -237,13 +243,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 	}
 
 	//Remove from in progress query slice
-	//tempInProgress := inProgressQueries[:0]
-	//for _, query := range inProgressQueries {
-	//	if !cmp.Equal(query, inProgressQuery) {
-	//		tempInProgress = append(tempInProgress,query)
-	//	}
-	//}
-	//inProgressQueries = tempInProgress
+	tempInProgress := inProgressQueries[:0]
+	for _, query := range inProgressQueries {
+		if !cmp.Equal(query, inProgressQuery) {
+			tempInProgress = append(tempInProgress,query)
+		}
+	}
+	inProgressQueries = tempInProgress
 
 	return lastCompletedQuery, inProgressQueries
 }
@@ -378,12 +384,8 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	if maxTime != (time.Time{}) {
 		if maxTime.Sub(newOnOrAfter) <= 0 {
 			done = true
-			log.Println("Triggered Done")
-			log.Println(done)
 		} else if maxTime.Sub(newOnOrBefore) <= 0 {
 			newOnOrBefore = maxTime
-			log.Println("Did not trigger Done")
-			log.Println(done)
 		}
 	}
 
