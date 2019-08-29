@@ -165,25 +165,6 @@ func ffsQuery (configuration config.Config, query config.FFSQuery) {
 }
 
 func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
-	//Logic for setting the correct times
-	//TODO make sure on or before never exceeds time.Now -15 minutes. This is what Code42 sets as expected time for logs to be ready for pulling
-	//If len(inProgressQueries) == 0
-		//then check last completed query
-		//If last completed query is "empty"
-			//then get ffs query times
-			//If ffs query on or after is empty
-				//then set to time.now
-				//else do nothing
-			//If ffs query on or before is empty
-				//then set to on or after + query time Interval
-				//else this is max time and should not be exceeded TODO save this to a "max time variable" that is checked only on program startup
-		//else set time based off of last completed query + time gap
-	//else get last inProgressQuery
-	//then check if last completed query is set
-		//if last completed query is set
-		//then compare last in progress query to last completed query and see which is newer
-		//else set time based off of last in progress query + time gap
-
 	//Increment time
 	query, err := calculateTimeStamps(inProgressQueries, lastCompletedQuery, query)
 
