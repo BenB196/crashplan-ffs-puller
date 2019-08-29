@@ -10,9 +10,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
+//Configuration File structs
 type Config struct {
 	AuthURI  		string 			`json:"authURI"`
 	FFSURI   		string 			`json:"ffsURI"`
@@ -29,8 +31,13 @@ type FFSQuery struct {
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
 }
-
-//Read the configuration file and return the Config struct
+/*
+ReadConfig - read a configuration file from a specified location
+configLocation - string which contains the location of the configuration file
+Returns
+Config - config struct of the configuration file (can be a "new" struct as well)
+error - any errors which have been caught
+ */
 func ReadConfig(configLocation string) (Config, error) {
 
 	//Make sure absolute file path is gotten
@@ -59,22 +66,30 @@ func ReadConfig(configLocation string) (Config, error) {
 
 	//Check file extension
 	fileExtension := path.Ext(configLocation)
+	fileExtension = strings.ToLower(fileExtension)
 
 	//If no file extension err
 	switch fileExtension {
 	case "":
 		return Config{}, errors.New("no file extension found on configuration file, unable to properly parse")
-	case ".json",".JSON",".Json":
-		return parseConfigJson(byteValue)
-	case ".yaml",".YAML",".Yaml",".yml",".YML",".Yml":
+	case ".json":
+		return validateConfigJson(byteValue)
+	case ".yaml",".yml":
 		//TODO parse file as yaml
 		return Config{}, nil
 	default:
-		return Config{}, errors.New("unknown file extension: " + fileExtension + ", supported file extensions: json, JSON, Json, yaml, YAML, Yaml, yml, YML, Yml")
+		return Config{}, errors.New("unknown file extension: " + fileExtension + ", supported file extensions: json, yaml, yml")
 	}
 }
 
-func parseConfigJson(fileBytes []byte) (Config, error) {
+/*
+validateConfigJson - validates the configuration file bytes to make sure the configuration file is accurate
+fileBytes - the bytes of the configuration file
+Returns
+Config - config struct of the configuration file (can be a "new" struct as well)
+error - any errors which have been caught
+ */
+func validateConfigJson(fileBytes []byte) (Config, error) {
 	//create config struct
 	var config Config
 	//Make sure file is valid JSON
@@ -86,20 +101,24 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 	}
 
 	//Validate JSON fields
-	//Validate AuthURI: check if empty and is valid request uri
+	//Validate AuthURI
+	//check if empty
 	if config.AuthURI == "" {
 		return config, errors.New("error: authURI cannot be blank")
 	} else {
+		//check if valid URI
 		_, err := url.ParseRequestURI(config.AuthURI)
 		if err != nil {
 			return config, errors.New("error: bad authURI provided: " + err.Error())
 		}
 	}
 
-	//Validate FFSURI: check if empty and is valid request uri
+	//Validate FFSURI
+	//check if empty
 	if config.FFSURI == "" {
 		return config, errors.New("error: FFSURI cannot be blank")
 	} else {
+		//check if valid URI
 		_, err := url.ParseRequestURI(config.FFSURI)
 		if err != nil {
 			return config, errors.New("error: bad FFSURI provided: " + err.Error())
@@ -115,10 +134,12 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 	} else {
 		for i, query := range config.FFSQueries {
 
-			//Validate queryName
+			//Validate query.Name
+			//check if empty
 			if query.Name == "" {
 				return config, errors.New("error: query name is empty")
 			} else if len(query.Name) > 100 {
+				//check if greater than 100 characters
 				return config, errors.New("error: query name: " + query.Name + ", is greater than 100 characters")
 			} else {
 				//Check if query name is unique
@@ -133,25 +154,30 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 				}
 			}
 
-			//Validate username: check if empty and is valid email
+			//Validate username
+			//check if empty
 			if query.Username == "" {
 				return config, errors.New("error: username in ffs query: " + query.Name + ", is blank")
 			} else {
+				//check if valid email address
 				err = utils.ValidateUsernameRegexp(query.Username)
 				if err != nil {
 					return config, errors.New("error: in ffs query: " + query.Name + ", " + err.Error())
 				}
 			}
 
-			//Validate password: check if empty
+			//Validate password
+			//check if empty
 			if query.Password == "" {
 				return config, errors.New("error: password in ffs query: " + query.Name + ", is blank")
 			}
 
 			//Validate interval
+			//check if empty
 			if query.Interval == "" {
 				return config, errors.New("error: interval in ffs query: " + query.Name + ", is blank")
 			} else {
+				//check if real duration value is passed
 				_, err := time.ParseDuration(query.Interval)
 				if err != nil {
 					return config, errors.New("error: invalid duration provide in ffs query for interval: " + query.Name)
@@ -159,9 +185,11 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			}
 
 			//Validate time gap
+			//check if empty
 			if query.TimeGap == "" {
 				return config, errors.New("error: time gap in ffs query: " + query.Name + ", is blank")
 			} else {
+				//check if real duration value is passed
 				_, err := time.ParseDuration(query.TimeGap)
 				if err != nil {
 					return config, errors.New("error: invalid duration provide in ffs query for time gap: " + query.Name)
@@ -172,6 +200,7 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 			//TODO need to validate that both ON_OR_AFTER and ON_OR_BEFORE exist once
 
 			//Validate Output Type
+			//check if empty
 			if query.OutputType == "" {
 				return config, errors.New("error: output type ")
 			} else {
@@ -181,17 +210,23 @@ func parseConfigJson(fileBytes []byte) (Config, error) {
 					if query.OutputLocation == "" {
 						//Get working directory and set as output location
 						dir, err := os.Getwd()
+						//return any errors
 						if err != nil {
 							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
 						}
+						//check if directory is writable
 						err = utils.IsWritable(dir)
+						//return any errors
 						if err != nil {
 							return config, err
 						}
+						//update output location to absolute path
 						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
 					} else {
 						//Validate that output location is a valid path
+						//check that path is writable
 						err = utils.IsWritable(query.OutputLocation)
+						//return any errors
 						if err != nil {
 							return config, err
 						}
