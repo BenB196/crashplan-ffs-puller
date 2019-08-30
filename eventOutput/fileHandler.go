@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -49,28 +51,39 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 
 	//Build ffsEvents string
 	var ffsEventsString string
-	for _, event := range ffsEvents {
-		ffsEventBytes, err := json.Marshal(event)
+	ffsEventsStringPointer := &ffsEventsString
 
-		if err != nil {
-			return errors.New("error: marshaling ffs event: " + err.Error())
+	log.Println("Marshaling events")
+	var wg sync.WaitGroup
+	wg.Add(len(ffsEvents))
+	go func() {
+		for _, event := range ffsEvents {
+			ffsEventBytes, err := json.Marshal(event)
+
+			if err != nil {
+				panic(errors.New("error: marshaling ffs event: " + err.Error()))
+			}
+
+			*ffsEventsStringPointer = *ffsEventsStringPointer + string(ffsEventBytes) + "\n"
+			wg.Done()
 		}
+	}()
 
-		ffsEventsString = ffsEventsString + string(ffsEventBytes) + "\n"
-	}
+	wg.Wait()
 
 	//Write events to file
 	if ffsEventsString != "" {
+		log.Println("Writing file")
 		_, err := w.WriteString(ffsEventsString)
-		//_, err := file.WriteString(ffsEventsString)
 
 		if err != nil {
 			return errors.New("error: writing events to file: " + fileName + " " + err.Error())
 		}
 	}
 
+	log.Println("Syncing file")
+
 	err = w.Flush()
-	//err = file.Close()
 
 	if err != nil {
 		return errors.New("error: flushing file: " + fileName + " " + err.Error())
