@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -50,26 +49,14 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	w := bufio.NewWriter(file)
 
 	//Build ffsEvents string
-	var ffsEventsString string
-	ffsEventsStringPointer := &ffsEventsString
+	ffsEventBytes, err := json.Marshal(ffsEvents)
 
-	log.Println("Marshaling events")
-	var wg sync.WaitGroup
-	wg.Add(len(ffsEvents))
-	go func() {
-		for _, event := range ffsEvents {
-			ffsEventBytes, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
 
-			if err != nil {
-				panic(errors.New("error: marshaling ffs event: " + err.Error()))
-			}
-
-			*ffsEventsStringPointer = *ffsEventsStringPointer + string(ffsEventBytes) + "\n"
-			wg.Done()
-		}
-	}()
-
-	wg.Wait()
+	//Split json array into individual json objects, makes every faster down the line
+	ffsEventsString := strings.Replace(strings.Replace(strings.ReplaceAll(string(ffsEventBytes),"},{","}\n{"),"[{","{",1),"}]","}",1)
 
 	//Write events to file
 	if ffsEventsString != "" {
