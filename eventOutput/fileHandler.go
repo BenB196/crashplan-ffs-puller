@@ -62,6 +62,7 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	//Write events to file
 	if ffsEventsString != "" {
 		_, err := w.WriteString(ffsEventsString)
+		//_, err := file.WriteString(ffsEventsString)
 
 		if err != nil {
 			return errors.New("error: writing events to file: " + fileName + " " + err.Error())
@@ -69,6 +70,7 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 	}
 
 	err = w.Flush()
+	//err = file.Close()
 
 	if err != nil {
 		return errors.New("error: flushing file: " + fileName + " " + err.Error())
@@ -139,7 +141,7 @@ type InProgressQueryString struct {
 	OnOrBefore	string
 }
 
-func WriteInProgressQueries(query config.FFSQuery, inProgressQueries []InProgressQuery) error {
+func WriteInProgressQueries(query config.FFSQuery, inProgressQueries *[]InProgressQuery) error {
 	fileName := query.OutputLocation + query.Name + "inProgressQueries.json"
 	file, err := os.Create(fileName)
 

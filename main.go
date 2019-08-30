@@ -75,8 +75,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 
 	//Keep track of in progress queries by storing their ON_OR_AFTER and ON_OR_BEFORE times
 	//Load saved in progress queries from last program stop
-	var inProgressQueries []eventOutput.InProgressQuery
-	inProgressQueries, err = eventOutput.ReadInProgressQueries(query)
+	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
 
 	if err != nil {
 		log.Println("error getting old in progress queries")
@@ -130,7 +129,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 			case <- inProgressQueryWriteTimeTicker.C:
 				log.Println("Current Number of in progress queries: " + strconv.Itoa(len(inProgressQueries)))
 
-				err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
+				err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
 				if err != nil {
 					panic(err)
@@ -144,7 +143,7 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, nil, wg, wgQuery, true)
+				lastCompletedQuery = queryFetcher(query, &inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, nil, wg, wgQuery, true)
 			}
 		}()
 	}
@@ -176,20 +175,20 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				lastCompletedQuery, inProgressQueries = queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false)
+				lastCompletedQuery = queryFetcher(query, &inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false)
 			}
 		}
 	}()
 	wgQuery.Wait()
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool) (eventOutput.InProgressQuery, []eventOutput.InProgressQuery) {
+func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool) eventOutput.InProgressQuery {
 	var done bool
 	var err error
 	//Increment time
 	//Only if it is not a catchup query (in progress queries when the app died)
 	if !cleanUpQuery {
-		query, done, err = calculateTimeStamps(inProgressQueries, lastCompletedQuery, query, maxTime)
+		query, done, err = calculateTimeStamps(*inProgressQueries, lastCompletedQuery, query, maxTime)
 
 		if err != nil {
 			panic(err)
@@ -202,7 +201,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 			if queryIntervalTimeTicker != nil {
 				queryIntervalTimeTicker.Stop()
 			}
-			return eventOutput.InProgressQuery{}, nil
+			return eventOutput.InProgressQuery{}
 		}
 	}
 
@@ -211,7 +210,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 	if err != nil {
 		panic(err)
 	}
-	inProgressQueries = append(inProgressQueries,inProgressQuery)
+	*inProgressQueries = append(*inProgressQueries,inProgressQuery)
+
+	log.Println("I added in progress query")
 
 	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
@@ -245,15 +246,18 @@ func queryFetcher(query config.FFSQuery, inProgressQueries []eventOutput.InProgr
 	}
 
 	//Remove from in progress query slice
-	tempInProgress := inProgressQueries[:0]
-	for _, query := range inProgressQueries {
+	temp := *inProgressQueries
+	tempInProgress := temp[:0]
+	for _, query := range *inProgressQueries {
 		if !cmp.Equal(query, inProgressQuery) {
 			tempInProgress = append(tempInProgress,query)
 		}
 	}
-	inProgressQueries = tempInProgress
+	*inProgressQueries = tempInProgress
 
-	return lastCompletedQuery, inProgressQueries
+	log.Println("I removed in progress query")
+
+	return lastCompletedQuery
 }
 
 func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
