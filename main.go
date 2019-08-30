@@ -128,6 +128,8 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		for {
 			select {
 			case <- inProgressQueryWriteTimeTicker.C:
+				log.Println("Current Number of in progress queries: " + strconv.Itoa(len(inProgressQueries)))
+
 				err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
 
 				if err != nil {
@@ -339,6 +341,10 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	//Create variable which will be used to store the latest query to have run
 	var lastQueryInterval eventOutput.InProgressQuery
 
+	//Set timezone
+	loc, _ := time.LoadLocation("UTC")
+	timeNow := time.Now().Add(-15 * time.Minute).In(loc)
+
 	//Get time gap as a duration
 	timeGap, err := time.ParseDuration(query.TimeGap)
 	if err != nil {
@@ -355,8 +361,8 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 			}
 			if currentQuery.OnOrAfter == (time.Time{}) {
 				lastQueryInterval = eventOutput.InProgressQuery{
-					OnOrAfter:  time.Now().Add(-15 * time.Minute).Add(-timeGap),
-					OnOrBefore: time.Now().Add(-15 * time.Minute).Add(timeGap),
+					OnOrAfter:  timeNow.Add(-timeGap),
+					OnOrBefore: timeNow.Add(timeGap),
 				}
 			} else {
 				lastQueryInterval = eventOutput.InProgressQuery{
@@ -377,7 +383,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	//set time variables
 	newOnOrAfter := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond)
 	newOnOrBefore := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond).Add(timeGap)
-	timeNow := time.Now().Add(-15 * time.Minute)
+
 
 	//TODO implement a check for "max time"
 	var done bool
