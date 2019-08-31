@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -60,15 +59,12 @@ func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
 
 	//Write events to file
 	if ffsEventsString != "" {
-		log.Println("Writing file")
 		_, err := w.WriteString(ffsEventsString)
 
 		if err != nil {
 			return errors.New("error: writing events to file: " + fileName + " " + err.Error())
 		}
 	}
-
-	log.Println("Syncing file")
 
 	err = w.Flush()
 

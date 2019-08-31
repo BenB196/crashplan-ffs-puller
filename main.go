@@ -9,6 +9,7 @@ import (
 	"flag"
 	"github.com/google/go-cmp/cmp"
 	"log"
+	"reflect"
 	"strconv"
 	"sync"
 	"time"
@@ -121,18 +122,23 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	}()
 
 	//Write in progress queries every 1 seconds to file
-	inProgressQueryWriteInterval := 1 * time.Second
+	inProgressQueryWriteInterval := 100 * time.Millisecond
 	inProgressQueryWriteTimeTicker := time.NewTicker(inProgressQueryWriteInterval)
 	go func() {
+		var oldInProgressQueries []eventOutput.InProgressQuery
+		oldInProgressQueries = inProgressQueries
 		for {
 			select {
 			case <- inProgressQueryWriteTimeTicker.C:
-				log.Println("Current Number of in progress queries: " + strconv.Itoa(len(inProgressQueries)))
+				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
+					oldInProgressQueries = inProgressQueries
+					log.Println("Current Number of in progress queries: " + strconv.Itoa(len(inProgressQueries)))
 
-				err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
+					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
-				if err != nil {
-					panic(err)
+					if err != nil {
+						panic(err)
+					}
 				}
 			}
 			defer wgQuery.Done()
@@ -214,8 +220,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		*inProgressQueries = append(*inProgressQueries,inProgressQuery)
 	}
 
-	log.Println("I added in progress query")
-
 	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
 	if err != nil {
@@ -256,8 +260,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 	*inProgressQueries = tempInProgress
-
-	log.Println("I removed in progress query")
 }
 
 func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
