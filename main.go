@@ -132,8 +132,6 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 			case <- inProgressQueryWriteTimeTicker.C:
 				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
 					oldInProgressQueries = inProgressQueries
-					log.Println("Current Number of in progress queries: " + strconv.Itoa(len(inProgressQueries)))
-
 					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
 					if err != nil {
