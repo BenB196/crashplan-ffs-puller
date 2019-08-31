@@ -155,15 +155,20 @@ func ffsQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	}
 
 	//Write last completed query every 1 seconds to file
-	lastCompletedQueryWriteInterval := 1 * time.Second
+	lastCompletedQueryWriteInterval := 100 * time.Millisecond
 	lastCompletedQueryWriteTimeTicker := time.NewTicker(lastCompletedQueryWriteInterval)
 	go func() {
+		var oldLastCompletedQuery eventOutput.InProgressQuery
+		oldLastCompletedQuery = lastCompletedQuery
 		for {
 			select {
 			case <- lastCompletedQueryWriteTimeTicker.C:
-				err := eventOutput.WriteLastCompletedQuery(query, lastCompletedQuery)
-				if err != nil {
-					panic(err)
+				if oldLastCompletedQuery != lastCompletedQuery {
+					oldLastCompletedQuery = lastCompletedQuery
+					err := eventOutput.WriteLastCompletedQuery(query, lastCompletedQuery)
+					if err != nil {
+						panic(err)
+					}
 				}
 			}
 			defer wgQuery.Done()
