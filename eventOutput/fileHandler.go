@@ -2,8 +2,8 @@ package eventOutput
 
 import (
 	"bufio"
+	"crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/config"
-	"crashplan-ffs-puller/ffsEvent"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -12,7 +12,12 @@ import (
 	"time"
 )
 
-func WriteEvents (ffsEvents []ffsEvent.FFSEvent, query config.FFSQuery) error {
+type FFSEvent struct {
+	ffs.FileEvent
+	//TODO you can add addition stuff here
+}
+
+func WriteEvents (ffsEvents []FFSEvent, query config.FFSQuery) error {
 	//Error if ffsEvents is nil, this should not be called if there are no ffsEvents
 	if ffsEvents == nil {
 		return errors.New("error: ffsEvents is nil")
