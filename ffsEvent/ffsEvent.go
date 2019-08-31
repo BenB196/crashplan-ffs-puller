@@ -21,7 +21,6 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	log.Println(query.Password)
 	log.Println(query.Interval)
 	//Don't print its not formatted correctly
-	//log.Println(query.Query)
 	log.Println(query.OutputLocation)
 
 	//Check if there is a "max" time and set
