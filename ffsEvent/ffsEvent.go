@@ -4,6 +4,7 @@ import (
 	"crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/eventOutput"
+	"crashplan-ffs-puller/promMetrics"
 	"errors"
 	"github.com/google/go-cmp/cmp"
 	"log"
@@ -92,6 +93,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 			case <- inProgressQueryWriteTimeTicker.C:
 				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
 					oldInProgressQueries = inProgressQueries
+					promMetrics.AdjustInProgressQueries(len(inProgressQueries))
 					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
 					if err != nil {
@@ -223,6 +225,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 	*inProgressQueries = tempInProgress
+
+	promMetrics.IncrementEventsProcessed(len(ffsEvents))
 }
 
 func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
