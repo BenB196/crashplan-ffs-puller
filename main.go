@@ -4,11 +4,11 @@ import (
 	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/ffsEvent"
 	"flag"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
+	"strconv"
 	"sync"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -16,7 +16,6 @@ func main() {
 	//Get Config location and get config struct
 	var configLocation string
 	flag.StringVar(&configLocation,"config","","Configuation File Location. REQUIRED") //TODO improve usage description
-	var port = flag.String("listening port",":8080", "The port to listen on for HTTP requests.")
 
 
 	//Parse Flags
@@ -41,18 +40,19 @@ func main() {
 
 	//Spawn goroutines for each ffs query provided
 	var wg sync.WaitGroup
+	wg.Add(len(configuration.FFSQueries))
 	go func() {
 		for _, query := range configuration.FFSQueries {
-			wg.Add(1)
 			go ffsEvent.FFSQuery(configuration, query, wg)
-			defer wg.Done()
 		}
 	}()
 
+	if configuration.Prometheus.Enabled {
+		//startup prometheus metrics port
+		http.Handle("/metrics",promhttp.Handler())
+
+		log.Fatal(http.ListenAndServe(":" + strconv.Itoa(configuration.Prometheus.Port), nil))
+	}
+
 	wg.Wait()
-
-	//startup prometheus metrics port
-	http.Handle("/metrics",promhttp.Handler())
-
-	log.Fatal(http.ListenAndServe(*port, nil))
 }

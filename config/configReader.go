@@ -19,6 +19,7 @@ type Config struct {
 	AuthURI  		string 			`json:"authURI"`
 	FFSURI   		string 			`json:"ffsURI"`
 	FFSQueries		[]FFSQuery		`json:"ffsQueries"`
+	Prometheus		Prometheus		`json:"prometheus,omitempty"`
 }
 
 type FFSQuery struct {
@@ -31,6 +32,11 @@ type FFSQuery struct {
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
 	OutputIndex		string			`json:"outputIndex,omitempty"`
+}
+
+type Prometheus struct {
+	Enabled			bool			`json:"enabled,omitempty"`
+	Port			int				`json:"port,omitempty"`
 }
 /*
 ReadConfig - read a configuration file from a specified location
@@ -123,6 +129,18 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 		_, err := url.ParseRequestURI(config.FFSURI)
 		if err != nil {
 			return config, errors.New("error: bad FFSURI provided: " + err.Error())
+		}
+	}
+
+	//Validate prometheus port
+	if config.Prometheus.Enabled {
+		//Set default port to 8080 if port == 0
+		if config.Prometheus.Port == 0 {
+			config.Prometheus.Port = 8080
+		} else if config.Prometheus.Port < 1024 {
+			return config, errors.New("error: prometheus port is below 1024, port must be between 1024 and 65535")
+		} else if config.Prometheus.Port > 65535 {
+			return config, errors.New("error: prometheus port is above 65535, port must be between 1024 and 65535")
 		}
 	}
 
