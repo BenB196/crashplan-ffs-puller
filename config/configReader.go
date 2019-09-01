@@ -30,6 +30,7 @@ type FFSQuery struct {
 	Query			ffs.Query 		`json:"query"`
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
+	OutputIndex		string			`json:"outputIndex,omitempty"`
 }
 /*
 ReadConfig - read a configuration file from a specified location
@@ -237,7 +238,23 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 							config.FFSQueries[i].OutputLocation = query.OutputLocation + utils.DirPath
 						}
 					}
-				//TODO add support for outputting to other things then just file, ie: elasticsearch
+				case "elastic":
+					//Validate output location
+					//check if empty
+					if query.OutputLocation == "" {
+						return config, errors.New("error: output location for elastic output cannot be null for ffs query: " + query.Name)
+					} else {
+						//check if valid url
+						_, err := url.ParseRequestURI(query.OutputLocation)
+						if err != nil {
+							return config, errors.New("error: invalid url provided for elastic output: " + err.Error())
+						}
+					}
+
+					//Validate output index
+					if query.OutputIndex == "" {
+						return config, errors.New("error: output index for elastic output cannot be null for ffs query: " + query.Name)
+					}
 				default:
 					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
 				}

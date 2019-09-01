@@ -199,12 +199,16 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	//Write events
 	if len(ffsEvents) > 0 {
-		if query.OutputType == "file" {
+		switch query.OutputType {
+		case "file":
 			err := eventOutput.WriteEvents(ffsEvents, query)
 
 			if err != nil {
 				panic(err)
 			}
+		case "elastic":
+			log.Println(query.OutputLocation)
+			log.Println(query.OutputIndex)
 		}
 	}
 
