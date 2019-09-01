@@ -92,8 +92,8 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 			select {
 			case <- inProgressQueryWriteTimeTicker.C:
 				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
+					promMetrics.AdjustInProgressQueries(len(inProgressQueries) - len(oldInProgressQueries))
 					oldInProgressQueries = inProgressQueries
-					promMetrics.AdjustInProgressQueries(len(inProgressQueries))
 					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
 					if err != nil {

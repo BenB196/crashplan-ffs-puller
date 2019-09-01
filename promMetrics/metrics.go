@@ -21,5 +21,5 @@ func IncrementEventsProcessed(numberOfEvents int)  {
 }
 
 func AdjustInProgressQueries(numberOfInProgressQueries int) {
-	inProgressQueries.Set(float64(numberOfInProgressQueries))
+	inProgressQueries.Add(float64(numberOfInProgressQueries))
 }
