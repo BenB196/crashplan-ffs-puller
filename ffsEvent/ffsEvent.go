@@ -54,8 +54,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	}
 
 	//Handle getting API AuthTokens every 55 minutes
-	apiTokenRefreshInterval := 55 * time.Minute
-	authTimeTicker := time.NewTicker(apiTokenRefreshInterval)
+	authTimeTicker := time.NewTicker(55 * time.Minute)
 
 	//Get initial authData
 	authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
@@ -82,9 +81,8 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		}
 	}()
 
-	//Write in progress queries every 1 seconds to file
-	inProgressQueryWriteInterval := 100 * time.Millisecond
-	inProgressQueryWriteTimeTicker := time.NewTicker(inProgressQueryWriteInterval)
+	//Write in progress queries every 100 milliseconds to file
+	inProgressQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		var oldInProgressQueries []eventOutput.InProgressQuery
 		oldInProgressQueries = inProgressQueries
@@ -114,9 +112,8 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		}()
 	}
 
-	//Write last completed query every 1 seconds to file
-	lastCompletedQueryWriteInterval := 100 * time.Millisecond
-	lastCompletedQueryWriteTimeTicker := time.NewTicker(lastCompletedQueryWriteInterval)
+	//Write last completed query every 100 milliseconds to file
+	lastCompletedQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
 	go func() {
 		var oldLastCompletedQuery eventOutput.InProgressQuery
 		oldLastCompletedQuery = lastCompletedQuery
