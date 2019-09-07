@@ -307,6 +307,11 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					if err != nil {
 						return config, err
 					}
+
+					//Make sure that this field is passed as it needs to used. Will be dropped anyway
+					if !strings.Contains(query.IPAPI.Fields,"query") {
+						config.FFSQueries[i].IPAPI.Fields = query.IPAPI.Fields + ",query"
+					}
 				}
 
 				//validate lang

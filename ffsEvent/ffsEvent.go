@@ -246,6 +246,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				if len(locationMap) == 0 {
 					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
 				} else if location, ok := locationMap[event.PublicIpAddress]; ok {
+					//nil this as it is not needed, we already have event.publicIpAddress
+					location.Query = ""
 					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: eventOutput.GeoPoint{
 						Lat: location.Lat,
 						Lon: location.Lon,
@@ -446,21 +448,4 @@ func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastComp
 	} else {
 		return lastCompletedQuery
 	}
-}
-
-/*
-contains - checks a string slice to see if it contains a string
-slice - string slice which you want to check
-item - string which you want to see if exists in the string slice
-
-returns
-bool - true if slice contains string, else false
-*/
-func contains(slice []string, item string) bool {
-	for _, value := range slice {
-		if value == item {
-			return true
-		}
-	}
-	return false
 }
