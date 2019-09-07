@@ -1,11 +1,11 @@
 package ffsEvent
 
 import (
-	"crashplan-ffs-go-pkg"
 	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/eventOutput"
 	"crashplan-ffs-puller/promMetrics"
 	"errors"
+	"github.com/BenB196/crashplan-ffs-go-pkg"
 	"github.com/google/go-cmp/cmp"
 	"log"
 	"reflect"

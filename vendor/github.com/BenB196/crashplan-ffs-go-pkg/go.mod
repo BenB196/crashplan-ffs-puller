@@ -1,0 +1,1 @@
+module github.com/BenB196/crashplan-ffs-go-pkg
