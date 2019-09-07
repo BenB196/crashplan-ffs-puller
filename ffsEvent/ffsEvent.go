@@ -6,6 +6,7 @@ import (
 	"crashplan-ffs-puller/promMetrics"
 	"errors"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/ip-api-go-pkg"
 	"github.com/google/go-cmp/cmp"
 	"log"
 	"reflect"
@@ -183,16 +184,83 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		panic(err)
 	}
 
-	//TODO this is where the data should be enriched
+	//Write events
 	var ffsEvents []eventOutput.FFSEvent
 
-	for _, event := range fileEvents {
-		ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
-	}
-	log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
+	if len(fileEvents) > 0 {
+		//TODO this is where the data should be enriched
+		//Add ip-api data if enabled
+		var locationMap = map[string]ip_api.Location{}
+		if query.IPAPI.Enabled {
+			//Build ip api query
+			//init vars
+			var ipApiQuery ip_api.Query
+			ipApiQuery.Fields = query.IPAPI.Fields
+			ipApiQuery.Lang = query.IPAPI.Lang
+			var queryMap = map[string]interface{}{}
+			var queryIPs []ip_api.QueryIP
+			var locations []ip_api.Location
+			var ipApiWg sync.WaitGroup
 
-	//Write events
-	if len(ffsEvents) > 0 {
+			//Loop through events and build batch query
+			ipApiWg.Add(len(fileEvents))
+			for _, event := range fileEvents {
+				//if queryIPs is not new
+				if len(queryIPs) > 0 {
+					//check to make sure map does not already contain ip, don't want to query same IP multiple times
+					if _, ok := queryMap[event.PublicIpAddress]; !ok {
+						queryIPs = append(queryIPs,ip_api.QueryIP{
+							Query:  event.PublicIpAddress,
+						})
+						queryMap[event.PublicIpAddress] = nil
+					}
+				} else {
+					queryIPs = append(queryIPs,ip_api.QueryIP{
+						Query:  event.PublicIpAddress,
+					})
+					queryMap[event.PublicIpAddress] = nil
+				}
+				ipApiWg.Done()
+			}
+
+			ipApiWg.Wait()
+
+			ipApiQuery.Queries = queryIPs
+
+			locations, err = ip_api.BatchQuery(ipApiQuery,query.IPAPI.APIKey,query.IPAPI.URL)
+
+			if err != nil {
+				log.Println(err)
+			}
+
+			//Move slice to map for easy lookups
+			for _, location := range locations {
+				locationMap[location.Query] = location
+			}
+		}
+
+		var eventWg sync.WaitGroup
+		eventWg.Add(len(fileEvents))
+		go func() {
+			for _, event := range fileEvents {
+				if len(locationMap) == 0 {
+					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
+				} else if location, ok := locationMap[event.PublicIpAddress]; ok {
+					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: eventOutput.GeoPoint{
+						Lat: location.Lat,
+						Lon: location.Lon,
+					}})
+				} else {
+					panic("Unable to find location which should exist.")
+				}
+
+				defer eventWg.Done()
+			}
+		}()
+
+		eventWg.Wait()
+		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
+
 		switch query.OutputType {
 		case "file":
 			err := eventOutput.WriteEvents(ffsEvents, query)
@@ -378,4 +446,21 @@ func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastComp
 	} else {
 		return lastCompletedQuery
 	}
+}
+
+/*
+contains - checks a string slice to see if it contains a string
+slice - string slice which you want to check
+item - string which you want to see if exists in the string slice
+
+returns
+bool - true if slice contains string, else false
+*/
+func contains(slice []string, item string) bool {
+	for _, value := range slice {
+		if value == item {
+			return true
+		}
+	}
+	return false
 }

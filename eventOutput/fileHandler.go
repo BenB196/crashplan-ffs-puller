@@ -2,6 +2,7 @@ package eventOutput
 
 import (
 	"bufio"
+	"bytes"
 	"crashplan-ffs-puller/config"
 	"encoding/json"
 	"errors"
@@ -61,14 +62,17 @@ func WriteEvents (ffsEvents []FFSEvent, query config.FFSQuery) error {
 	w := bufio.NewWriter(file)
 
 	//Build ffsEvents string
-	ffsEventBytes, err := json.Marshal(ffsEvents)
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(ffsEvents)
 
 	if err != nil {
 		return err
 	}
 
 	//Split json array into individual json objects, makes every faster down the line
-	ffsEventsString := strings.Replace(strings.Replace(strings.ReplaceAll(string(ffsEventBytes),"},{","}\n{"),"[{","{",1),"}]","}",1)
+	ffsEventsString := strings.Replace(strings.Replace(strings.ReplaceAll(string(buffer.Bytes()),"},{","}\n{"),"[{","{",1),"}]","}",1)
 
 	//Write events to file
 	if ffsEventsString != "" {
