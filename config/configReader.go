@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/ip-api-go-pkg"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -32,12 +33,22 @@ type FFSQuery struct {
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
 	OutputIndex		string			`json:"outputIndex,omitempty"`
+	IPAPI			IPAPI			`json:"ip-api,omitempty"`
+}
+
+type IPAPI struct {
+	Enabled			bool			`json:"enabled,omitempty"`
+	URL				string			`json:"url,omitempty"`
+	APIKey			string			`json:"apiKey,omitempty"`
+	Fields			string			`json:"fields,omitempty"`
+	Lang			string			`json:"lang,omitempty"`
 }
 
 type Prometheus struct {
 	Enabled			bool			`json:"enabled,omitempty"`
 	Port			int				`json:"port,omitempty"`
 }
+
 /*
 ReadConfig - read a configuration file from a specified location
 configLocation - string which contains the location of the configuration file
@@ -275,6 +286,36 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 				default:
 					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
+				}
+			}
+
+			//Validate ip-api
+			if query.IPAPI != (IPAPI{}) && query.IPAPI.Enabled {
+
+				//validate URL is valid if provided
+				if config.AuthURI != "" {
+					_, err := url.ParseRequestURI(query.IPAPI.URL)
+					if err != nil {
+						return config, errors.New("error: bad ip api URL provided: " + err.Error())
+					}
+				}
+
+				//validate fields
+				if query.IPAPI.Fields != "" {
+					_, err = ip_api.ValidateFields(query.IPAPI.Fields)
+
+					if err != nil {
+						return config, err
+					}
+				}
+
+				//validate lang
+				if query.IPAPI.Lang != "" {
+					_, err = ip_api.ValidateLang(query.IPAPI.Lang)
+
+					if err != nil {
+						return config, err
+					}
 				}
 			}
 		}

@@ -1,5 +1,7 @@
 # github.com/BenB196/crashplan-ffs-go-pkg v0.0.1
 github.com/BenB196/crashplan-ffs-go-pkg
+# github.com/BenB196/ip-api-go-pkg v0.0.4
+github.com/BenB196/ip-api-go-pkg
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/golang/protobuf v1.3.2
