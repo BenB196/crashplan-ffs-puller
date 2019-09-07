@@ -293,7 +293,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 			if query.IPAPI != (IPAPI{}) && query.IPAPI.Enabled {
 
 				//validate URL is valid if provided
-				if config.AuthURI != "" {
+				if query.IPAPI.URL != "" {
 					_, err := url.ParseRequestURI(query.IPAPI.URL)
 					if err != nil {
 						return config, errors.New("error: bad ip api URL provided: " + err.Error())

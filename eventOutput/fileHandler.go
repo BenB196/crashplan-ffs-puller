@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/ip-api-go-pkg"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -14,8 +15,15 @@ import (
 
 type FFSEvent struct {
 	ffs.FileEvent
-	//TODO you can add addition stuff here
+	ip_api.Location		`json:",omitempty"`
+	GeoPoint 			`json:"geoPoint,omitempty"`
 }
+
+type GeoPoint struct {
+	Lat		float32		`json:"lat,omitempty"`
+	Lon		float32		`json:"lon,omitempty"`
+}
+
 
 func WriteEvents (ffsEvents []FFSEvent, query config.FFSQuery) error {
 	//Error if ffsEvents is nil, this should not be called if there are no ffsEvents
