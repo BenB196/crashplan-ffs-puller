@@ -18,12 +18,6 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
-	log.Println(query.Username)
-	log.Println(query.Password)
-	log.Println(query.Interval)
-	//Don't print its not formatted correctly
-	log.Println(query.OutputLocation)
-
 	//Check if there is a "max" time and set
 	var maxTime time.Time
 	defaultQueryTimes, err := getOnOrBeforeAndAfter(query)
