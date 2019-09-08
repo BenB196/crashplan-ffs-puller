@@ -51,6 +51,12 @@ type Elasticsearch struct {
 	IndexName			string		`json:"indexName,omitempty"`
 	IndexTimeAppend		string		`json:"indexTimeAppend,omitempty"`
 	ElasticURL			string		`json:"elasticUrl,omitempty"`
+	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
+}
+
+type BasicAuth struct {
+	User			string			`json:"user,omitempty"`
+	Password		string			`json:"password,omitempty"`
 }
 
 type Prometheus struct {
