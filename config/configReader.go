@@ -50,6 +50,7 @@ type Elasticsearch struct {
 	NumberOfReplicas	int			`json:"numberOfReplicas,omitempty"`
 	IndexName			string		`json:"indexName,omitempty"`
 	IndexTimeAppend		string		`json:"indexTimeAppend,omitempty"`
+	IndexTimeGen		string		`json:"indexTimeGen,omitempty"`
 	ElasticURL			string		`json:"elasticUrl,omitempty"`
 	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
 	Protocol			string		`json:"protocol,omitempty"`
@@ -339,6 +340,13 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) > 255 {
 							return config, errors.New("error: index name cannot be longer than 255 characters")
 						}
+					}
+
+					//validate indexTimeGen, must either be timeNow, or onOrBefore
+					if query.Elasticsearch.IndexTimeGen == "" {
+						config.FFSQueries[i].Elasticsearch.IndexTimeGen = "timeNow"
+					} else if query.Elasticsearch.IndexTimeGen != "timeNow" && query.Elasticsearch.IndexTimeGen != "onOrBefore" {
+						return config, errors.New("error: elasticsearch indexTimeGen must either be timeNow or onOrBefore")
 					}
 
 					//Validate elasticUrl

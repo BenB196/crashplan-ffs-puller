@@ -317,7 +317,12 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			}
 		case "elastic":
 			//get index name based off of query end time
-			indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,inProgressQuery.OnOrBefore)
+			var indexName string
+			if query.Elasticsearch.IndexTimeGen == "timeNow" {
+				indexName = elasticsearch.BuildIndexName(query.Elasticsearch)
+			} else {
+				indexName = elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,inProgressQuery.OnOrBefore)
+			}
 
 			//check if index exists if not create
 			exists, err := client.IndexExists(indexName).Do(ctx)

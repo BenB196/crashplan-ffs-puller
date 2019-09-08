@@ -31,16 +31,16 @@ func BuildElasticClient(elasticConfig config.Elasticsearch) (*elastic.Client, er
 	return client, nil
 }
 
-func BuildIndexName(elasticConfig config.Elasticsearch) *string {
+func BuildIndexName(elasticConfig config.Elasticsearch) string {
 	if elasticConfig.IndexTimeAppend == "" {
-		return &elasticConfig.IndexName
+		return elasticConfig.IndexName
 	}
 
 	loc, _ := time.LoadLocation("UTC")
 	currentTime := time.Now().In(loc).Format(elasticConfig.IndexTimeAppend)
 	indexName := elasticConfig.IndexName + currentTime
 
-	return &indexName
+	return indexName
 }
 
 func BuildIndexNameWithTime(elasticConfig config.Elasticsearch, timeToAppend time.Time) string {
