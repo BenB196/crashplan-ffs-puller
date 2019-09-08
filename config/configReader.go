@@ -327,7 +327,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 
 					//validate index name
-					err = elastic.ValidateIndexName(query.Elasticsearch.IndexName)
+					err = elasticsearch.ValidateIndexName(query.Elasticsearch.IndexName)
 
 					if err != nil {
 						return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())

@@ -1,13 +1,17 @@
 package ffsEvent
 
 import (
+	"context"
 	"crashplan-ffs-puller/config"
 	"crashplan-ffs-puller/eventOutput"
 	"crashplan-ffs-puller/promMetrics"
+	"crashplan-ffs-puller/elasticsearch"
 	"errors"
+	"fmt"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
 	"github.com/BenB196/ip-api-go-pkg"
 	"github.com/google/go-cmp/cmp"
+	"github.com/olivere/elastic/v7"
 	"log"
 	"reflect"
 	"strconv"
@@ -98,11 +102,43 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		}
 	}()
 
+	//Init elastic client if output type == elastic
+	var elasticClient *elastic.Client
+	var ctx context.Context
+	var processor *elastic.BulkProcessor
+
+	if query.OutputType == "elastic" {
+		//Create context
+		ctx = context.Background()
+
+		//Create elastic client
+		elasticClient, err = elasticsearch.BuildElasticClient(query.Elasticsearch)
+
+		if err != nil {
+			//TODO handle error
+			panic(err)
+		}
+
+		//get elastic info
+		info, code, err := elasticClient.Ping(query.Elasticsearch.ElasticURL).Do(ctx)
+
+		if err != nil {
+			//TODO hanlde error
+			panic(err)
+		}
+
+		fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
+
+		//setup bulk processor
+		processor, err = elasticClient.BulkProcessor().Name(query.Name + "BGWorker").Workers(2).Do(ctx)
+	}
+
+	//Handle old in progress queries that never completed when programmed died
 	if len(inProgressQueries) > 0 {
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, nil, wg, wgQuery, true)
+				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, nil, wg, wgQuery, true, elasticClient, ctx, processor)
 			}
 		}()
 	}
@@ -138,14 +174,23 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false)
+				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false, elasticClient, ctx, processor)
 			}
 		}
 	}()
 	wgQuery.Wait()
+
+	if query.OutputType == "elastic" {
+		err = processor.Close()
+
+		if err != nil {
+			//TODO handle error
+			panic(err)
+		}
+	}
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool) {
+func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool, client *elastic.Client, ctx context.Context, process *elastic.BulkProcessor) {
 	var done bool
 	var err error
 	//Increment time
@@ -271,8 +316,42 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				panic(err)
 			}
 		case "elastic":
-			log.Println(query.OutputLocation)
-			log.Println(query.OutputIndex)
+			//get index name based off of query end time
+			indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,inProgressQuery.OnOrBefore)
+
+			//check if index exists if not create
+			exists, err := client.IndexExists(indexName).Do(ctx)
+
+			if err != nil {
+				//TODO handle err
+				panic(err)
+			}
+
+			if !exists {
+				//create index
+				createIndex, err := client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+
+				if err != nil {
+					//TODO handle err
+					panic(err)
+				}
+
+				if !createIndex.Acknowledged {
+					//TODO handle the creation not being acknowledged
+					panic("elasticsearch index creation failed for: " + indexName)
+				}
+			}
+			for _, ffsEvent := range ffsEvents {
+				r := elastic.NewBulkIndexRequest().Index(indexName).Type("fileEvent").Doc(ffsEvent)
+				process.Add(r)
+			}
+
+			err = process.Flush()
+
+			if err != nil {
+				//TODO handle err
+				panic(err)
+			}
 		}
 	}
 

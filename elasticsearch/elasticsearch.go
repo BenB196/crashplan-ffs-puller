@@ -1,4 +1,4 @@
-package elastic
+package elasticsearch
 
 import (
 	"crashplan-ffs-puller/config"
@@ -9,19 +9,19 @@ import (
 	"time"
 )
 
-func BuildElasticClient(elasticsearch config.Elasticsearch) (*elastic.Client, error) {
+func BuildElasticClient(elasticConfig config.Elasticsearch) (*elastic.Client, error) {
 	client := &elastic.Client{}
 	var err error
 
-	if elasticsearch.BasicAuth.User != "" {
+	if elasticConfig.BasicAuth.User != "" {
 		client, err = elastic.NewClient(
-			elastic.SetURL(elasticsearch.ElasticURL),
-			elastic.SetBasicAuth(elasticsearch.BasicAuth.User,elasticsearch.BasicAuth.Password),
-			elastic.SetScheme(elasticsearch.Protocol))
+			elastic.SetURL(elasticConfig.ElasticURL),
+			elastic.SetBasicAuth(elasticConfig.BasicAuth.User,elasticConfig.BasicAuth.Password),
+			elastic.SetScheme(elasticConfig.Protocol))
 	} else {
 		client, err = elastic.NewClient(
-			elastic.SetURL(elasticsearch.ElasticURL),
-			elastic.SetScheme(elasticsearch.Protocol))
+			elastic.SetURL(elasticConfig.ElasticURL),
+			elastic.SetScheme(elasticConfig.Protocol))
 	}
 
 	if err != nil {
@@ -31,23 +31,33 @@ func BuildElasticClient(elasticsearch config.Elasticsearch) (*elastic.Client, er
 	return client, nil
 }
 
-func BuildIndexName(elasticsearch config.Elasticsearch) *string {
-	if elasticsearch.IndexTimeAppend == "" {
-		return &elasticsearch.IndexName
+func BuildIndexName(elasticConfig config.Elasticsearch) *string {
+	if elasticConfig.IndexTimeAppend == "" {
+		return &elasticConfig.IndexName
 	}
 
 	loc, _ := time.LoadLocation("UTC")
-	currentTime := time.Now().In(loc).Format(elasticsearch.IndexTimeAppend)
-	indexName := elasticsearch.IndexName + currentTime
+	currentTime := time.Now().In(loc).Format(elasticConfig.IndexTimeAppend)
+	indexName := elasticConfig.IndexName + currentTime
 
 	return &indexName
 }
 
-func BuildIndexPattern(elasticsearch config.Elasticsearch) *string {
+func BuildIndexNameWithTime(elasticConfig config.Elasticsearch, timeToAppend time.Time) string {
+	if elasticConfig.IndexTimeAppend == "" {
+		return elasticConfig.IndexName
+	}
+
+	indexName := elasticConfig.IndexName + timeToAppend.Format(elasticConfig.IndexTimeAppend)
+
+	return indexName
+}
+
+func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 	index := "{" +
 		"  \"settings\": {" +
-		"    \"number_of_shards\": " + strconv.Itoa(elasticsearch.NumberOfShards) + "," +
-		"    \"number_of_replicas\": " + strconv.Itoa(elasticsearch.NumberOfReplicas) + "" +
+		"    \"number_of_shards\": " + strconv.Itoa(elasticConfig.NumberOfShards) + "," +
+		"    \"number_of_replicas\": " + strconv.Itoa(elasticConfig.NumberOfReplicas) + "" +
 		"  }," +
 		"  \"mappings\": {" +
 		"    \"fileEvent\": {" +
@@ -256,7 +266,7 @@ func BuildIndexPattern(elasticsearch config.Elasticsearch) *string {
 		"  }," +
 		"  \"aliases\": {}" +
 		"}"
-	return &index
+	return index
 }
 
 //Based of comments here: https://discuss.elastic.co/t/index-name-type-name-and-field-name-rules/133039
