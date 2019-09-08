@@ -1,4 +1,4 @@
-module crashplan-ffs-puller
+module github.com/BenB196/crashplan-ffs-puller
 
 go 1.12
 
