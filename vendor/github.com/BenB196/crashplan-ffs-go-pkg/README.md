@@ -112,10 +112,10 @@ FileEvent
     Sha256Checksum              string	        (potentially empty)
     CreatedTimestamp            time.Time       (potentially empty)
     ModifyTimestamp             time.Time       (potentially empty)
-    DeviceUserName              string	
+    DeviceUsername              string	
     DeviceUid                   string	
     UserUid                     string	
-    OsHostName                  string	
+    OsHostname                  string	
     DomainName                  string	
     PublicIpAddress             string	        (potentially empty)
     PrivateIpAddresses          []string
@@ -148,24 +148,13 @@ Code42 Crashplan FFS API has limitations like most APIs, these limitations affec
 
 1. 120 Queries per minute, any additional queries will be dropped. (never actually bothered to test if/how this limit is actually enforced)
 2. 200,000 results returned per query. This limitation is kind of annoying to handle as there is no easy way to handle it. The API does not support paging and the only way to figure out how many results there is for a query is to first query, count, then if over 200,000 results, break up the query into smaller time increments and perform multiple queries to get all of the results.
-3. The GetFileEvents function only supports the /v1/fileevent/export API endpoint currently. This has to do with how the highly limited functionality of the /v1/fileevent endpoint which isn't well documented (See below for a short rant about this once great endpoint).
+3. The GetFileEvents function only supports the /v1/fileevent/export API endpoint currently. This has to do with how the highly limited functionality of the /v1/fileevent endpoint which isn't well documented.
 
 ## Code42 Documentation
 
 Links for Code42 Documentation
 
 - [Crashplan FFS API Documentation](https://support.code42.com/Administrator/Cloud/Monitoring_and_managing/Forensic_File_Search_API)
-
-## /v1/fileevent Rant/Constructive Criticism
-
-This endpoint used to be surprisingly useful. You could use paging to concurrently pull and process a time range and 10,000 events per page. You could determine how many results were in a time range and thus determine how many pages you would need to pull to process everything. It was all working great, so great actually I created an event exporter that would pull from the endpoint. The best thing about this endpoint though, is it is the only endpoint which exposes the data in JSON format, the best format for dealing with inconsistent amounts of fields and fields with arrays.
-
-However, one day this endpoint was broken in an update. What I was told happened was the update broke the paging functionality, so that you could never pull the last page unless it was the same size as the query specified page size. I was told that this was some sort of rounding bug, and that a bug report was submitted. Shortly after this though, I was informed that the break was intentional, and that if I wanted to export large amounts of data, I would need to use the /export endpoint. The /export endpoint is nowhere close to as good as the /v1/fileevent endpoint used to be. First /export only exports in CSV, which is nowhere near as easy to use or reliable as JSON (Periodically this endpoint returns invalid CSV rows with improperly handled doubled quotes). Also, this endpoint lacks any sort of total results number, meaning that if you want to check if your query has gone over the allowed 200,000 events, you need to count all the events up yourself (a minor inconvenience, but still an inconvenience). This endpoint also lacks and sort of paging support, so if your query does contain more than 200,000 events, not only can you not just pull page 2, you need to shrink your query time scope, and re-query the exact same data you already pulled plus the additional missed data, because there is no way to determine where the first results actually end and where you would need to pick up from.
-
-Enough criticism, and time for how the /v1/fileevent/export endpoint could be made better.
-1. Add support for JSON output, CSV is terrible for anything other than reading in Excel
-2. Add a field in the result which includes a total number of events in the result. (This one could be a bit tricky as I have no clue how you would do this in a CSV format.)
-3. Add support for paging, I don't want to have to re-query the exact same data multiple times, until I come up with an interval that allows me to pull all of the data.
 
 ## TODOs
 

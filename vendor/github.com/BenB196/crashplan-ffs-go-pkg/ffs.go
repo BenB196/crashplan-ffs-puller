@@ -31,10 +31,10 @@ type FileEvent struct {
 	Sha256Checksum				string			`json:"sha256Checksum,omitempty"`
 	CreatedTimestamp			time.Time		`json:"createdTimestamp,omitempty"`
 	ModifyTimestamp				time.Time		`json:"modifyTimestamp,omitempty"`
-	DeviceUserName				string			`json:"deviceUserName"`
+	DeviceUsername				string			`json:"deviceUsername"`
 	DeviceUid					string			`json:"deviceUid"`
 	UserUid						string			`json:"userUid"`
-	OsHostName					string			`json:"osHostName"`
+	OsHostname					string			`json:"osHostname"`
 	DomainName					string			`json:"domainName"`
 	PublicIpAddress				string			`json:"publicIpAddress,omitempty"`
 	PrivateIpAddresses			[]string		`json:"privateIpAddresses"` //Array of IP address strings
@@ -333,10 +333,10 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		Sha256Checksum:             sha256Checksum,
 		CreatedTimestamp:           createdTimestamp,
 		ModifyTimestamp:            modifyTimestamp,
-		DeviceUserName:             deviceUserName,
+		DeviceUsername:             deviceUserName,
 		DeviceUid:                  deviceUid,
 		UserUid:                    userUid,
-		OsHostName:                 osHostName,
+		OsHostname:                 osHostName,
 		DomainName:                 domainName,
 		PublicIpAddress:            publicIpAddress,
 		PrivateIpAddresses:         privateIpAddresses,
