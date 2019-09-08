@@ -116,6 +116,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 
 		if err != nil {
 			//TODO handle error
+			log.Println("error building elastic client")
 			panic(err)
 		}
 
@@ -124,6 +125,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 
 		if err != nil {
 			//TODO hanlde error
+			log.Println("error reaching elastic server")
 			panic(err)
 		}
 
@@ -185,6 +187,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 
 		if err != nil {
 			//TODO handle error
+			log.Println("error closing elastic bulk request")
 			panic(err)
 		}
 	}
@@ -329,6 +332,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 			if err != nil {
 				//TODO handle err
+				log.Println("error checking if elastic index exists: " + indexName)
 				panic(err)
 			}
 
@@ -338,6 +342,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 				if err != nil {
 					//TODO handle err
+					log.Println("error creating elastic index: " + indexName)
+					log.Println(elasticsearch.BuildIndexPattern(query.Elasticsearch))
 					panic(err)
 				}
 
@@ -347,7 +353,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				}
 			}
 			for _, ffsEvent := range ffsEvents {
-				r := elastic.NewBulkIndexRequest().Index(indexName).Type("fileEvent").Doc(ffsEvent)
+				r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 				process.Add(r)
 			}
 
@@ -355,6 +361,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 			if err != nil {
 				//TODO handle err
+				log.Println("error flushing elastic bulk request")
 				panic(err)
 			}
 		}

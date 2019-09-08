@@ -59,207 +59,201 @@ func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 		"    \"number_of_replicas\": " + strconv.Itoa(elasticConfig.NumberOfReplicas) + "" +
 		"  }," +
 		"  \"mappings\": {" +
-		"    \"fileEvent\": {" +
-		"      \"_source\": {" +
-		"        \"enabled\": true" +
+		"    \"_source\": {" +
+		"      \"enabled\": true" +
+		"    }," +
+		"    \"properties\": {" +
+		"      \"eventId\": {" +
+		"        \"type\": \"keyword\"" +
 		"      }," +
-		"      \"properties\": {" +
-		"        \"eventId\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"eventType\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"eventTimestamp\": {" +
-		"          \"type\": \"date\"," +
-		"          \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\"" +
-		"        }," +
-		"        \"insertionTimestamp\": {" +
-		"          \"type\": \"date\"," +
-		"          \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\"" +
-		"        }," +
-		"        \"filePath\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"fileName\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"fileType\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"fileCategory\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"fileSize\": {" +
-		"          \"type\": \"long\"" +
-		"        }," +
-		"        \"fileOwner\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"md5Checksum\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"sha256Checksum\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"createdTimestamp\": {" +
-		"          \"type\": \"date\"," +
-		"          \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\"" +
-		"        }," +
-		"        \"modifyTimestamp\": {" +
-		"          \"type\": \"date\"," +
-		"          \"format\": \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\"" +
-		"        }," +
-		"        \"deviceUsername\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"deviceUid\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"userUid\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"osHostname\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"domainName\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"publicIpAddress\": {" +
-		"          \"type\": \"ip\"" +
-		"        }," +
-		"        \"privateIpAddresses\": {" +
-		"          \"type\": \"ip\"" +
-		"        }," +
-		"        \"actor\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"directoryId\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"source\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"url\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"shared\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"sharedWith\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"sharingTypeAdded\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"cloudDriveId\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"detectionSourceAlias\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"fileId\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"exposure\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"processOwner\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"processName\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"removableMediaVendor\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"removableMediaName\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"removableMediaSerialNumber\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"removableMediaCapacity\": {" +
-		"          \"type\": \"long\"" +
-		"        }," +
-		"        \"removableMediaBusType\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"syncDestination\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"status\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"message\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"continent\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"continentCode\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"country\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"countryCode\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"region\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"regionName\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"city\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"district\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"zip\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"lat\": {" +
-		"          \"type\": \"float\"" +
-		"        }," +
-		"        \"lon\": {" +
-		"          \"type\": \"float\"" +
-		"        }," +
-		"        \"timezone\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"currency\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"isp\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"org\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"as\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"asname\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"reverse\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"mobile\": {" +
-		"          \"type\": \"boolean\"" +
-		"        }," +
-		"        \"proxy\": {" +
-		"          \"type\": \"boolean\"" +
-		"        }," +
-		"        \"query\": {" +
-		"          \"type\": \"keyword\"" +
-		"        }," +
-		"        \"geoPoint\": {" +
-		"          \"type\": \"geo_point\"" +
-		"        }" +
+		"      \"eventType\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"eventTimestamp\": {" +
+		"        \"type\": \"date\"" +
+		"      }," +
+		"      \"insertionTimestamp\": {" +
+		"        \"type\": \"date\"" +
+		"      }," +
+		"      \"filePath\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"fileName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"fileType\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"fileCategory\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"fileSize\": {" +
+		"        \"type\": \"long\"" +
+		"      }," +
+		"      \"fileOwner\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"md5Checksum\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"sha256Checksum\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"createdTimestamp\": {" +
+		"        \"type\": \"date\"" +
+		"      }," +
+		"      \"modifyTimestamp\": {" +
+		"        \"type\": \"date\"" +
+		"      }," +
+		"      \"deviceUsername\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"deviceUid\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"userUid\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"osHostname\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"domainName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"publicIpAddress\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"privateIpAddresses\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"actor\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"directoryId\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"source\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"url\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"shared\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"sharedWith\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"sharingTypeAdded\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"cloudDriveId\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"detectionSourceAlias\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"fileId\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"exposure\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"processOwner\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"processName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaVendor\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaSerialNumber\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaCapacity\": {" +
+		"        \"type\": \"long\"" +
+		"      }," +
+		"      \"removableMediaBusType\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"syncDestination\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"status\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"message\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"continent\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"continentCode\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"country\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"countryCode\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"region\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"regionName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"city\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"district\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"zip\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"lat\": {" +
+		"        \"type\": \"float\"" +
+		"      }," +
+		"      \"lon\": {" +
+		"        \"type\": \"float\"" +
+		"      }," +
+		"      \"timezone\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"currency\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"isp\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"org\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"as\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"asname\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"reverse\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"mobile\": {" +
+		"        \"type\": \"boolean\"" +
+		"      }," +
+		"      \"proxy\": {" +
+		"        \"type\": \"boolean\"" +
+		"      }," +
+		"      \"query\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"geoPoint\": {" +
+		"        \"type\": \"geo_point\"" +
 		"      }" +
 		"    }" +
 		"  }," +
@@ -278,14 +272,14 @@ func buildAliasString(aliases []string) string {
 	for i, alias := range aliases {
 		if i == 0 {
 			if len(aliases) == 1 {
-				aliasString = alias + ": {}"
+				aliasString = "\"" + alias + "\": {}"
 			} else {
-				aliasString = alias + ": {},"
+				aliasString = "\"" + alias + "\": {},"
 			}
 		} else if i == (len(aliases) -1) {
-			aliasString = aliasString + alias + ": {}"
+			aliasString = aliasString + "\"" + alias + "\": {}"
 		} else {
-			aliasString = aliasString + alias + ": {},"
+			aliasString = aliasString + "\"" + alias + "\": {},"
 		}
 	}
 
