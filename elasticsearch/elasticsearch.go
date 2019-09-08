@@ -1,8 +1,8 @@
 package elasticsearch
 
 import (
-	"crashplan-ffs-puller/config"
 	"errors"
+	"github.com/BenB196/crashplan-ffs-puller/config"
 	"github.com/olivere/elastic/v7"
 	"strconv"
 	"time"

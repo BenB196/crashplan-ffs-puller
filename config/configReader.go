@@ -1,10 +1,10 @@
 package config
 
 import (
-	"crashplan-ffs-puller/utils"
 	"encoding/json"
 	"errors"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/crashplan-ffs-puller/utils"
 	"github.com/BenB196/ip-api-go-pkg"
 	"io/ioutil"
 	"net/url"

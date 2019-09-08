@@ -3,10 +3,10 @@ package eventOutput
 import (
 	"bufio"
 	"bytes"
-	"crashplan-ffs-puller/config"
 	"encoding/json"
 	"errors"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/crashplan-ffs-puller/config"
 	"github.com/BenB196/ip-api-go-pkg"
 	"io/ioutil"
 	"os"

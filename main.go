@@ -1,9 +1,9 @@
 package main
 
 import (
-	"crashplan-ffs-puller/config"
-	"crashplan-ffs-puller/ffsEvent"
 	"flag"
+	"github.com/BenB196/crashplan-ffs-puller/config"
+	"github.com/BenB196/crashplan-ffs-puller/ffsEvent"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"

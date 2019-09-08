@@ -2,13 +2,13 @@ package ffsEvent
 
 import (
 	"context"
-	"crashplan-ffs-puller/config"
-	"crashplan-ffs-puller/elasticsearch"
-	"crashplan-ffs-puller/eventOutput"
-	"crashplan-ffs-puller/promMetrics"
 	"errors"
 	"fmt"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
+	"github.com/BenB196/crashplan-ffs-puller/config"
+	"github.com/BenB196/crashplan-ffs-puller/elasticsearch"
+	"github.com/BenB196/crashplan-ffs-puller/eventOutput"
+	"github.com/BenB196/crashplan-ffs-puller/promMetrics"
 	"github.com/BenB196/ip-api-go-pkg"
 	"github.com/google/go-cmp/cmp"
 	"github.com/olivere/elastic/v7"
