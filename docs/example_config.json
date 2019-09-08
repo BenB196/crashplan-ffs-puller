@@ -1,0 +1,95 @@
+{
+  "authURI": "https://www.crashplan.com/c42api/v3/auth/jwt?useBody=true",
+  "ffsURI": "https://forensicsearch-default.prod.ffs.us2.code42.com/forensic-search/queryservice/api/v1/fileevent/export",
+  "ffsQueries": [{
+    "name": "example_query_1",
+    "username": "example@example.com",
+    "password": "<password>",
+    "interval": "5s",
+    "timeGap": "10s",
+    "query": {
+      "groups": [
+        {
+          "filters": [
+            {
+              "operator": "IS",
+              "term": "fileName",
+              "value": "*"
+            },
+            {
+              "operator": "ON_OR_AFTER",
+              "term": "insertionTimestamp",
+              "value": "2019-08-29T16:31:48.728Z"
+            },
+            {
+              "operator": "ON_OR_BEFORE",
+              "term": "insertionTimestamp",
+              "value": ""
+            }
+          ],
+          "filterClause": "AND"
+        }
+      ]
+    },
+    "outputType": "elastic",
+    "outputLocation": "/path/to/output",
+    "ip-api": {
+      "enabled": true,
+      "url": "http://ip-api.com/",
+      "apiKey": "",
+      "fields": "status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy",
+      "lang": ""
+    },
+    "elasticsearch": {
+      "numberOfShards": 1,
+      "numberOfReplicas": 0,
+      "indexName": "crashplan",
+      "indexTimeAppend": "2006-01-02",
+      "indexTimeGen": "onOrBefore",
+      "elasticUrl": "http://elasticsearch:9200",
+      "basicAuth": {
+        "user": "",
+        "password": ""
+      },
+      "protocol": "http",
+      "aliases": ["test1","test2"]
+    }
+  },
+    {
+      "name": "example_query_2",
+      "username": "example@example.com",
+      "password": "<password>",
+      "interval": "5s",
+      "timeGap": "15s",
+      "query": {
+        "groups": [
+          {
+            "filters": [
+              {
+                "operator": "IS",
+                "term": "fileName",
+                "value": "*"
+              },
+              {
+                "operator": "ON_OR_AFTER",
+                "term": "insertionTimestamp",
+                "value": "2019-08-29T16:31:48.727Z"
+              },
+              {
+                "operator": "ON_OR_BEFORE",
+                "term": "insertionTimestamp",
+                "value": "2019-08-29T16:31:48.727Z"
+              }
+            ],
+            "filterClause": "AND"
+          }
+        ]
+      },
+      "outputType": "file",
+      "outputLocation": "/path/to/output"
+    }],
+  "prometheus": {
+    "enabled": true,
+    "port": 8080
+  }
+}
