@@ -1,7 +1,7 @@
 package config
 
 import (
-	"crashplan-ffs-puller/elastic"
+	"crashplan-ffs-puller/elasticsearch"
 	"crashplan-ffs-puller/utils"
 	"encoding/json"
 	"errors"
