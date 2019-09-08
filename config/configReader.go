@@ -1,7 +1,6 @@
 package config
 
 import (
-	"crashplan-ffs-puller/elasticsearch"
 	"crashplan-ffs-puller/utils"
 	"encoding/json"
 	"errors"
@@ -329,7 +328,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 
 					//validate index name
-					err = elasticsearch.ValidateIndexName(query.Elasticsearch.IndexName)
+					err = utils.ValidateIndexName(query.Elasticsearch.IndexName)
 
 					if err != nil {
 						return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
@@ -373,7 +372,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					if len(query.Elasticsearch.Aliases) > 0 {
 						for _, alias := range query.Elasticsearch.Aliases {
 							//validate alias names
-							err = elasticsearch.ValidateIndexName(alias)
+							err = utils.ValidateIndexName(alias)
 
 							if err != nil {
 								return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
