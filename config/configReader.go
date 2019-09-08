@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crashplan-ffs-puller/elastic"
 	"crashplan-ffs-puller/utils"
 	"encoding/json"
 	"errors"
@@ -32,8 +33,8 @@ type FFSQuery struct {
 	Query			ffs.Query 		`json:"query"`
 	OutputType		string			`json:"outputType"`
 	OutputLocation  string			`json:"outputLocation,omitempty"`
-	OutputIndex		string			`json:"outputIndex,omitempty"`
 	IPAPI			IPAPI			`json:"ip-api,omitempty"`
+	Elasticsearch	Elasticsearch	`json:"elasticsearch,omitempty"`
 }
 
 type IPAPI struct {
@@ -42,6 +43,14 @@ type IPAPI struct {
 	APIKey			string			`json:"apiKey,omitempty"`
 	Fields			string			`json:"fields,omitempty"`
 	Lang			string			`json:"lang,omitempty"`
+}
+
+type Elasticsearch struct {
+	NumberOfShards		int			`json:"numberOfShards,omitempty"`
+	NumberOfReplicas	int			`json:"numberOfReplicas,omitempty"`
+	IndexName			string		`json:"indexName,omitempty"`
+	IndexTimeAppend		string		`json:"indexTimeAppend,omitempty"`
+	ElasticURL			string		`json:"elasticUrl,omitempty"`
 }
 
 type Prometheus struct {
@@ -268,22 +277,75 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						}
 					}
 				case "elastic":
-					//Validate output location
-					//check if empty
+					//Validate output location, this is still needed for writing files to keep track on in progress and last completed queries
 					if query.OutputLocation == "" {
-						return config, errors.New("error: output location for elastic output cannot be null for ffs query: " + query.Name)
-					} else {
-						//check if valid url
-						_, err := url.ParseRequestURI(query.OutputLocation)
+						//Get working directory and set as output location
+						dir, err := os.Getwd()
+						//return any errors
 						if err != nil {
-							return config, errors.New("error: invalid url provided for elastic output: " + err.Error())
+							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+						}
+						//check if directory is writable
+						err = utils.IsWritable(dir)
+						//return any errors
+						if err != nil {
+							return config, err
+						}
+						//update output location to absolute path
+						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
+					} else {
+						//Validate that output location is a valid path
+						//check that path is writable
+						err = utils.IsWritable(query.OutputLocation)
+						//return any errors
+						if err != nil {
+							return config, err
+						}
+
+						//Append a / or \\ to end of path if not there
+						lastChar := query.OutputLocation[len(query.OutputLocation)-1:]
+						if lastChar != utils.DirPath {
+							config.FFSQueries[i].OutputLocation = query.OutputLocation + utils.DirPath
 						}
 					}
 
-					//Validate output index
-					if query.OutputIndex == "" {
-						return config, errors.New("error: output index for elastic output cannot be null for ffs query: " + query.Name)
+					//validate number of shards
+					if query.Elasticsearch.NumberOfShards < 1 {
+						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 1")
 					}
+
+					//validate number of replicas
+					if query.Elasticsearch.NumberOfReplicas < 0 {
+						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 0")
+					}
+
+					//validate index name
+					err = elastic.ValidateIndexName(query.Elasticsearch.IndexName)
+
+					if err != nil {
+						return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
+					}
+
+					//check if indexTimeAppend is set, validate and get length, will need to add to length of index name and validate not > 255 characters
+					if query.Elasticsearch.IndexTimeAppend != "" {
+						//TODO figure out a way to validate golang time format
+						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) > 255 {
+							return config, errors.New("error: index name cannot be longer than 255 characters")
+						}
+					}
+
+					//Validate elasticUrl
+					//check if empty
+					if query.Elasticsearch.ElasticURL == "" {
+						return config, errors.New("error: elastic url cannot be blank")
+					} else {
+						//check if valid URI
+						_, err := url.ParseRequestURI(query.Elasticsearch.ElasticURL)
+						if err != nil {
+							return config, errors.New("error: invalid elastic url provided: " + err.Error())
+						}
+					}
+
 				default:
 					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
 				}
