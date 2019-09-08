@@ -37,7 +37,7 @@ func BuildIndexName(elasticConfig config.Elasticsearch) string {
 
 	loc, _ := time.LoadLocation("UTC")
 	currentTime := time.Now().In(loc).Format(elasticConfig.IndexTimeAppend)
-	indexName := elasticConfig.IndexName + currentTime
+	indexName := elasticConfig.IndexName + "-" + currentTime
 
 	return indexName
 }
@@ -47,7 +47,7 @@ func BuildIndexNameWithTime(elasticConfig config.Elasticsearch, timeToAppend tim
 		return elasticConfig.IndexName
 	}
 
-	indexName := elasticConfig.IndexName + timeToAppend.Format(elasticConfig.IndexTimeAppend)
+	indexName := elasticConfig.IndexName + "-" + timeToAppend.Format(elasticConfig.IndexTimeAppend)
 
 	return indexName
 }

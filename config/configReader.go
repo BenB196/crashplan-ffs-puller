@@ -337,7 +337,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					//check if indexTimeAppend is set, validate and get length, will need to add to length of index name and validate not > 255 characters
 					if query.Elasticsearch.IndexTimeAppend != "" {
 						//TODO figure out a way to validate golang time format
-						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) > 255 {
+						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) + 1 > 255 {
 							return config, errors.New("error: index name cannot be longer than 255 characters")
 						}
 					}
