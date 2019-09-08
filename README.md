@@ -45,7 +45,8 @@ This application is stateful, so it is recommended that a volume be mounted to t
 
 ```
 docker run -d\
- -v /path/to/local/storage:/path/to/output/location\
+ -v /path/to/local/storage:/crashplan-ffs-puller\
+ -v /path/to/config/file.json:/etc/crashplan-ffs-puller/config.json\
  benb196/crashplan-ffs-puller
 ```
 
@@ -57,7 +58,8 @@ version: "3"
     crashplan-ffs-puller:
       image: benb196/crashplan-ffs-puller
       volumes:
-        - /path/to/local/storage:/path/to/output/location
+        - /path/to/local/storage:/crashplan-ffs-puller
+        - /path/to/config/file.json:/etc/crashplan-ffs-puller/config.json
 ```
 
 Note: If you enable [Prometheus](https://prometheus.io/) integration, you need to expose/open the port that the Prometheus endpoint is configured to listen on (default: 8080)
