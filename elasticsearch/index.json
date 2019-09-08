@@ -16,12 +16,10 @@
           "type": "keyword"
         },
         "eventTimestamp": {
-          "type": "date",
-          "format": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+          "type": "date"
         },
         "insertionTimestamp": {
-          "type": "date",
-          "format": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+          "type": "date"
         },
         "filePath": {
           "type": "keyword"
@@ -48,12 +46,10 @@
           "type": "keyword"
         },
         "createdTimestamp": {
-          "type": "date",
-          "format": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+          "type": "date"
         },
         "modifyTimestamp": {
-          "type": "date",
-          "format": "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+          "type": "date"
         },
         "deviceUsername": {
           "type": "keyword"
@@ -71,10 +67,10 @@
           "type": "keyword"
         },
         "publicIpAddress": {
-          "type": "ip"
+          "type": "keyword"
         },
         "privateIpAddresses": {
-          "type": "ip"
+          "type": "keyword"
         },
         "actor": {
           "type": "keyword"
