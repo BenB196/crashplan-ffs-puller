@@ -264,7 +264,7 @@ func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 		"      }" +
 		"    }" +
 		"  }," +
-		"  \"aliases\": {}" +
+		"  \"aliases\": {" + buildAliasString(elasticConfig.Aliases) + "}" +
 		"}"
 	return index
 }
@@ -339,4 +339,28 @@ func ValidateIndexName(indexName string) error {
 	}
 
 	return nil
+}
+
+func buildAliasString(aliases []string) string {
+	if len(aliases) <= 0 {
+		return ""
+	}
+
+	var aliasString string
+
+	for i, alias := range aliases {
+		if i == 0 {
+			if len(aliases) == 1 {
+				aliasString = alias + ": {}"
+			} else {
+				aliasString = alias + ": {},"
+			}
+		} else if i == (len(aliases) -1) {
+			aliasString = aliasString + alias + ": {}"
+		} else {
+			aliasString = aliasString + alias + ": {},"
+		}
+	}
+
+	return aliasString
 }

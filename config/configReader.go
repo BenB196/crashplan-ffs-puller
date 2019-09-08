@@ -54,6 +54,7 @@ type Elasticsearch struct {
 	ElasticURL			string		`json:"elasticUrl,omitempty"`
 	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
 	Protocol			string		`json:"protocol,omitempty"`
+	Aliases				[]string	`json:"aliases,omitempty"`
 }
 
 type BasicAuth struct {
@@ -366,6 +367,18 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						config.FFSQueries[i].Elasticsearch.Protocol = "http"
 					} else if query.Elasticsearch.Protocol != "http" && query.Elasticsearch.Protocol != "https" {
 						return config, errors.New("error: elasticsearch protocol must either be http or https")
+					}
+
+					//validate aliases
+					if len(query.Elasticsearch.Aliases) > 0 {
+						for _, alias := range query.Elasticsearch.Aliases {
+							//validate alias names
+							err = elasticsearch.ValidateIndexName(alias)
+
+							if err != nil {
+								return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
+							}
+						}
 					}
 
 				default:

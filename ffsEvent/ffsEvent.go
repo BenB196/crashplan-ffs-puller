@@ -3,9 +3,9 @@ package ffsEvent
 import (
 	"context"
 	"crashplan-ffs-puller/config"
+	"crashplan-ffs-puller/elasticsearch"
 	"crashplan-ffs-puller/eventOutput"
 	"crashplan-ffs-puller/promMetrics"
-	"crashplan-ffs-puller/elasticsearch"
 	"errors"
 	"fmt"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
