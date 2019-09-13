@@ -16,5 +16,6 @@ VOLUME ["/crashplan-ffs-puller"]
 WORKDIR /crashplan-ffs-puller
 COPY --from=builder /app/crashplan-ffs-puller /bin/crashplan-ffs-puller
 
+CMD ["/usr/sbin/update-ca-certificates"]
 ENTRYPOINT ["/bin/crashplan-ffs-puller"]
 CMD ["--config=/etc/crashplan-ffs-puller/config.json"]
