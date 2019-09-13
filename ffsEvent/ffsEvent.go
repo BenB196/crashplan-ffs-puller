@@ -301,7 +301,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Lon: location.Lon,
 					}})
 				} else {
-					log.Println("error getting location for fileEvent: " + event)
+					log.Println("error getting location for fileEvent: " + string(event))
 					panic("Unable to find location which should exist.")
 				}
 
