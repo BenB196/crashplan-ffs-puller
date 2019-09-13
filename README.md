@@ -125,7 +125,6 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
         "user": "",
         "password": ""
       },
-      "protocol": "http",                                                                                                   #Elasticsearch protocol, supports http or https. Default = http
       "aliases": ["test1","test2"]                                                                                          #Any aliases you want the index to be created with.
     }
   },
