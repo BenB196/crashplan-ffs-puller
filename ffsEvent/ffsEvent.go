@@ -254,20 +254,22 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			//Loop through events and build batch query
 			ipApiWg.Add(len(fileEvents))
 			for _, event := range fileEvents {
-				//if queryIPs is not new
-				if len(queryIPs) > 0 {
-					//check to make sure map does not already contain ip, don't want to query same IP multiple times
-					if _, ok := queryMap[event.PublicIpAddress]; !ok {
+				if event.PublicIpAddress != "" {
+					//if queryIPs is not new
+					if len(queryIPs) > 0 {
+						//check to make sure map does not already contain ip, don't want to query same IP multiple times
+						if _, ok := queryMap[event.PublicIpAddress]; !ok {
+							queryIPs = append(queryIPs,ip_api.QueryIP{
+								Query:  event.PublicIpAddress,
+							})
+							queryMap[event.PublicIpAddress] = nil
+						}
+					} else {
 						queryIPs = append(queryIPs,ip_api.QueryIP{
 							Query:  event.PublicIpAddress,
 						})
 						queryMap[event.PublicIpAddress] = nil
 					}
-				} else {
-					queryIPs = append(queryIPs,ip_api.QueryIP{
-						Query:  event.PublicIpAddress,
-					})
-					queryMap[event.PublicIpAddress] = nil
 				}
 				ipApiWg.Done()
 			}
@@ -292,21 +294,22 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		eventWg.Add(len(fileEvents))
 		go func() {
 			for _, event := range fileEvents {
-				if len(locationMap) == 0 {
-					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
-				} else if location, ok := locationMap[event.PublicIpAddress]; ok {
-					//nil this as it is not needed, we already have event.publicIpAddress
-					location.Query = ""
-					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: eventOutput.GeoPoint{
-						Lat: location.Lat,
-						Lon: location.Lon,
-					}})
-				} else {
-					b, _ := json.Marshal(event)
-					log.Println("error getting location for fileEvent: " + string(b))
-					panic("Unable to find location which should exist.")
+				if event.PublicIpAddress != "" {
+					if len(locationMap) == 0 {
+						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
+					} else if location, ok := locationMap[event.PublicIpAddress]; ok {
+						//nil this as it is not needed, we already have event.publicIpAddress
+						location.Query = ""
+						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: eventOutput.GeoPoint{
+							Lat: location.Lat,
+							Lon: location.Lon,
+						}})
+					} else {
+						b, _ := json.Marshal(event)
+						log.Println("error getting location for fileEvent: " + string(b))
+						panic("Unable to find location which should exist.")
+					}
 				}
-
 				defer eventWg.Done()
 			}
 		}()
