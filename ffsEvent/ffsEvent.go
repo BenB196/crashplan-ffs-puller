@@ -2,6 +2,7 @@ package ffsEvent
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
