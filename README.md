@@ -120,6 +120,7 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
       "indexTimeAppend": "2006-01-02",                                                                                      #If you want to append a time format to the index name do it here. Must match the Golang time format pattern (This example is yyyy-MM-dd)
       "indexTimeGen": "onOrBefore",                                                                                         #How to determine what time to use for the time stamp. Support either timeNow or onOrBefore.
       "elasticUrl": "http://elasticsearch:9200",                                                                            #The elasticsearch URL
+      "sniffing": false,                                                                                                    #This determines whether the application will automatically try update its elasticsearch node list
       "basicAuth": {                                                                                                        #If you are using basic auth with elasticsearch
         "user": "",
         "password": ""
