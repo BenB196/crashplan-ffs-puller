@@ -19,8 +19,8 @@ import (
 type FileEvent struct {
 	EventId						string			`json:"eventId"`
 	EventType					string			`json:"eventType"`
-	EventTimestamp				time.Time		`json:"eventTimestamp,omitempty"`
-	InsertionTimestamp			time.Time		`json:"insertionTimestamp,omitempty"`
+	EventTimestamp				*time.Time		`json:"eventTimestamp,omitempty"`
+	InsertionTimestamp			*time.Time		`json:"insertionTimestamp,omitempty"`
 	FilePath					string			`json:"filePath,omitempty"`
 	FileName					string			`json:"fileName"`
 	FileType					string			`json:"fileType,omitempty"`
@@ -29,8 +29,8 @@ type FileEvent struct {
 	FileOwner					[]string		`json:"fileOwner,omitempty"`  //Array of owners
 	Md5Checksum					string			`json:"md5Checksum,omitempty"`
 	Sha256Checksum				string			`json:"sha256Checksum,omitempty"`
-	CreatedTimestamp			time.Time		`json:"createdTimestamp,omitempty"`
-	ModifyTimestamp				time.Time		`json:"modifyTimestamp,omitempty"`
+	CreatedTimestamp			*time.Time		`json:"createdTimestamp,omitempty"`
+	ModifyTimestamp				*time.Time		`json:"modifyTimestamp,omitempty"`
 	DeviceUsername				string			`json:"deviceUsername,omitempty"`
 	DeviceUid					string			`json:"deviceUid,omitempty"`
 	UserUid						string			`json:"userUid,omitempty"`
@@ -327,8 +327,8 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	fileEvent = FileEvent{
 		EventId:                    eventId,
 		EventType:                  eventType,
-		EventTimestamp:             eventTimeStamp,
-		InsertionTimestamp:         insertionTimestamp,
+		EventTimestamp:             &eventTimeStamp,
+		InsertionTimestamp:         &insertionTimestamp,
 		FilePath:                   filePath,
 		FileName:                   fileName,
 		FileType:                   fileType,
@@ -337,8 +337,8 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		FileOwner:                  fileOwner,
 		Md5Checksum:                md5Checksum,
 		Sha256Checksum:             sha256Checksum,
-		CreatedTimestamp:           createdTimestamp,
-		ModifyTimestamp:            modifyTimestamp,
+		CreatedTimestamp:           &createdTimestamp,
+		ModifyTimestamp:            &modifyTimestamp,
 		DeviceUsername:             deviceUserName,
 		DeviceUid:                  deviceUid,
 		UserUid:                    userUid,
@@ -365,6 +365,22 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		RemovableMediaCapacity:     removableMediaCapacity,
 		RemovableMediaBusType:      removableMediaBusType,
 		SyncDestination:            syncDestination,
+	}
+	
+	if eventTimestampString == "" {
+		fileEvent.EventTimestamp = nil
+	}
+
+	if insertionTimestampString == "" {
+		fileEvent.InsertionTimestamp = nil
+	}
+
+	if createdTimestampString == "" {
+		fileEvent.CreatedTimestamp = nil
+	}
+
+	if modifyTimestampString == "" {
+		fileEvent.ModifyTimestamp = nil
 	}
 
 	return fileEvent
