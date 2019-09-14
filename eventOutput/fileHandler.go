@@ -17,7 +17,7 @@ import (
 type FFSEvent struct {
 	ffs.FileEvent
 	ip_api.Location		`json:",omitempty"`
-	GeoPoint 			`json:"geoPoint,omitempty"`
+	*GeoPoint 			`json:"geoPoint,omitempty"`
 }
 
 type GeoPoint struct {
