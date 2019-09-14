@@ -100,8 +100,8 @@ Returns:
 FileEvent
     EventId                     string	
     EventType                   string	
-    EventTimestamp              time.Time       (potentially empty)
-    InsertionTimestamp          time.Time       (potentially empty)
+    EventTimestamp              *time.Time      (potentially empty)
+    InsertionTimestamp          *time.Time      (potentially empty)
     FilePath                    string          (potentially empty)
     FileName                    string
     FileType                    string          (potentially empty)
@@ -110,8 +110,8 @@ FileEvent
     FileOwner                   []string        (potentially empty)
     Md5Checksum                 string	        (potentially empty)
     Sha256Checksum              string	        (potentially empty)
-    CreatedTimestamp            time.Time       (potentially empty)
-    ModifyTimestamp             time.Time       (potentially empty)
+    CreatedTimestamp            *time.Time      (potentially empty)
+    ModifyTimestamp             *time.Time      (potentially empty)
     DeviceUsername              string          (potentially empty)
     DeviceUid                   string          (potentially empty)
     UserUid                     string          (potentially empty)
