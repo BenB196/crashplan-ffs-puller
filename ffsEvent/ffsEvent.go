@@ -300,10 +300,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					} else if location, ok := locationMap[event.PublicIpAddress]; ok {
 						//nil this as it is not needed, we already have event.publicIpAddress
 						location.Query = ""
-						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: eventOutput.GeoPoint{
+						geoPoint := eventOutput.GeoPoint{
 							Lat: location.Lat,
 							Lon: location.Lon,
-						}})
+						}
+						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: &geoPoint})
 					} else {
 						b, _ := json.Marshal(event)
 						log.Println("error getting location for fileEvent: " + string(b))

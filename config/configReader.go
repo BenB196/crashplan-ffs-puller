@@ -52,7 +52,7 @@ type Elasticsearch struct {
 	IndexTimeGen		string		`json:"indexTimeGen,omitempty"`
 	ElasticURL			string		`json:"elasticUrl,omitempty"`
 	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
-	Protocol			string		`json:"protocol,omitempty"`
+	Sniffing			bool		`json:"sniffing,omitempty"`
 	Aliases				[]string	`json:"aliases,omitempty"`
 }
 
@@ -359,13 +359,6 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						if err != nil {
 							return config, errors.New("error: invalid elastic url provided: " + err.Error())
 						}
-					}
-
-					//validate protocol
-					if query.Elasticsearch.Protocol == "" {
-						config.FFSQueries[i].Elasticsearch.Protocol = "http"
-					} else if query.Elasticsearch.Protocol != "http" && query.Elasticsearch.Protocol != "https" {
-						return config, errors.New("error: elasticsearch protocol must either be http or https")
 					}
 
 					//validate aliases

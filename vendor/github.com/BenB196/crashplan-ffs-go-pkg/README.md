@@ -102,26 +102,26 @@ FileEvent
     EventType                   string	
     EventTimestamp              time.Time       (potentially empty)
     InsertionTimestamp          time.Time       (potentially empty)
-    FilePath                    string	
-    FileName                    string	
-    FileType                    string	
-    FileCategory                string	
-    FileSize                    int		
-    FileOwner                   string          (potentially empty)
+    FilePath                    string          (potentially empty)
+    FileName                    string
+    FileType                    string          (potentially empty)
+    FileCategory                string          (potentially empty)
+    FileSize                    int
+    FileOwner                   []string        (potentially empty)
     Md5Checksum                 string	        (potentially empty)
     Sha256Checksum              string	        (potentially empty)
     CreatedTimestamp            time.Time       (potentially empty)
     ModifyTimestamp             time.Time       (potentially empty)
-    DeviceUsername              string	
-    DeviceUid                   string	
-    UserUid                     string	
-    OsHostname                  string	
-    DomainName                  string	
+    DeviceUsername              string          (potentially empty)
+    DeviceUid                   string          (potentially empty)
+    UserUid                     string          (potentially empty)
+    OsHostname                  string          (potentially empty)
+    DomainName                  string          (potentially empty)
     PublicIpAddress             string	        (potentially empty)
-    PrivateIpAddresses          []string
+    PrivateIpAddresses          []string        (potentially empty)
     Actor                       string	        (potentially empty)
     DirectoryId                 []string        (potentially empty)
-    Source                      string	
+    Source                      string          (potentially empty)
     Url                         string	        (potentially empty)
     Shared                      string	        (potentially empty)
     SharedWith                  []string        (potentially empty)
