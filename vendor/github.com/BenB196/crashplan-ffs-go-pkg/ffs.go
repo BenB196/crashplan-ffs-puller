@@ -25,7 +25,7 @@ type FileEvent struct {
 	FileName					string			`json:"fileName"`
 	FileType					string			`json:"fileType,omitempty"`
 	FileCategory				string			`json:"fileCategory,omitempty"`
-	FileSize					int				`json:"fileSize"`
+	FileSize					*int			`json:"fileSize"`
 	FileOwner					[]string		`json:"fileOwner,omitempty"`  //Array of owners
 	Md5Checksum					string			`json:"md5Checksum,omitempty"`
 	Sha256Checksum				string			`json:"sha256Checksum,omitempty"`
@@ -54,7 +54,7 @@ type FileEvent struct {
 	RemovableMediaVendor		string			`json:"removableMediaVendor,omitempty"`
 	RemovableMediaName			string			`json:"removableMediaName,omitempty"`
 	RemovableMediaSerialNumber	string			`json:"removableMediaSerialNumber,omitempty"`
-	RemovableMediaCapacity		int				`json:"removableMediaCapacity,omitempty"`
+	RemovableMediaCapacity		*int			`json:"removableMediaCapacity,omitempty"`
 	RemovableMediaBusType		string			`json:"removableMediaBusType,omitempty"`
 	SyncDestination				string			`json:"syncDestination,omitempty"`
 }
@@ -333,7 +333,7 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		FileName:                   fileName,
 		FileType:                   fileType,
 		FileCategory:               fileCategory,
-		FileSize:                   fileSize,
+		FileSize:                   &fileSize,
 		FileOwner:                  fileOwner,
 		Md5Checksum:                md5Checksum,
 		Sha256Checksum:             sha256Checksum,
@@ -362,25 +362,39 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		RemovableMediaVendor:       removableMediaVendor,
 		RemovableMediaName:         removableMediaName,
 		RemovableMediaSerialNumber: removableMediaSerialNumber,
-		RemovableMediaCapacity:     removableMediaCapacity,
+		RemovableMediaCapacity:     &removableMediaCapacity,
 		RemovableMediaBusType:      removableMediaBusType,
 		SyncDestination:            syncDestination,
 	}
-	
+
+	//set eventTimestamp to nil if empty string
 	if eventTimestampString == "" {
 		fileEvent.EventTimestamp = nil
 	}
 
+	//set insertionTimestamp to nil if empty
 	if insertionTimestampString == "" {
 		fileEvent.InsertionTimestamp = nil
 	}
 
+	//set createdTimestamp to nil if empty
 	if createdTimestampString == "" {
 		fileEvent.CreatedTimestamp = nil
 	}
 
+	//set modifyTimestamp to nil if empty
 	if modifyTimestampString == "" {
 		fileEvent.ModifyTimestamp = nil
+	}
+
+	//set fileSize to nil if empty
+	if fileSizeString == "" {
+		fileEvent.FileSize = nil
+	}
+
+	//set removableMediaCapacity to nil if empty
+	if removableMediaCapacityString == "" {
+		fileEvent.RemovableMediaCapacity = nil
 	}
 
 	return fileEvent
