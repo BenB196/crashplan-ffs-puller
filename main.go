@@ -43,7 +43,8 @@ func main() {
 	wg.Add(len(configuration.FFSQueries))
 	go func() {
 		for _, query := range configuration.FFSQueries {
-			go ffsEvent.FFSQuery(configuration, query, wg)
+			go ffsEvent.FFSQuery(configuration, query)
+			wg.Done()
 		}
 	}()
 

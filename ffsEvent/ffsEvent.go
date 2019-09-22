@@ -20,7 +20,7 @@ import (
 	"time"
 )
 
-func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitGroup) {
+func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -125,7 +125,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		info, code, err := elasticClient.Ping(query.Elasticsearch.ElasticURL).Do(ctx)
 
 		if err != nil {
-			//TODO hanlde error
+			//TODO handle error
 			log.Println("error reaching elastic server")
 			panic(err)
 		}
@@ -141,7 +141,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, nil, wg, wgQuery, true, elasticClient, ctx, processor)
+				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, nil, true, elasticClient, ctx, processor)
 			}
 		}()
 	}
@@ -177,8 +177,9 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, queryIntervalTimeTicker, wg, wgQuery, false, elasticClient, ctx, processor)
+				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, queryIntervalTimeTicker,false, elasticClient, ctx, processor)
 			}
+			defer wgQuery.Done()
 		}
 	}()
 	wgQuery.Wait()
@@ -194,7 +195,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery, wg sync.WaitG
 	}
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, wg sync.WaitGroup, wgQuery sync.WaitGroup, cleanUpQuery bool, client *elastic.Client, ctx context.Context, process *elastic.BulkProcessor) {
+func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, queryIntervalTimeTicker *time.Ticker, cleanUpQuery bool, client *elastic.Client, ctx context.Context, process *elastic.BulkProcessor) {
 	var done bool
 	var err error
 	//Increment time
@@ -208,11 +209,10 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 		//Stop the goroutine if the max time is past
 		if done {
-			wg.Done()
-			wgQuery.Done()
 			if queryIntervalTimeTicker != nil {
 				queryIntervalTimeTicker.Stop()
 			}
+			return
 		}
 	}
 
