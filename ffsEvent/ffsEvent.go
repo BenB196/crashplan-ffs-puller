@@ -378,10 +378,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					for _, ffsEvent :=range ffsEvents {
 						var indexTime time.Time
 						if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.String())
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 						} else {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.String())
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 						}
+
 						requiredIndexMutex.RLock()
 						if _, found := requiredIndexTimestamps[indexTime]; !found {
 							requiredIndexTimestamps[indexTime] = nil
@@ -434,9 +435,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					for _, ffsEvent := range ffsEvents {
 						var indexTime time.Time
 						if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-							indexTime, _ = time.Parse(ffsEvent.InsertionTimestamp.String(),query.Elasticsearch.IndexTimeAppend)
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 						} else {
-							indexTime, _ = time.Parse(ffsEvent.EventTimestamp.String(),query.Elasticsearch.IndexTimeAppend)
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 						}
 						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
 						r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
