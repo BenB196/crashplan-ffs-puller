@@ -316,6 +316,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			var processor *elastic.BulkProcessor
 			processor, err = client.BulkProcessor().Name(query.Name + "BGWorker").Workers(2).Do(ctx)
 
+			var elasticWg sync.WaitGroup
+
 			//get index name based off of query end time
 			if query.Elasticsearch.IndexTimeGen == "timeNow" || query.Elasticsearch.IndexTimeGen == "onOrBefore" {
 				var indexName string
@@ -350,12 +352,15 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						panic("elasticsearch index creation failed for: " + indexName)
 					}
 				}
+				elasticWg.Add(len(ffsEvents))
 				go func() {
 					for _, ffsEvent := range ffsEvents {
 						r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 						processor.Add(r)
+						elasticWg.Done()
 					}
 				}()
+				elasticWg.Wait()
 
 				err = processor.Flush()
 
@@ -368,6 +373,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				//create map of indexes required
 				var requiredIndexTimestamps = map[time.Time]interface{}{}
 				var requiredIndexMutex = sync.RWMutex{}
+				elasticWg.Add(len(ffsEvents))
 				go func() {
 					for _, ffsEvent :=range ffsEvents {
 						var indexTime time.Time
@@ -381,10 +387,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							requiredIndexTimestamps[indexTime] = nil
 						}
 						requiredIndexMutex.RUnlock()
+						elasticWg.Done()
 					}
 				}()
+				elasticWg.Wait()
 
 				//check if indexes exist
+				elasticWg.Add(len(requiredIndexTimestamps))
 				go func() {
 					for timestamp, _ := range requiredIndexTimestamps {
 						//generate indexName
@@ -413,10 +422,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 								panic("elasticsearch index creation failed for: " + indexName)
 							}
 						}
+						elasticWg.Done()
 					}
 				}()
 
+				elasticWg.Done()
+
 				//build bulk request
+				elasticWg.Add(len(ffsEvents))
 				go func() {
 					for _, ffsEvent := range ffsEvents {
 						var indexTime time.Time
@@ -428,8 +441,10 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
 						r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 						processor.Add(r)
+						elasticWg.Done()
 					}
 				}()
+				elasticWg.Done()
 
 				err = processor.Flush()
 
