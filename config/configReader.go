@@ -340,13 +340,15 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) + 1 > 255 {
 							return config, errors.New("error: index name cannot be longer than 255 characters")
 						}
+					} else {
+						config.FFSQueries[i].Elasticsearch.IndexTimeAppend = "2006-01-02"
 					}
 
 					//validate indexTimeGen, must either be timeNow, or onOrBefore
 					if query.Elasticsearch.IndexTimeGen == "" {
 						config.FFSQueries[i].Elasticsearch.IndexTimeGen = "timeNow"
-					} else if query.Elasticsearch.IndexTimeGen != "timeNow" && query.Elasticsearch.IndexTimeGen != "onOrBefore" {
-						return config, errors.New("error: elasticsearch indexTimeGen must either be timeNow or onOrBefore")
+					} else if query.Elasticsearch.IndexTimeGen != "timeNow" && query.Elasticsearch.IndexTimeGen != "onOrBefore" && query.Elasticsearch.IndexTimeGen != "eventTimestamp" && query.Elasticsearch.IndexTimeGen != "insertionTimestamp" {
+						return config, errors.New("error: elasticsearch indexTimeGen must be timeNow, onOrBefore, eventTimestamp, or insertionTimestamp")
 					}
 
 					//Validate elasticUrl
