@@ -426,7 +426,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 				}()
 
-				elasticWg.Done()
+				elasticWg.Wait()
 
 				//build bulk request
 				elasticWg.Add(len(ffsEvents))
@@ -444,7 +444,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						elasticWg.Done()
 					}
 				}()
-				elasticWg.Done()
+				elasticWg.Wait()
 
 				err = processor.Flush()
 
