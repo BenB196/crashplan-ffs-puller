@@ -53,6 +53,7 @@ type Elasticsearch struct {
 	ElasticURL			string		`json:"elasticUrl,omitempty"`
 	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
 	Sniffing			bool		`json:"sniffing,omitempty"`
+	BestCompression		bool		`json:"bestCompression,omitempty"`
 	Aliases				[]string	`json:"aliases,omitempty"`
 }
 

@@ -53,8 +53,16 @@ func BuildIndexNameWithTime(elasticConfig config.Elasticsearch, timeToAppend tim
 }
 
 func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
+	var codec string
+	if elasticConfig.BestCompression {
+		codec = "    \"codec\": \"best_compression\","
+	} else {
+		codec = ""
+	}
+
 	index := "{" +
 		"  \"settings\": {" +
+		codec +
 		"    \"number_of_shards\": " + strconv.Itoa(elasticConfig.NumberOfShards) + "," +
 		"    \"number_of_replicas\": " + strconv.Itoa(elasticConfig.NumberOfReplicas) + "" +
 		"  }," +
