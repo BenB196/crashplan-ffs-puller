@@ -121,7 +121,8 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
       "indexTimeGen": "onOrBefore",                                                                                         #How to determine what time to use for the time stamp. Supports timeNow, onOrBefore, eventTimestamp, or insertionTimestamp.
       "elasticUrl": "http://elasticsearch:9200",                                                                            #The elasticsearch URL
       "sniffing": false,                                                                                                    #This determines whether the application will automatically try update its elasticsearch node list
-      "bestCompression": false,                                                                                            #This allows for indexes to be created with best_compression codec enabled
+      "bestCompression": false,                                                                                             #This allows for indexes to be created with best_compression codec enabled
+      "refreshInterval": 30,                                                                                                #This allows you to set the refresh interval (in seconds) of the index template. If empty it disables refresh interval
       "basicAuth": {                                                                                                        #If you are using basic auth with elasticsearch
         "user": "",
         "password": ""

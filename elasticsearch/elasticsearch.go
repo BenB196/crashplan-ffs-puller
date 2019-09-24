@@ -60,9 +60,17 @@ func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 		codec = ""
 	}
 
+	var refreshInterval string
+	if elasticConfig.RefreshInterval == 0 {
+		refreshInterval = "-1"
+	} else {
+		refreshInterval = strconv.Itoa(elasticConfig.RefreshInterval) + "s"
+	}
+
 	index := "{" +
 		"  \"settings\": {" +
 		codec +
+		"    \"refresh_interval\": \"" + refreshInterval + "\"," +
 		"    \"number_of_shards\": " + strconv.Itoa(elasticConfig.NumberOfShards) + "," +
 		"    \"number_of_replicas\": " + strconv.Itoa(elasticConfig.NumberOfReplicas) + "" +
 		"  }," +
