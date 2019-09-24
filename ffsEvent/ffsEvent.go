@@ -378,9 +378,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					for _, ffsEvent :=range ffsEvents {
 						var indexTime time.Time
 						if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-							indexTime, _ = time.Parse(ffsEvent.InsertionTimestamp.String(),query.Elasticsearch.IndexTimeAppend)
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.String())
 						} else {
-							indexTime, _ = time.Parse(ffsEvent.EventTimestamp.String(),query.Elasticsearch.IndexTimeAppend)
+							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.String())
 						}
 						requiredIndexMutex.RLock()
 						if _, found := requiredIndexTimestamps[indexTime]; !found {
