@@ -83,6 +83,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 
 	//Write in progress queries every 100 milliseconds to file
 	inProgressQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
+	wgQuery.Add(1)
 	go func() {
 		var oldInProgressQueries []eventOutput.InProgressQuery
 		oldInProgressQueries = inProgressQueries
@@ -134,16 +135,19 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 
 	//Handle old in progress queries that never completed when programmed died
 	if len(inProgressQueries) > 0 {
+		wgQuery.Add(1)
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
 				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, nil, true, elasticClient, ctx)
+				defer wgQuery.Done()
 			}
 		}()
 	}
 
 	//Write last completed query every 100 milliseconds to file
 	lastCompletedQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
+	wgQuery.Add(1)
 	go func() {
 		var oldLastCompletedQuery eventOutput.InProgressQuery
 		oldLastCompletedQuery = lastCompletedQuery
@@ -169,6 +173,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 
 	queryInterval, _ := time.ParseDuration(query.Interval)
 	queryIntervalTimeTicker := time.NewTicker(queryInterval)
+	wgQuery.Add(1)
 	go func() {
 		for {
 			select {
