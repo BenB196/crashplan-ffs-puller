@@ -202,6 +202,16 @@ func ReadInProgressQueries(query config.FFSQuery) ([]InProgressQuery, error) {
 		return nil, err
 	}
 
+	fileStats, err := os.Stat(fileName)
+
+	if err != nil {
+		return nil, errors.New("error: unable to check if in progress queries file is empty: " + err.Error())
+	}
+
+	if fileStats.Size() == 0 {
+		return nil, nil
+	}
+
 	var inProgressQueryStrings []InProgressQueryString
 
 	err = json.Unmarshal(inProgressQueryData, &inProgressQueryStrings)
@@ -277,6 +287,16 @@ func ReadLastCompletedQuery(query config.FFSQuery) (InProgressQuery, error) {
 			return InProgressQuery{}, err
 		}
 		return InProgressQuery{}, err
+	}
+
+	fileStats, err := os.Stat(fileName)
+
+	if err != nil {
+		return InProgressQuery{}, errors.New("error: unable to check if in progress queries file is empty: " + err.Error())
+	}
+
+	if fileStats.Size() == 0 {
+		return InProgressQuery{}, nil
 	}
 
 	var lastCompletedQueryString InProgressQueryString
