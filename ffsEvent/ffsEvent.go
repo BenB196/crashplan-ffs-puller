@@ -190,6 +190,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 		}
 	}()
 	wgQuery.Wait()
+	return
 }
 
 func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, cleanUpQuery bool, client *elastic.Client, ctx context.Context, quit chan<- struct{}) {
