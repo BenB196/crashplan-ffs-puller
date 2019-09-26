@@ -93,7 +93,6 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 			select {
 			case <- inProgressQueryWriteTimeTicker.C:
 				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
-					promMetrics.AdjustInProgressQueries(len(inProgressQueries) - len(oldInProgressQueries))
 					oldInProgressQueries = inProgressQueries
 					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
 
@@ -213,6 +212,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			return
 		}
 	}
+
+	//increase in progress queries
+	promMetrics.IncreaseInProgressQueries()
 
 	//Add query interval to in progress query list
 	inProgressQuery, err := getOnOrBeforeAndAfter(query)
@@ -494,6 +496,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	*inProgressQueries = tempInProgress
 
 	promMetrics.IncrementEventsProcessed(len(ffsEvents))
+	promMetrics.DecreaseInProgressQueries()
 }
 
 func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){

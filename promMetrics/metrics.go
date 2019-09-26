@@ -20,6 +20,10 @@ func IncrementEventsProcessed(numberOfEvents int)  {
 	eventsProcessed.Add(float64(numberOfEvents))
 }
 
-func AdjustInProgressQueries(numberOfInProgressQueries int) {
-	inProgressQueries.Add(float64(numberOfInProgressQueries))
+func IncreaseInProgressQueries() {
+	inProgressQueries.Inc()
+}
+
+func DecreaseInProgressQueries() {
+	inProgressQueries.Dec()
 }
