@@ -352,7 +352,12 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 				if !exists {
 					//create index
-					createIndex, err := client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+					var createIndex *elastic.IndicesCreateResult
+					if !query.Elasticsearch.UseCustomIndexPattern {
+						createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+					} else {
+						createIndex, err = client.CreateIndex(indexName).Do(ctx)
+					}
 
 					if err != nil {
 						//TODO handle err
@@ -423,7 +428,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 						if !exists {
 							//create index
-							createIndex, err := client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+							var createIndex *elastic.IndicesCreateResult
+							if !query.Elasticsearch.UseCustomIndexPattern {
+								createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+							} else {
+								createIndex, err = client.CreateIndex(indexName).Do(ctx)
+							}
+
 
 							if err != nil {
 								//TODO handle err
