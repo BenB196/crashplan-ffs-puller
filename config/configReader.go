@@ -45,17 +45,18 @@ type IPAPI struct {
 }
 
 type Elasticsearch struct {
-	NumberOfShards		int			`json:"numberOfShards,omitempty"`
-	NumberOfReplicas	int			`json:"numberOfReplicas,omitempty"`
-	IndexName			string		`json:"indexName,omitempty"`
-	IndexTimeAppend		string		`json:"indexTimeAppend,omitempty"`
-	IndexTimeGen		string		`json:"indexTimeGen,omitempty"`
-	ElasticURL			string		`json:"elasticUrl,omitempty"`
-	BasicAuth			BasicAuth	`json:"basicAuth,omitempty"`
-	Sniffing			bool		`json:"sniffing,omitempty"`
-	BestCompression		bool		`json:"bestCompression,omitempty"`
-	RefreshInterval		int			`json:"refreshInterval,omitempty"`
-	Aliases				[]string	`json:"aliases,omitempty"`
+	NumberOfShards			int			`json:"numberOfShards,omitempty"`
+	NumberOfReplicas		int			`json:"numberOfReplicas,omitempty"`
+	IndexName				string		`json:"indexName,omitempty"`
+	IndexTimeAppend			string		`json:"indexTimeAppend,omitempty"`
+	IndexTimeGen			string		`json:"indexTimeGen,omitempty"`
+	ElasticURL				string		`json:"elasticUrl,omitempty"`
+	UseCustomIndexPattern	bool		`json:"useCustomIndexPattern"`
+	BasicAuth				BasicAuth	`json:"basicAuth,omitempty"`
+	Sniffing				bool		`json:"sniffing,omitempty"`
+	BestCompression			bool		`json:"bestCompression,omitempty"`
+	RefreshInterval			int			`json:"refreshInterval,omitempty"`
+	Aliases					[]string	`json:"aliases,omitempty"`
 }
 
 type BasicAuth struct {
@@ -320,12 +321,12 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 
 					//validate number of shards
-					if query.Elasticsearch.NumberOfShards < 1 {
+					if !query.Elasticsearch.UseCustomIndexPattern && query.Elasticsearch.NumberOfShards < 1 {
 						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 1")
 					}
 
 					//validate number of replicas
-					if query.Elasticsearch.NumberOfReplicas < 0 {
+					if !query.Elasticsearch.UseCustomIndexPattern && query.Elasticsearch.NumberOfReplicas < 0 {
 						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 0")
 					}
 
@@ -366,7 +367,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 
 					//validate aliases
-					if len(query.Elasticsearch.Aliases) > 0 {
+					if !query.Elasticsearch.UseCustomIndexPattern && len(query.Elasticsearch.Aliases) > 0 {
 						for _, alias := range query.Elasticsearch.Aliases {
 							//validate alias names
 							err = utils.ValidateIndexName(alias)

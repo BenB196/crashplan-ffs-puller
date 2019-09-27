@@ -1,5 +1,8 @@
 {
+  "index_patterns": ["crashplan*"],
   "settings": {
+    "refresh_interval": "30s",
+    "codec": "best_compression",
     "number_of_shards": 1,
     "number_of_replicas": 0
   },
@@ -53,6 +56,14 @@
       "deviceUsername": {
         "type": "keyword"
       },
+      "username": {
+        "type": "alias",
+        "path": "deviceUsername"
+      },
+      "user": {
+        "type": "alias",
+        "path": "deviceUsername"
+      },
       "deviceUid": {
         "type": "keyword"
       },
@@ -62,6 +73,14 @@
       "osHostname": {
         "type": "keyword"
       },
+      "hostname": {
+        "type": "alias",
+        "path": "osHostname"
+      },
+      "host": {
+        "type": "alias",
+        "path": "osHostname"
+      },
       "domainName": {
         "type": "keyword"
       },
@@ -70,6 +89,10 @@
       },
       "privateIpAddresses": {
         "type": "keyword"
+      },
+      "privateIpAddress": {
+        "type": "alias",
+        "path": "privateIpAddresses"
       },
       "actor": {
         "type": "keyword"
@@ -202,5 +225,8 @@
       }
     }
   },
-  "aliases": {}
+  "aliases": {
+    "security": { },
+    "crashplan": { }
+  }
 }

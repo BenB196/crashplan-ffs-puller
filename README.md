@@ -117,8 +117,9 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
       "numberOfShards": 1,                                                                                                  #The number of shards the index should be created with
       "numberOfReplicas": 0,                                                                                                #The number of replicas the index should be created with
       "indexName": "crashplan",                                                                                             #The index name
-      "indexTimeAppend": "2006-01-02",                                                                                      #If you want to append a time format to the index name do it here. Must match the Golang time format pattern (This example is yyyy-MM-dd)
-      "indexTimeGen": "onOrBefore",                                                                                         #How to determine what time to use for the time stamp. Supports timeNow, onOrBefore, eventTimestamp, or insertionTimestamp.
+      "indexTimeAppend": "2006-01-02",                                                                                      #If you want to append a time format to the index name do it here. Must match the Golang time format pattern (This example is yyyy-MM-dd). Default: 2006-01-02
+      "indexTimeGen": "onOrBefore",                                                                                         #How to determine what time to use for the time stamp. Supports timeNow, onOrBefore, eventTimestamp, or insertionTimestamp. Default: timeNow
+      "useCustomIndexPattern": false                                                                                        #This allows you to use a custom Elasticsearch Index Template instead of using the build in Elasticsearch Index Pattern provided by the application. Default: false
       "elasticUrl": "http://elasticsearch:9200",                                                                            #The elasticsearch URL
       "sniffing": false,                                                                                                    #This determines whether the application will automatically try update its elasticsearch node list
       "bestCompression": false,                                                                                             #This allows for indexes to be created with best_compression codec enabled
@@ -197,6 +198,13 @@ If you are using the elastic output type there are a few important things to und
    1. onOrBefore, this will look at the onOrBefore time of the just completed query and set the appended value based off of it (this is useful if you are querying either old or new data, as it will spread the old data out over more indexes).
    1. eventTimestamp, this will look at the eventTimestamp of the event and set the index name based off of it
    1. insertTimestamp, this will look at the insertTimestamp of the event and set the index name based off of it.
+1. If useCustomIndexPattern is set to true then you must set an Index Template up before proceeding. A basic index template can be found [here](docs/default_index_template.json).
+   1. If useCustomIndexPattern is set to false the following Elasticsearch configuration settings are ignored:
+      1. numberOfShards
+      1. numberOfReplicas
+      1. bestCompression
+      1. refreshInterval
+      1. aliases
 
 ### IP-API Integration
 
