@@ -1,6 +1,7 @@
 package ffsEvent
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
@@ -486,6 +487,77 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			if err != nil {
 				//TODO handle error
 				log.Println("error closing elastic bulk request")
+				panic(err)
+			}
+		case "logstash":
+			var logstashWg sync.WaitGroup
+
+			conn, err := elasticsearch.CreateLogstashClient(query.Logstash.LogstashURL)
+
+			if err != nil {
+				//TODO handle error
+				log.Println("error creating logstash connection")
+				panic(err)
+			}
+
+			writer := bufio.NewWriter(conn)
+
+			logstashWg.Add(len(ffsEvents))
+			go func() {
+				for _, ffsEvent := range ffsEvents {
+					event, err := json.Marshal(ffsEvent)
+
+					if err != nil {
+						//TODO handle error
+						log.Println("error marshaling ffs event")
+						log.Println(ffsEvent)
+						panic(err)
+					}
+
+					_, err = writer.Write(event)
+
+					if err != nil {
+						//TODO handle error
+						err = writer.Flush()
+						if err != nil {
+							log.Println("error writing ffs event on flush")
+							log.Println(string(event))
+							panic(err)
+						}
+						log.Println("error writing ffs event")
+						log.Println(string(event))
+						panic(err)
+					}
+					_, err = writer.Write([]byte("\n"))
+					if err != nil {
+						//TODO handle error
+						err = writer.Flush()
+						if err != nil {
+							log.Println("error writing ffs event on flush")
+							log.Println(string(event))
+							panic(err)
+						}
+						log.Println("error writing ffs event")
+						log.Println(string(event))
+						panic(err)
+					}
+					logstashWg.Done()
+				}
+			}()
+
+			logstashWg.Wait()
+
+			err = writer.Flush()
+
+			if err != nil {
+				log.Println("error flushing logstash buffer")
+				panic(err)
+			}
+
+			err = conn.Close()
+
+			if err != nil {
+				log.Println("error closing logstash connection")
 				panic(err)
 			}
 		}
