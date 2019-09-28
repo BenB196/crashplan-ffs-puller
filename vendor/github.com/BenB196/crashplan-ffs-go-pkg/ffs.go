@@ -244,7 +244,7 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	//Convert fileOwnerString to string slice
 	var fileOwner []string
 	if fileOwnerString != "" {
-		fileOwner = strings.Fields(fileOwnerString)
+		fileOwner = strings.Split(fileOwnerString,",")
 	}
 
 	//Convert createdTimestamp to time
@@ -277,35 +277,35 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	var privateIpAddresses []string
 	if privateIpAddressesString != "" {
 		privateIpAddressesString := strings.Replace(privateIpAddressesString, "\n","",-1)
-		privateIpAddresses = strings.Fields(privateIpAddressesString)
+		privateIpAddresses = strings.Split(privateIpAddressesString,",")
 	}
 
 	//Convert directoryId to string slice
 	var directoryId []string
 	if directoryIdString != "" {
 		directoryIdString := strings.Replace(directoryIdString, "\n","",-1)
-		directoryId = strings.Fields(directoryIdString)
+		directoryId = strings.Split(directoryIdString,",")
 	}
 
 	//Convert sharedWith to string slice
 	var sharedWith []string
 	if sharedWithString != "" {
 		sharedWithString := strings.Replace(sharedWithString, "\n","",-1)
-		sharedWith = strings.Fields(sharedWithString)
+		sharedWith = strings.Split(sharedWithString,",")
 	}
 
 	//Convert sharingTypeAdded to string slice
 	var sharingTypeAdded []string
 	if sharingTypeAddedString != "" {
 		sharingTypeAddedString := strings.Replace(sharingTypeAddedString, "\n","",-1)
-		sharingTypeAdded = strings.Fields(sharingTypeAddedString)
+		sharingTypeAdded = strings.Split(sharingTypeAddedString,",")
 	}
 
 	//Convert exposure to string slice
 	var exposure []string
 	if exposureString != "" {
 		exposureString := strings.Replace(exposureString, "\n","",-1)
-		exposure = strings.Fields(exposureString)
+		exposure = strings.Split(exposureString,",")
 	}
 
 	//Convert removableMediaCapacity to int

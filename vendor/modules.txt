@@ -1,4 +1,4 @@
-# github.com/BenB196/crashplan-ffs-go-pkg v0.0.5
+# github.com/BenB196/crashplan-ffs-go-pkg v0.0.6
 github.com/BenB196/crashplan-ffs-go-pkg
 # github.com/BenB196/ip-api-go-pkg v0.0.4
 github.com/BenB196/ip-api-go-pkg
@@ -6,7 +6,7 @@ github.com/BenB196/ip-api-go-pkg
 github.com/beorn7/perks/quantile
 # github.com/golang/protobuf v1.3.2
 github.com/golang/protobuf/proto
-# github.com/google/go-cmp v0.3.0
+# github.com/google/go-cmp v0.3.1
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags

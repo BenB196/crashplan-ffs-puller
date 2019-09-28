@@ -104,7 +104,7 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
         }
       ]
     },
-    "outputType": "elastic",                                                                                                #Output type, supports either file or elastic
+    "outputType": "elastic",                                                                                                #Output type, supports either file, elastic, logstash
     "outputLocation": "/path/to/output",                                                                                    #This is needed even if not using file output type, as there are stateful files which need to be written and stored.
     "ip-api": {                                                                                                             #IP-API Integration
       "enabled": true,                                                                                                      #Enable IP-API support? Default = false
@@ -129,6 +129,9 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
         "password": ""
       },
       "aliases": ["test1","test2"]                                                                                          #Any aliases you want the index to be created with.
+    }
+    "logstash": {                                                                                                           #Logstash output
+      "logstashURL": "192.168.1.105:8080"                                                                                   #Address of logstash
     }
   },
     {
@@ -205,6 +208,20 @@ If you are using the elastic output type there are a few important things to und
       1. bestCompression
       1. refreshInterval
       1. aliases
+      
+### Logstash Integration
+
+Even though this is for Logstash integration, it uses a standard TCP socket output, so in theory this can be integrated with anything that accepts TCP data.
+
+Logstash pipeline input:
+
+```
+input {
+  tcp {
+    port => 8080 #Set your port
+  }
+}
+```
 
 ### IP-API Integration
 
