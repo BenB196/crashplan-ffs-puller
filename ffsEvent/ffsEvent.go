@@ -518,12 +518,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					if err != nil {
 						//TODO handle error
-						err = writer.Flush()
-						if err != nil {
-							log.Println("error writing ffs event on flush")
-							log.Println(string(event))
-							panic(err)
-						}
 						log.Println("error writing ffs event")
 						log.Println(string(event))
 						panic(err)
@@ -531,12 +525,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					_, err = writer.Write([]byte("\n"))
 					if err != nil {
 						//TODO handle error
-						err = writer.Flush()
-						if err != nil {
-							log.Println("error writing ffs event on flush")
-							log.Println(string(event))
-							panic(err)
-						}
 						log.Println("error writing ffs event")
 						log.Println(string(event))
 						panic(err)

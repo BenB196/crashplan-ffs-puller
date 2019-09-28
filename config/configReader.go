@@ -385,13 +385,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 				case "logstash":
 					if query.Logstash.LogstashURL == "" {
 						return config, errors.New("error: logstash url cannot be blank")
-					}// else {
-					//	//check if valid URI
-					//	_, err := url.ParseRequestURI(query.Logstash.LogstashURL)
-					//	if err != nil {
-					//		return config, errors.New("error: invalid logstash url provided: " + err.Error())
-					//	}
-					//}
+					}
 				default:
 					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
 				}
