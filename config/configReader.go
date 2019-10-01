@@ -383,6 +383,38 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						}
 					}
 				case "logstash":
+					//Validate output location, this is still needed for writing files to keep track on in progress and last completed queries
+					if query.OutputLocation == "" {
+						//Get working directory and set as output location
+						dir, err := os.Getwd()
+						//return any errors
+						if err != nil {
+							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+						}
+						//check if directory is writable
+						err = utils.IsWritable(dir)
+						//return any errors
+						if err != nil {
+							return config, err
+						}
+						//update output location to absolute path
+						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
+					} else {
+						//Validate that output location is a valid path
+						//check that path is writable
+						err = utils.IsWritable(query.OutputLocation)
+						//return any errors
+						if err != nil {
+							return config, err
+						}
+
+						//Append a / or \\ to end of path if not there
+						lastChar := query.OutputLocation[len(query.OutputLocation)-1:]
+						if lastChar != utils.DirPath {
+							config.FFSQueries[i].OutputLocation = query.OutputLocation + utils.DirPath
+						}
+					}
+
 					if query.Logstash.LogstashURL == "" {
 						return config, errors.New("error: logstash url cannot be blank")
 					}
