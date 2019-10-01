@@ -17,6 +17,7 @@ import (
 	"log"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -142,7 +143,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
 				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
-				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, true, elasticClient, ctx, nil)
+				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, true, elasticClient, ctx, nil, 0, false)
 			}
 		}()
 	}
@@ -181,7 +182,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 		for {
 			select {
 			case <- queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime,false, elasticClient, ctx, quit)
+				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime,false, elasticClient, ctx, quit, 0, false)
 			case <- quit:
 				queryIntervalTimeTicker.Stop()
 				wgQuery.Done()
@@ -193,12 +194,12 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	return
 }
 
-func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, cleanUpQuery bool, client *elastic.Client, ctx context.Context, quit chan<- struct{}) {
+func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, cleanUpQuery bool, client *elastic.Client, ctx context.Context, quit chan<- struct{}, retryCount int, retryQuery bool) {
 	var done bool
 	var err error
 	//Increment time
 	//Only if it is not a catchup query (in progress queries when the app died)
-	if !cleanUpQuery {
+	if !cleanUpQuery && !retryQuery {
 		query, done, err = calculateTimeStamps(*inProgressQueries, *lastCompletedQuery, query, maxTime)
 
 		if err != nil {
@@ -223,7 +224,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		panic(err)
 	}
 
-	if !cleanUpQuery {
+	if !cleanUpQuery && !retryQuery {
 		*inProgressQueries = append(*inProgressQueries,inProgressQuery)
 	}
 
@@ -231,7 +232,22 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
-		panic(err)
+		//check if recoverable errors are thrown
+		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && strings.Contains(err.Error(),"INTERNAL_ERROR")) {
+			//allow for 10 retries before killing to save resource overload.
+			log.Println("Attempting to recover from error: " + err.Error() + ". Retry number: " + strconv.Itoa(retryCount))
+			if retryCount <= 10 {
+				retryCount++
+				queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, cleanUpQuery, client, ctx, quit, retryCount, true)
+				return
+			} else {
+				//panic passed 10 retries
+				panic("Failed on retry of query 10 times. Panicking to prevent unrecoverable resource utilization for ffs query: " + query.Name)
+			}
+		} else {
+			//panic if unrecoverable/unknown error
+			panic(err)
+		}
 	}
 
 	//Write events
