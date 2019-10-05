@@ -216,7 +216,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	}
 
 	//increase in progress queries
-	promMetrics.IncreaseInProgressQueries()
+	if !retryQuery {
+		promMetrics.IncreaseInProgressQueries()
+	}
 
 	//Add query interval to in progress query list
 	inProgressQuery, err := getOnOrBeforeAndAfter(query)
