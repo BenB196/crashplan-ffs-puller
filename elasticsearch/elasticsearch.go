@@ -196,6 +196,15 @@ func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 		"      \"removableMediaBusType\": {" +
 		"        \"type\": \"keyword\"" +
 		"      }," +
+		"      \"removableMediaMediaName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaVolumeName\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
+		"      \"removableMediaPartitionId\": {" +
+		"        \"type\": \"keyword\"" +
+		"      }," +
 		"      \"syncDestination\": {" +
 		"        \"type\": \"keyword\"" +
 		"      }," +
