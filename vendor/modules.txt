@@ -1,4 +1,4 @@
-# github.com/BenB196/crashplan-ffs-go-pkg v0.0.7
+# github.com/BenB196/crashplan-ffs-go-pkg v0.0.8
 github.com/BenB196/crashplan-ffs-go-pkg
 # github.com/BenB196/ip-api-go-pkg v0.0.4
 github.com/BenB196/ip-api-go-pkg

@@ -137,6 +137,9 @@ FileEvent
     RemovableMediaSerialNumber  string	        (potentially empty)
     RemovableMediaCapacity      int             (potentially empty)
     RemovableMediaBusType       string	        (potentially empty)
+    RemovableMediaMediaName     string          (potentially empty)
+    RemovableMediaVolumeName    string          (potentially empty)
+    RemovableMediaPartitionId   string          (potentially empty)
     SyncDestination             string	        (potentially empty)
 ```
 
