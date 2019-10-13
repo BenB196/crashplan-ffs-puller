@@ -104,7 +104,7 @@ type GeoPoint struct {
 }
 
 
-func WriteEvents (ffsEvents []FFSEvent, query config.FFSQuery) error {
+func WriteEvents (ffsEvents interface{}, query config.FFSQuery) error {
 	//Error if ffsEvents is nil, this should not be called if there are no ffsEvents
 	if ffsEvents == nil {
 		return errors.New("error: ffsEvents is nil")

@@ -337,9 +337,113 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		eventWg.Wait()
 		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
 
+		//remap ffsEvents to ElasticFFSEvent
+		var elasticFFSEvents []eventOutput.ElasticFFSEvent
+		if query.EsStandardized {
+			var remapWg sync.WaitGroup
+			remapWg.Add(len(ffsEvents))
+			go func() {
+				for _, ffsEvent := range ffsEvents {
+					elasticFileEvent := eventOutput.ElasticFileEvent{
+						EventId:                    ffsEvent.EventId,
+						EventType:                  ffsEvent.EventType,
+						EventTimestamp:             ffsEvent.EventTimestamp,
+						InsertionTimestamp:         ffsEvent.InsertionTimestamp,
+						FilePath:                   ffsEvent.FilePath,
+						FileName:                   ffsEvent.FileName,
+						FileType:                   ffsEvent.FileType,
+						FileCategory:               ffsEvent.FileCategory,
+						FileSize:                   ffsEvent.FileSize,
+						FileOwner:                  ffsEvent.FileOwner,
+						Md5Checksum:                ffsEvent.Md5Checksum,
+						Sha256Checksum:             ffsEvent.Sha256Checksum,
+						CreatedTimestamp:           ffsEvent.CreatedTimestamp,
+						ModifyTimestamp:            ffsEvent.ModifyTimestamp,
+						DeviceUsername:             ffsEvent.DeviceUsername,
+						DeviceUid:                  ffsEvent.DeviceUid,
+						UserUid:                    ffsEvent.UserUid,
+						OsHostname:                 ffsEvent.OsHostname,
+						DomainName:                 ffsEvent.DomainName,
+						PublicIpAddress:            ffsEvent.PublicIpAddress,
+						PrivateIpAddresses:         ffsEvent.PrivateIpAddresses,
+						Actor:                      ffsEvent.Actor,
+						DirectoryId:                ffsEvent.DirectoryId,
+						Source:                     ffsEvent.Source,
+						Url:                        ffsEvent.Url,
+						Shared:                     ffsEvent.Shared,
+						SharedWith:                 ffsEvent.SharedWith,
+						SharingTypeAdded:           ffsEvent.SharingTypeAdded,
+						CloudDriveId:               ffsEvent.CloudDriveId,
+						DetectionSourceAlias:       ffsEvent.DetectionSourceAlias,
+						FileId:                     ffsEvent.FileId,
+						Exposure:                   ffsEvent.Exposure,
+						ProcessOwner:               ffsEvent.ProcessOwner,
+						ProcessName:                ffsEvent.ProcessName,
+						RemovableMediaVendor:       ffsEvent.RemovableMediaVendor,
+						RemovableMediaName:         ffsEvent.RemovableMediaName,
+						RemovableMediaSerialNumber: ffsEvent.RemovableMediaSerialNumber,
+						RemovableMediaCapacity:     ffsEvent.RemovableMediaCapacity,
+						RemovableMediaBusType:      ffsEvent.RemovableMediaBusType,
+						RemovableMediaMediaName:    ffsEvent.RemovableMediaMediaName,
+						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
+						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
+						SyncDestination:            ffsEvent.SyncDestination,
+					}
+
+					var geoPoint eventOutput.GeoPoint
+					if ffsEvent.Location.Lat != 0 && ffsEvent.Location.Lon != 0 {
+						geoPoint = eventOutput.GeoPoint{
+							Lat: 0,
+							Lon: 0,
+						}
+					}
+
+					
+					geoip := eventOutput.Geoip{
+						Status:        ffsEvent.Location.Status,
+						Message:       ffsEvent.Location.Message,
+						Continent:     ffsEvent.Location.Continent,
+						ContinentCode: ffsEvent.Location.ContinentCode,
+						Country:       ffsEvent.Location.Country,
+						CountryCode:   ffsEvent.Location.CountryCode,
+						Region:        ffsEvent.Location.Region,
+						RegionName:    ffsEvent.Location.RegionName,
+						City:          ffsEvent.Location.City,
+						District:      ffsEvent.Location.District,
+						ZIP:           ffsEvent.Location.ZIP,
+						Lat:           ffsEvent.Location.Lat,
+						Lon:           ffsEvent.Location.Lon,
+						Timezone:      ffsEvent.Location.Timezone,
+						Currency:      ffsEvent.Location.Currency,
+						ISP:           ffsEvent.Location.ISP,
+						Org:           ffsEvent.Location.Org,
+						AS:            ffsEvent.Location.AS,
+						ASName:        ffsEvent.Location.ASName,
+						Reverse:       ffsEvent.Location.Reverse,
+						Mobile:        ffsEvent.Location.Mobile,
+						Proxy:         ffsEvent.Location.Proxy,
+						Query:         ffsEvent.Location.Query,
+						GeoPoint:      &geoPoint,
+					}
+					elasticFFSEvent := eventOutput.ElasticFFSEvent{
+						FileEvent: elasticFileEvent,
+						Geoip:     &geoip,
+					}
+
+					elasticFFSEvents = append(elasticFFSEvents, elasticFFSEvent)
+					remapWg.Done()
+				}
+			}()
+			remapWg.Wait()
+		}
+
 		switch query.OutputType {
 		case "file":
-			err := eventOutput.WriteEvents(ffsEvents, query)
+			if query.EsStandardized {
+				err = eventOutput.WriteEvents(elasticFFSEvents, query)
+			} else {
+				err = eventOutput.WriteEvents(ffsEvents, query)
+			}
 
 			if err != nil {
 				panic(err)
@@ -390,14 +494,26 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						panic("elasticsearch index creation failed for: " + indexName)
 					}
 				}
-				elasticWg.Add(len(ffsEvents))
-				go func() {
-					for _, ffsEvent := range ffsEvents {
-						r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
-						processor.Add(r)
-						elasticWg.Done()
-					}
-				}()
+				if query.EsStandardized {
+					elasticWg.Add(len(elasticFFSEvents))
+					go func() {
+						for _, elasticFileEvent := range elasticFFSEvents {
+							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
+							processor.Add(r)
+							elasticWg.Done()
+						}
+					}()
+				} else {
+					elasticWg.Add(len(ffsEvents))
+					go func() {
+						for _, ffsEvent := range ffsEvents {
+							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
+							processor.Add(r)
+							elasticWg.Done()
+						}
+					}()
+				}
+
 				elasticWg.Wait()
 
 				err = processor.Flush()
@@ -411,24 +527,46 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				//create map of indexes required
 				var requiredIndexTimestamps = map[time.Time]interface{}{}
 				var requiredIndexMutex = sync.RWMutex{}
-				elasticWg.Add(len(ffsEvents))
-				go func() {
-					for _, ffsEvent :=range ffsEvents {
-						var indexTime time.Time
-						if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-						} else {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-						}
+				if query.EsStandardized {
+					elasticWg.Add(len(elasticFFSEvents))
+					go func() {
+						for _, elasticFileEvent :=range elasticFFSEvents {
+							var indexTime time.Time
+							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							} else {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							}
 
-						requiredIndexMutex.RLock()
-						if _, found := requiredIndexTimestamps[indexTime]; !found {
-							requiredIndexTimestamps[indexTime] = nil
+							requiredIndexMutex.RLock()
+							if _, found := requiredIndexTimestamps[indexTime]; !found {
+								requiredIndexTimestamps[indexTime] = nil
+							}
+							requiredIndexMutex.RUnlock()
+							elasticWg.Done()
 						}
-						requiredIndexMutex.RUnlock()
-						elasticWg.Done()
-					}
-				}()
+					}()
+				} else {
+					elasticWg.Add(len(ffsEvents))
+					go func() {
+						for _, ffsEvent :=range ffsEvents {
+							var indexTime time.Time
+							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							} else {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							}
+
+							requiredIndexMutex.RLock()
+							if _, found := requiredIndexTimestamps[indexTime]; !found {
+								requiredIndexTimestamps[indexTime] = nil
+							}
+							requiredIndexMutex.RUnlock()
+							elasticWg.Done()
+						}
+					}()
+				}
+
 				elasticWg.Wait()
 
 				//check if indexes exist
@@ -474,21 +612,39 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				elasticWg.Wait()
 
 				//build bulk request
-				elasticWg.Add(len(ffsEvents))
-				go func() {
-					for _, ffsEvent := range ffsEvents {
-						var indexTime time.Time
-						if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-						} else {
-							indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+				if query.EsStandardized {
+					elasticWg.Add(len(elasticFFSEvents))
+					go func() {
+						for _, elasticFileEvent := range elasticFFSEvents {
+							var indexTime time.Time
+							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							} else {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							}
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
+							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
+							processor.Add(r)
+							elasticWg.Done()
 						}
-						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
-						r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
-						processor.Add(r)
-						elasticWg.Done()
-					}
-				}()
+					}()
+				} else {
+					elasticWg.Add(len(ffsEvents))
+					go func() {
+						for _, ffsEvent := range ffsEvents {
+							var indexTime time.Time
+							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							} else {
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+							}
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
+							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
+							processor.Add(r)
+							elasticWg.Done()
+						}
+					}()
+				}
 				elasticWg.Wait()
 
 				err = processor.Flush()
@@ -520,36 +676,70 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 			writer := bufio.NewWriter(conn)
 
-			logstashWg.Add(len(ffsEvents))
-			go func() {
-				for _, ffsEvent := range ffsEvents {
-					event, err := json.Marshal(ffsEvent)
+			if query.EsStandardized {
+				logstashWg.Add(len(elasticFFSEvents))
+				go func() {
+					for _, elasticFileEvent := range elasticFFSEvents {
+						event, err := json.Marshal(elasticFileEvent)
 
-					if err != nil {
-						//TODO handle error
-						log.Println("error marshaling ffs event")
-						log.Println(ffsEvent)
-						panic(err)
-					}
+						if err != nil {
+							//TODO handle error
+							log.Println("error marshaling ffs event")
+							log.Println(elasticFileEvent)
+							panic(err)
+						}
 
-					_, err = writer.Write(event)
+						_, err = writer.Write(event)
 
-					if err != nil {
-						//TODO handle error
-						log.Println("error writing ffs event")
-						log.Println(string(event))
-						panic(err)
+						if err != nil {
+							//TODO handle error
+							log.Println("error writing ffs event")
+							log.Println(string(event))
+							panic(err)
+						}
+						_, err = writer.Write([]byte("\n"))
+						if err != nil {
+							//TODO handle error
+							log.Println("error writing ffs event")
+							log.Println(string(event))
+							panic(err)
+						}
+						logstashWg.Done()
 					}
-					_, err = writer.Write([]byte("\n"))
-					if err != nil {
-						//TODO handle error
-						log.Println("error writing ffs event")
-						log.Println(string(event))
-						panic(err)
+				}()
+			} else {
+				logstashWg.Add(len(ffsEvents))
+				go func() {
+					for _, ffsEvent := range ffsEvents {
+						event, err := json.Marshal(ffsEvent)
+
+						if err != nil {
+							//TODO handle error
+							log.Println("error marshaling ffs event")
+							log.Println(ffsEvent)
+							panic(err)
+						}
+
+						_, err = writer.Write(event)
+
+						if err != nil {
+							//TODO handle error
+							log.Println("error writing ffs event")
+							log.Println(string(event))
+							panic(err)
+						}
+						_, err = writer.Write([]byte("\n"))
+						if err != nil {
+							//TODO handle error
+							log.Println("error writing ffs event")
+							log.Println(string(event))
+							panic(err)
+						}
+						logstashWg.Done()
 					}
-					logstashWg.Done()
-				}
-			}()
+				}()
+			}
+
 
 			logstashWg.Wait()
 

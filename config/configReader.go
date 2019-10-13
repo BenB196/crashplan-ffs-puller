@@ -35,6 +35,7 @@ type FFSQuery struct {
 	IPAPI			IPAPI			`json:"ip-api,omitempty"`
 	Elasticsearch	Elasticsearch	`json:"elasticsearch,omitempty"`
 	Logstash		Logstash		`json:"logstash,omitempty"`
+	EsStandardized	bool			`json:"esStandardized,omitempty"`
 }
 
 type IPAPI struct {
@@ -58,7 +59,6 @@ type Elasticsearch struct {
 	BestCompression			bool		`json:"bestCompression,omitempty"`
 	RefreshInterval			int			`json:"refreshInterval,omitempty"`
 	Aliases					[]string	`json:"aliases,omitempty"`
-	EsStandardized			bool		`json:"esStandardized,omitempty"`
 }
 
 type Logstash struct {
