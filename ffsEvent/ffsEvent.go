@@ -344,41 +344,57 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			remapWg.Add(len(ffsEvents))
 			go func() {
 				for _, ffsEvent := range ffsEvents {
-					elasticFileEvent := eventOutput.ElasticFileEvent{
-						EventId:                    ffsEvent.EventId,
-						EventType:                  ffsEvent.EventType,
-						EventTimestamp:             ffsEvent.EventTimestamp,
-						InsertionTimestamp:         ffsEvent.InsertionTimestamp,
-						FilePath:                   ffsEvent.FilePath,
-						FileName:                   ffsEvent.FileName,
-						FileType:                   ffsEvent.FileType,
-						FileCategory:               ffsEvent.FileCategory,
-						FileSize:                   ffsEvent.FileSize,
-						FileOwner:                  ffsEvent.FileOwner,
-						Md5Checksum:                ffsEvent.Md5Checksum,
-						Sha256Checksum:             ffsEvent.Sha256Checksum,
-						CreatedTimestamp:           ffsEvent.CreatedTimestamp,
-						ModifyTimestamp:            ffsEvent.ModifyTimestamp,
-						DeviceUsername:             ffsEvent.DeviceUsername,
-						DeviceUid:                  ffsEvent.DeviceUid,
-						UserUid:                    ffsEvent.UserUid,
-						OsHostname:                 ffsEvent.OsHostname,
-						DomainName:                 ffsEvent.DomainName,
-						PublicIpAddress:            ffsEvent.PublicIpAddress,
-						PrivateIpAddresses:         ffsEvent.PrivateIpAddresses,
-						Actor:                      ffsEvent.Actor,
-						DirectoryId:                ffsEvent.DirectoryId,
-						Source:                     ffsEvent.Source,
-						Url:                        ffsEvent.Url,
-						Shared:                     ffsEvent.Shared,
-						SharedWith:                 ffsEvent.SharedWith,
-						SharingTypeAdded:           ffsEvent.SharingTypeAdded,
-						CloudDriveId:               ffsEvent.CloudDriveId,
-						DetectionSourceAlias:       ffsEvent.DetectionSourceAlias,
-						FileId:                     ffsEvent.FileId,
-						Exposure:                   ffsEvent.Exposure,
-						ProcessOwner:               ffsEvent.ProcessOwner,
-						ProcessName:                ffsEvent.ProcessName,
+					event := eventOutput.Event{
+						EventId:        ffsEvent.EventId,
+						EventType:      ffsEvent.EventType,
+						EventTimestamp: ffsEvent.EventTimestamp,
+					}
+
+					insertion := eventOutput.Insertion{InsertionTimestamp:ffsEvent.InsertionTimestamp}
+
+					file := eventOutput.File{
+						FilePath:         ffsEvent.FilePath,
+						FileName:         ffsEvent.FileName,
+						FileType:         ffsEvent.FileType,
+						FileCategory:     ffsEvent.FileCategory,
+						FileSize:         ffsEvent.FileSize,
+						FileOwner:        ffsEvent.FileOwner,
+						Md5Checksum:      ffsEvent.Md5Checksum,
+						Sha256Checksum:   ffsEvent.Sha256Checksum,
+						CreatedTimestamp: ffsEvent.CreatedTimestamp,
+						ModifyTimestamp:  ffsEvent.ModifyTimestamp,
+					}
+
+					device := eventOutput.Device{
+						DeviceUsername:     ffsEvent.DeviceUsername,
+						DeviceUid:          ffsEvent.DeviceUid,
+						UserUid:            ffsEvent.UserUid,
+						OsHostname:         ffsEvent.OsHostname,
+						DomainName:         ffsEvent.DomainName,
+						PublicIpAddress:    ffsEvent.PublicIpAddress,
+						PrivateIpAddresses: ffsEvent.PrivateIpAddresses,
+					}
+
+					cloud := eventOutput.Cloud{
+						Actor:                ffsEvent.Actor,
+						DirectoryId:          ffsEvent.DirectoryId,
+						Source:               ffsEvent.Source,
+						Url:                  ffsEvent.Url,
+						Shared:               ffsEvent.Shared,
+						SharedWith:           ffsEvent.SharedWith,
+						SharingTypeAdded:     ffsEvent.SharingTypeAdded,
+						CloudDriveId:         ffsEvent.CloudDriveId,
+						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
+						FileId:               ffsEvent.FileId,
+						Exposure:             ffsEvent.Exposure,
+					}
+
+					process := eventOutput.Process{
+						ProcessOwner: ffsEvent.ProcessOwner,
+						ProcessName:  ffsEvent.ProcessName,
+					}
+
+					removableMedia := eventOutput.RemovableMedia{
 						RemovableMediaVendor:       ffsEvent.RemovableMediaVendor,
 						RemovableMediaName:         ffsEvent.RemovableMediaName,
 						RemovableMediaSerialNumber: ffsEvent.RemovableMediaSerialNumber,
@@ -387,6 +403,16 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaMediaName:    ffsEvent.RemovableMediaMediaName,
 						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
+					}
+
+					elasticFileEvent := eventOutput.ElasticFileEvent{
+						Event:						&event,
+						Insertion:         			&insertion,
+						File:						&file,
+						Device:						&device,
+						Cloud:						&cloud,
+						Process:					&process,
+						RemovableMedia:				&removableMedia,
 						SyncDestination:            ffsEvent.SyncDestination,
 					}
 
@@ -569,9 +595,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent :=range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -654,9 +680,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Insertion.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
