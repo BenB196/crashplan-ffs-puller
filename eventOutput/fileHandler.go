@@ -31,10 +31,10 @@ type ElasticFileEvent struct {
 	EventTimestamp				*time.Time		`json:"event_timestamp,omitempty"`
 	InsertionTimestamp			*time.Time		`json:"insertion_timestamp,omitempty"`
 	FilePath					string			`json:"file_path,omitempty"`
-	FileName					string			`json:"file_name"`
+	FileName					string			`json:"file_name,omitempty"`
 	FileType					string			`json:"file_type,omitempty"`
 	FileCategory				string			`json:"file_category,omitempty"`
-	FileSize					*int			`json:"file_size"`
+	FileSize					*int			`json:"file_size,omitempty"`
 	FileOwner					[]string		`json:"file_owner,omitempty"`  //Array of owners
 	Md5Checksum					string			`json:"md5_checksum,omitempty"`
 	Sha256Checksum				string			`json:"sha256_checksum,omitempty"`
