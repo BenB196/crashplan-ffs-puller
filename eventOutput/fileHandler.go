@@ -26,8 +26,8 @@ type ElasticFFSEvent struct {
 }
 
 type ElasticFileEvent struct {
-	EventId						string			`json:"eventId"`
-	EventType					string			`json:"eventType"`
+	EventId						string			`json:"event_id"`
+	EventType					string			`json:"event_type"`
 	EventTimestamp				*time.Time		`json:"event_timestamp,omitempty"`
 	InsertionTimestamp			*time.Time		`json:"insertion_timestamp,omitempty"`
 	FilePath					string			`json:"file_path,omitempty"`
