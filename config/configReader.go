@@ -58,6 +58,7 @@ type Elasticsearch struct {
 	BestCompression			bool		`json:"bestCompression,omitempty"`
 	RefreshInterval			int			`json:"refreshInterval,omitempty"`
 	Aliases					[]string	`json:"aliases,omitempty"`
+	EsStandardized			bool		`json:"esStandardized,omitempty"`
 }
 
 type Logstash struct {
