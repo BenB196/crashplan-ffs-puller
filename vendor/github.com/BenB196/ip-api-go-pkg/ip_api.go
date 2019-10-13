@@ -35,7 +35,7 @@ type Location struct {
 	ISP				string	`json:"isp,omitempty"`
 	Org				string	`json:"org,omitempty"`
 	AS				string	`json:"as,omitempty"`
-	ASName			string	`json:"asame,omitempty"`
+	ASName			string	`json:"asname,omitempty"`
 	Reverse			string	`json:"reverse,omitempty"`
 	Mobile			bool	`json:"mobile,omitempty"`
 	Proxy			bool	`json:"proxy,omitempty"`

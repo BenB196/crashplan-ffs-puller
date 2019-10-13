@@ -356,8 +356,10 @@ Here are a few tips on how to get used to Elastic:
   - [x] Geo Distance Query
   - [x] Geo Polygon Query
 - Specialized queries
+  - [x] Distance Feature Query
   - [x] More Like This Query
   - [x] Script Query
+  - [x] Script Score Query
   - [x] Percolate Query
 - Span queries
   - [ ] Span Term Query

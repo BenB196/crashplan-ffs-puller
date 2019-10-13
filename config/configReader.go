@@ -35,6 +35,7 @@ type FFSQuery struct {
 	IPAPI			IPAPI			`json:"ip-api,omitempty"`
 	Elasticsearch	Elasticsearch	`json:"elasticsearch,omitempty"`
 	Logstash		Logstash		`json:"logstash,omitempty"`
+	EsStandardized	bool			`json:"esStandardized,omitempty"`
 }
 
 type IPAPI struct {
