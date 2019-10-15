@@ -232,6 +232,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
 
+	log.Println(fileEvents)
+
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
 		//check if recoverable errors are thrown
@@ -315,7 +317,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			for _, event := range fileEvents {
 				if event.PublicIpAddress != "" {
 					if len(locationMap) == 0 {
-						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event})
+						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoPoint: nil})
 					} else if location, ok := locationMap[event.PublicIpAddress]; ok {
 						//nil this as it is not needed, we already have event.publicIpAddress
 						location.Query = ""
@@ -323,12 +325,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							Lat: location.Lat,
 							Lon: location.Lon,
 						}
-						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: location, GeoPoint: &geoPoint})
+						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: &location, GeoPoint: &geoPoint})
 					} else {
 						b, _ := json.Marshal(event)
 						log.Println("error getting location for fileEvent: " + string(b))
 						panic("Unable to find location which should exist.")
 					}
+				} else {
+					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoPoint: nil})
 				}
 				defer eventWg.Done()
 			}
@@ -442,68 +446,70 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					var elasticFFSEvent eventOutput.ElasticFFSEvent
 					var geoPoint eventOutput.GeoPoint
 					var geoip eventOutput.Geoip
-					if ffsEvent.Location.Lat != 0 && ffsEvent.Location.Lon != 0 {
-						geoPoint = eventOutput.GeoPoint{
-							Lat: ffsEvent.Location.Lat,
-							Lon: ffsEvent.Location.Lon,
-						}
+					if ffsEvent.Location != nil {
+						if ffsEvent.Location.Lat != 0 && ffsEvent.Location.Lon != 0 {
+							geoPoint = eventOutput.GeoPoint{
+								Lat: ffsEvent.Location.Lat,
+								Lon: ffsEvent.Location.Lon,
+							}
 
-						geoip = eventOutput.Geoip{
-							Status:        ffsEvent.Location.Status,
-							Message:       ffsEvent.Location.Message,
-							Continent:     ffsEvent.Location.Continent,
-							ContinentCode: ffsEvent.Location.ContinentCode,
-							Country:       ffsEvent.Location.Country,
-							CountryCode:   ffsEvent.Location.CountryCode,
-							Region:        ffsEvent.Location.Region,
-							RegionName:    ffsEvent.Location.RegionName,
-							City:          ffsEvent.Location.City,
-							District:      ffsEvent.Location.District,
-							ZIP:           ffsEvent.Location.ZIP,
-							Lat:           ffsEvent.Location.Lat,
-							Lon:           ffsEvent.Location.Lon,
-							Timezone:      ffsEvent.Location.Timezone,
-							Currency:      ffsEvent.Location.Currency,
-							ISP:           ffsEvent.Location.ISP,
-							Org:           ffsEvent.Location.Org,
-							AS:            ffsEvent.Location.AS,
-							ASName:        ffsEvent.Location.ASName,
-							Reverse:       ffsEvent.Location.Reverse,
-							Mobile:        ffsEvent.Location.Mobile,
-							Proxy:         ffsEvent.Location.Proxy,
-							Query:         ffsEvent.Location.Query,
-							GeoPoint:      &geoPoint,
-						}
-					} else {
-						geoip = eventOutput.Geoip{
-							Status:        ffsEvent.Location.Status,
-							Message:       ffsEvent.Location.Message,
-							Continent:     ffsEvent.Location.Continent,
-							ContinentCode: ffsEvent.Location.ContinentCode,
-							Country:       ffsEvent.Location.Country,
-							CountryCode:   ffsEvent.Location.CountryCode,
-							Region:        ffsEvent.Location.Region,
-							RegionName:    ffsEvent.Location.RegionName,
-							City:          ffsEvent.Location.City,
-							District:      ffsEvent.Location.District,
-							ZIP:           ffsEvent.Location.ZIP,
-							Lat:           ffsEvent.Location.Lat,
-							Lon:           ffsEvent.Location.Lon,
-							Timezone:      ffsEvent.Location.Timezone,
-							Currency:      ffsEvent.Location.Currency,
-							ISP:           ffsEvent.Location.ISP,
-							Org:           ffsEvent.Location.Org,
-							AS:            ffsEvent.Location.AS,
-							ASName:        ffsEvent.Location.ASName,
-							Reverse:       ffsEvent.Location.Reverse,
-							Mobile:        ffsEvent.Location.Mobile,
-							Proxy:         ffsEvent.Location.Proxy,
-							Query:         ffsEvent.Location.Query,
-							GeoPoint:      nil,
+							geoip = eventOutput.Geoip{
+								Status:        ffsEvent.Location.Status,
+								Message:       ffsEvent.Location.Message,
+								Continent:     ffsEvent.Location.Continent,
+								ContinentCode: ffsEvent.Location.ContinentCode,
+								Country:       ffsEvent.Location.Country,
+								CountryCode:   ffsEvent.Location.CountryCode,
+								Region:        ffsEvent.Location.Region,
+								RegionName:    ffsEvent.Location.RegionName,
+								City:          ffsEvent.Location.City,
+								District:      ffsEvent.Location.District,
+								ZIP:           ffsEvent.Location.ZIP,
+								Lat:           ffsEvent.Location.Lat,
+								Lon:           ffsEvent.Location.Lon,
+								Timezone:      ffsEvent.Location.Timezone,
+								Currency:      ffsEvent.Location.Currency,
+								ISP:           ffsEvent.Location.ISP,
+								Org:           ffsEvent.Location.Org,
+								AS:            ffsEvent.Location.AS,
+								ASName:        ffsEvent.Location.ASName,
+								Reverse:       ffsEvent.Location.Reverse,
+								Mobile:        ffsEvent.Location.Mobile,
+								Proxy:         ffsEvent.Location.Proxy,
+								Query:         ffsEvent.Location.Query,
+								GeoPoint:      &geoPoint,
+							}
+						} else {
+							geoip = eventOutput.Geoip{
+								Status:        ffsEvent.Location.Status,
+								Message:       ffsEvent.Location.Message,
+								Continent:     ffsEvent.Location.Continent,
+								ContinentCode: ffsEvent.Location.ContinentCode,
+								Country:       ffsEvent.Location.Country,
+								CountryCode:   ffsEvent.Location.CountryCode,
+								Region:        ffsEvent.Location.Region,
+								RegionName:    ffsEvent.Location.RegionName,
+								City:          ffsEvent.Location.City,
+								District:      ffsEvent.Location.District,
+								ZIP:           ffsEvent.Location.ZIP,
+								Lat:           ffsEvent.Location.Lat,
+								Lon:           ffsEvent.Location.Lon,
+								Timezone:      ffsEvent.Location.Timezone,
+								Currency:      ffsEvent.Location.Currency,
+								ISP:           ffsEvent.Location.ISP,
+								Org:           ffsEvent.Location.Org,
+								AS:            ffsEvent.Location.AS,
+								ASName:        ffsEvent.Location.ASName,
+								Reverse:       ffsEvent.Location.Reverse,
+								Mobile:        ffsEvent.Location.Mobile,
+								Proxy:         ffsEvent.Location.Proxy,
+								Query:         ffsEvent.Location.Query,
+								GeoPoint:      nil,
+							}
 						}
 					}
 
-					if ffsEvent.Location.Status == "" {
+					if ffsEvent.Location != nil && ffsEvent.Location.Status == "" {
 						elasticFFSEvent = eventOutput.ElasticFFSEvent{
 							FileEvent: elasticFileEvent,
 							Geoip:     nil,
