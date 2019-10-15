@@ -334,6 +334,29 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			}
 		}()
 
+		//check if validIpAddressesOnly is true and if so convert all non-valid ip addresses to valid ones
+		if query.ValidIpAddressesOnly {
+			var validIpAddressesWg sync.WaitGroup
+			validIpAddressesWg.Add(len(fileEvents))
+			go func() {
+				for i, fileEvent := range fileEvents {
+					if len(fileEvent.PrivateIpAddresses) > 0 {
+						var privateIpWg sync.WaitGroup
+						privateIpWg.Add(len(fileEvent.PrivateIpAddresses))
+						go func() {
+							for x, privateIpAddress := range fileEvent.PrivateIpAddresses {
+								fileEvents[i].PrivateIpAddresses[x] = strings.Split(privateIpAddress,"%")[0]
+								privateIpWg.Done()
+							}
+						}()
+						privateIpWg.Wait()
+					}
+					validIpAddressesWg.Done()
+				}
+			}()
+			validIpAddressesWg.Wait()
+		}
+
 		eventWg.Wait()
 		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
 

@@ -133,7 +133,8 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
     "logstash": {                                                                                                           #Logstash output
       "logstashURL": "192.168.1.105:8080"                                                                                   #Address of logstash
     }
-    "esStandardized": true                                                                                                  #esStandardized This allows for the output to be formatted in an elastic standardized output
+    "esStandardized": true,                                                                                                 #esStandardized This allows for the output to be formatted in an elastic standardized output
+    "validIpAddressesOnly": true                                                                                            #Setting this to true makes the private IP Addresses valid. By default Crashplan FFS provides invalid private IP addresses.
   },
     {
       "name": "example_query_2",                                                                                            #Second example FFS query, with extremely simple setup.
@@ -186,6 +187,7 @@ In the above configuration there are some important notes to know about the FFS 
    1. If you set ON_OR_AFTER, then this is where the query will start off from (on the initial run only).
    1. If you leave ON_OR_BEFORE empty, then the query will run indefinitely (this is intended to be used to constantly pull new queries).
    1. If you set ON_OR_BEFORE, then once the query hits the value, the query will stop running entirely (this is intended really to pull a specific time interval of data).
+1. Crashplan FFS provides invalid IPv6 addresses in the private IP address field. Setting validIpAddressesOnly to true corrects this issue.
    
 Note: I have not tested out all possible queries in this application, if you come across a query which does not work, let me know and I will try to get it working.
 

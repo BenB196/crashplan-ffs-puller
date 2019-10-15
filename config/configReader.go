@@ -24,18 +24,19 @@ type Config struct {
 }
 
 type FFSQuery struct {
-	Name			string			`json:"name"`
-	Username 		string			`json:"username"`
-	Password 		string 			`json:"password"`
-	Interval		string			`json:"interval"`
-	TimeGap			string			`json:"timeGap"`
-	Query			ffs.Query 		`json:"query"`
-	OutputType		string			`json:"outputType"`
-	OutputLocation  string			`json:"outputLocation,omitempty"`
-	IPAPI			IPAPI			`json:"ip-api,omitempty"`
-	Elasticsearch	Elasticsearch	`json:"elasticsearch,omitempty"`
-	Logstash		Logstash		`json:"logstash,omitempty"`
-	EsStandardized	bool			`json:"esStandardized,omitempty"`
+	Name					string			`json:"name"`
+	Username 				string			`json:"username"`
+	Password 				string 			`json:"password"`
+	Interval				string			`json:"interval"`
+	TimeGap					string			`json:"timeGap"`
+	Query					ffs.Query 		`json:"query"`
+	OutputType				string			`json:"outputType"`
+	OutputLocation  		string			`json:"outputLocation,omitempty"`
+	IPAPI					IPAPI			`json:"ip-api,omitempty"`
+	Elasticsearch			Elasticsearch	`json:"elasticsearch,omitempty"`
+	Logstash				Logstash		`json:"logstash,omitempty"`
+	EsStandardized			bool			`json:"esStandardized,omitempty"`
+	ValidIpAddressesOnly	bool			`json:"validIpAddressesOnly"`
 }
 
 type IPAPI struct {
