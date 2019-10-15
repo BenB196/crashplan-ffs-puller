@@ -409,7 +409,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						CloudDriveId:         ffsEvent.CloudDriveId,
 						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
 						FileId:               ffsEvent.FileId,
-						Exposure:             ffsEvent.Exposure,
 					}
 
 					process := eventOutput.Process{
@@ -434,6 +433,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						File:						&file,
 						Device:						&device,
 						Cloud:						&cloud,
+						Exposure:             		ffsEvent.Exposure,
 						Process:					&process,
 						RemovableMedia:				&removableMedia,
 						SyncDestination:            ffsEvent.SyncDestination,
