@@ -31,6 +31,7 @@ type ElasticFileEvent struct {
 	File						*File			`json:"file"`
 	Device						*Device			`json:"device"`
 	Cloud						*Cloud			`json:"cloud"`
+	Exposure					[]string		`json:"exposure,omitempty"`
 	Process						*Process		`json:"process"`
 	RemovableMedia				*RemovableMedia	`json:"removable_media,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
@@ -80,7 +81,6 @@ type Cloud struct {
 	CloudDriveId				string			`json:"drive_id,omitempty"`
 	DetectionSourceAlias		string			`json:"detection_source_alias,omitempty"`
 	FileId						string			`json:"file_id,omitempty"`
-	Exposure					[]string		`json:"exposure,omitempty"`
 }
 
 type Process struct {
