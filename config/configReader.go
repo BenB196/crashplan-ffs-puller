@@ -35,7 +35,7 @@ type FFSQuery struct {
 	IPAPI					IPAPI			`json:"ip-api,omitempty"`
 	Elasticsearch			Elasticsearch	`json:"elasticsearch,omitempty"`
 	Logstash				Logstash		`json:"logstash,omitempty"`
-	EsStandardized			bool			`json:"esStandardized,omitempty"`
+	EsStandardized			string			`json:"esStandardized,omitempty"`
 	ValidIpAddressesOnly	bool			`json:"validIpAddressesOnly"`
 }
 
@@ -423,6 +423,11 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 				default:
 					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
 				}
+			}
+
+			//validate esStandardized
+			if query.EsStandardized != "" && !strings.EqualFold(query.EsStandardized,"full") && !strings.EqualFold(query.EsStandardized,"half") {
+				return config, errors.New("unknown value for esStandardized, values can either be full, half, or \"\"")
 			}
 
 			//Validate ip-api

@@ -20,19 +20,70 @@ type FFSEvent struct {
 	*GeoPoint 			`json:"geoPoint,omitempty"`
 }
 
+type SemiElasticFFSEvent struct {
+	FileEvent SemiElasticFileEvent `json:"file_event"`
+	Geoip		*Geoip				`json:"geoip,omitempty"`
+}
+
+type SemiElasticFileEvent struct {
+	EventId						string			`json:"event_id"`
+	EventType					string			`json:"event_type"`
+	EventTimestamp				*time.Time		`json:"event_timestamp,omitempty"`
+	InsertionTimestamp			*time.Time		`json:"insertion_timestamp,omitempty"`
+	FilePath					string			`json:"file_path,omitempty"`
+	FileName					string			`json:"file_name"`
+	FileType					string			`json:"file_type,omitempty"`
+	FileCategory				string			`json:"file_category,omitempty"`
+	FileSize					*int			`json:"file_size"`
+	FileOwner					[]string		`json:"file_owner,omitempty"`  //Array of owners
+	Md5Checksum					string			`json:"md5_checksum,omitempty"`
+	Sha256Checksum				string			`json:"sha256_checksum,omitempty"`
+	CreatedTimestamp			*time.Time		`json:"created_timestamp,omitempty"`
+	ModifyTimestamp				*time.Time		`json:"modify_timestamp,omitempty"`
+	DeviceUsername				string			`json:"device_username,omitempty"`
+	DeviceUid					string			`json:"device_uid,omitempty"`
+	UserUid						string			`json:"user_uid,omitempty"`
+	OsHostname					string			`json:"os_hostname,omitempty"`
+	DomainName					string			`json:"domain_name,omitempty"`
+	PublicIpAddress				string			`json:"public_ip_address,omitempty"`
+	PrivateIpAddresses			[]string		`json:"private_ip_addresses,omitempty"` //Array of IP address strings
+	Actor						string			`json:"actor,omitempty"`
+	DirectoryId					[]string		`json:"directory_id,omitempty"` //An array of something, I am not sure
+	Source						string			`json:"source,omitempty"`
+	Url							string			`json:"url,omitempty"`
+	Shared						string			`json:"shared,omitempty"`
+	SharedWith					[]string		`json:"shared_with,omitempty"` //An array of strings (Mainly Email Addresses)
+	SharingTypeAdded			[]string		`json:"sharing_type_added,omitempty"`
+	CloudDriveId				string			`json:"cloud_drive_id,omitempty"`
+	DetectionSourceAlias		string			`json:"detection_source_alias,omitempty"`
+	FileId						string			`json:"file_id,omitempty"`
+	Exposure					[]string		`json:"exposure,omitempty"`
+	ProcessOwner				string			`json:"process_owner,omitempty"`
+	ProcessName					string			`json:"process_name,omitempty"`
+	RemovableMediaVendor		string			`json:"removable_media_vendor,omitempty"`
+	RemovableMediaName			string			`json:"removable_media_name,omitempty"`
+	RemovableMediaSerialNumber	string			`json:"removable_media_serial_number,omitempty"`
+	RemovableMediaCapacity		*int			`json:"removable_media_capacity,omitempty"`
+	RemovableMediaBusType		string			`json:"removable_media_bus_type,omitempty"`
+	RemovableMediaMediaName		string			`json:"removable_media_media_name,omitempty"`
+	RemovableMediaVolumeName	string			`json:"removable_media_volume_name,omitempty"`
+	RemovableMediaPartitionId	string			`json:"removable_media_partition_id,omitempty"`
+	SyncDestination				string			`json:"sync_destination,omitempty"`
+}
+
 type ElasticFFSEvent struct {
 	FileEvent	ElasticFileEvent	`json:"file_event"`
-	Geoip		*Geoip				`json:"geoip"`
+	Geoip		*Geoip				`json:"geoip,omitempty"`
 }
 
 type ElasticFileEvent struct {
 	Event						*Event			`json:"event,omitempty"`
 	Insertion					*Insertion		`json:"insertion,omitempty"`
-	File						*File			`json:"file"`
-	Device						*Device			`json:"device"`
-	Cloud						*Cloud			`json:"cloud"`
+	File						*File			`json:"file,omitempty"`
+	Device						*Device			`json:"device,omitempty"`
+	Cloud						*Cloud			`json:"cloud,omitempty"`
 	Exposure					[]string		`json:"exposure,omitempty"`
-	Process						*Process		`json:"process"`
+	Process						*Process		`json:"process,omitempty"`
 	RemovableMedia				*RemovableMedia	`json:"removable_media,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
 }
@@ -193,6 +244,12 @@ func WriteEvents (ffsEvents interface{}, query config.FFSQuery) error {
 
 	if err != nil {
 		return errors.New("error: flushing file: " + fileName + " " + err.Error())
+	}
+
+	err = file.Sync()
+
+	if err != nil {
+		return errors.New("error: syncing file: " + fileName + " " + err.Error())
 	}
 
 	return nil
