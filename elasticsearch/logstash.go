@@ -2,6 +2,7 @@ package elasticsearch
 
 import (
 	"net"
+	"time"
 )
 
 func CreateLogstashClient(logstashURL string) (net.Conn,error) {
@@ -10,13 +11,12 @@ func CreateLogstashClient(logstashURL string) (net.Conn,error) {
 	if err != nil {
 		return nil, err
 	}
-
-	connection, err := net.DialTCP("tcp",nil,tcpAddr)
-
-	if err != nil {
-		return nil, err
+	
+	d := net.Dialer{
+		Timeout:       30 * time.Second,
 	}
-	err = connection.SetWriteBuffer(100000)
+
+	connection, err := d.Dial("tcp", tcpAddr.String())
 
 	if err != nil {
 		return nil, err

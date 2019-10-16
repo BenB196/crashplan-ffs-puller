@@ -133,7 +133,7 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
     "logstash": {                                                                                                           #Logstash output
       "logstashURL": "192.168.1.105:8080"                                                                                   #Address of logstash
     }
-    "esStandardized": true,                                                                                                 #esStandardized This allows for the output to be formatted in an elastic standardized output
+    "esStandardized": "",                                                                                                   #esStandardized This allows for the output to be formatted in standard Crashplan FFS (""), Semi Elastic Standard ("half"), or full Elastic Standard ("full")
     "validIpAddressesOnly": true                                                                                            #Setting this to true makes the private IP Addresses valid. By default Crashplan FFS provides invalid private IP addresses.
   },
     {
@@ -211,7 +211,7 @@ If you are using the elastic output type there are a few important things to und
       1. bestCompression
       1. refreshInterval
       1. aliases
-1. If you use the esStandardized output, there is currently no build in template for this. Therefore you need to provide an index template on the elasticsearch side.
+1. If you use the esStandardized output (half or full), there is currently no build in template for this. Therefore you need to provide an index template on the elasticsearch side.
       
 ### Logstash Integration
 
