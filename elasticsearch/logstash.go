@@ -13,7 +13,7 @@ func CreateLogstashClient(logstashURL string) (net.Conn,error) {
 	}
 	
 	d := net.Dialer{
-		Timeout:       30 * time.Second,
+		Timeout:       5 * time.Minute,
 	}
 
 	connection, err := d.Dial("tcp", tcpAddr.String())
