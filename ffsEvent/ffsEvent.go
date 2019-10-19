@@ -239,6 +239,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			//allow for 10 retries before killing to save resource overload.
 			log.Println("Attempting to recover from error: " + err.Error() + ". Retry number: " + strconv.Itoa(retryCount))
 			if retryCount <= 10 {
+				queryInterval, _ := time.ParseDuration(query.Interval)
+				//sleep before retry to reduce chance of hitting max queries per minute
+				time.Sleep(queryInterval)
 				retryCount = retryCount + 1
 				queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, cleanUpQuery, client, ctx, quit, retryCount, true)
 				return
