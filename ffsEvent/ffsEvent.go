@@ -235,11 +235,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
 		//check if recoverable errors are thrown
-		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && (strings.Contains(err.Error(),"INTERNAL_ERROR") || strings.Contains(err.Error(),"PROTOCOL_ERROR"))) || strings.Contains(err.Error(),"read: connection reset by peer") || strings.Contains(err.Error(),"POST: 400 Bad Request") || strings.Contains(err.Error(),"unexpected EOF") {
+		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && (strings.Contains(err.Error(),"INTERNAL_ERROR") || strings.Contains(err.Error(),"PROTOCOL_ERROR"))) || strings.Contains(err.Error(),"read: connection reset by peer") || strings.Contains(err.Error(),"POST: 400 Bad Request") || strings.Contains(err.Error(),"unexpected EOF") || strings.Contains(err.Error(),"POST: 504 Gateway Timeout") {
 			//allow for 10 retries before killing to save resource overload.
 			log.Println("Attempting to recover from error: " + err.Error() + ". Retry number: " + strconv.Itoa(retryCount))
 			if retryCount <= 10 {
-				retryCount++
+				retryCount = retryCount + 1
 				queryFetcher(query, inProgressQueries, authData, configuration, lastCompletedQuery, maxTime, cleanUpQuery, client, ctx, quit, retryCount, true)
 				return
 			} else {
