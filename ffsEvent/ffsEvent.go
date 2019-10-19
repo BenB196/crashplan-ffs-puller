@@ -15,7 +15,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/olivere/elastic/v7"
 	"log"
-	"reflect"
 	"strconv"
 	"strings"
 	"sync"
@@ -86,29 +85,6 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 		}
 	}()
 
-	//Write in progress queries every 100 milliseconds to file
-	inProgressQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
-	go func() {
-		var oldInProgressQueries []eventOutput.InProgressQuery
-		oldInProgressQueries = inProgressQueries
-		for {
-			select {
-			case <- inProgressQueryWriteTimeTicker.C:
-				if !reflect.DeepEqual(oldInProgressQueries,inProgressQueries) {
-					oldInProgressQueries = inProgressQueries
-					err := eventOutput.WriteInProgressQueries(query, &inProgressQueries)
-
-					if err != nil {
-						panic(err)
-					}
-				}
-			case <- quit:
-				inProgressQueryWriteTimeTicker.Stop()
-				return
-			}
-		}
-	}()
-
 	//Init elastic client if output type == elastic
 	var elasticClient *elastic.Client
 	var ctx context.Context
@@ -147,28 +123,6 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 			}
 		}()
 	}
-
-	//Write last completed query every 100 milliseconds to file
-	lastCompletedQueryWriteTimeTicker := time.NewTicker(100 * time.Millisecond)
-	go func() {
-		var oldLastCompletedQuery eventOutput.InProgressQuery
-		oldLastCompletedQuery = lastCompletedQuery
-		for {
-			select {
-			case <-lastCompletedQueryWriteTimeTicker.C:
-				if oldLastCompletedQuery != lastCompletedQuery {
-					oldLastCompletedQuery = lastCompletedQuery
-					err := eventOutput.WriteLastCompletedQuery(query, lastCompletedQuery)
-					if err != nil {
-						panic(err)
-					}
-				}
-			case <- quit:
-				lastCompletedQueryWriteTimeTicker.Stop()
-				return
-			}
-		}
-	}()
 
 	//Handle setting the initial ON_OR_BEFORE and ON_OR_AFTER depending on the saved lastCompletedQuery
 	if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
@@ -228,6 +182,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	if !cleanUpQuery && !retryQuery {
 		*inProgressQueries = append(*inProgressQueries,inProgressQuery)
+
+		//Write in progress queries to file
+		err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
+
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
@@ -1066,6 +1027,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	//Check if this query is the newest completed query, if it is, set last completed query to query times
 	if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
 		*lastCompletedQuery = inProgressQuery
+
+		err := eventOutput.WriteLastCompletedQuery(query, inProgressQuery)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	//Remove from in progress query slice
@@ -1077,6 +1043,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 	*inProgressQueries = tempInProgress
+
+	//Write in progress queries to file
+	err = eventOutput.WriteInProgressQueries(query, inProgressQueries)
+
+	if err != nil {
+		panic(err)
+	}
 
 	promMetrics.IncrementEventsProcessed(len(ffsEvents))
 	promMetrics.DecreaseInProgressQueries()
