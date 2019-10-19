@@ -351,6 +351,12 @@ func WriteInProgressQueries(query config.FFSQuery, inProgressQueries *[]InProgre
 		return errors.New("error: flushing file: " + fileName + " " + err.Error())
 	}
 
+	err = file.Sync()
+
+	if err != nil {
+		return errors.New("error: syncing file: " + fileName + " " + err.Error())
+	}
+
 	return nil
 }
 
@@ -436,6 +442,12 @@ func WriteLastCompletedQuery(query config.FFSQuery, lastCompletedQuery InProgres
 
 	if err != nil {
 		return errors.New("error: flushing file: " + fileName + " " + err.Error())
+	}
+
+	err = file.Sync()
+
+	if err != nil {
+		return errors.New("error: syncing file: " + fileName + " " + err.Error())
 	}
 
 	return nil
