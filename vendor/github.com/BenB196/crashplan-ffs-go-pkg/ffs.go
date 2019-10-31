@@ -51,6 +51,8 @@ type FileEvent struct {
 	Exposure					[]string		`json:"exposure,omitempty"`
 	ProcessOwner				string			`json:"processOwner,omitempty"`
 	ProcessName					string			`json:"processName,omitempty"`
+	TabWindowTitle				string			`json:"tabWindowTitle,omitempty"`
+	TabUrl						string			`json:"tabUrl,omitempty"`
 	RemovableMediaVendor		string			`json:"removableMediaVendor,omitempty"`
 	RemovableMediaName			string			`json:"removableMediaName,omitempty"`
 	RemovableMediaSerialNumber	string			`json:"removableMediaSerialNumber,omitempty"`
@@ -63,7 +65,7 @@ type FileEvent struct {
 }
 
 //Currently recognized csv headers
-var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination"}
+var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination"}
 
 //Structs of Crashplan FFS API Authentication Token Return
 type AuthData struct {
@@ -194,15 +196,17 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	exposureString := csvLine[31] //Convert to slice below
 	processOwner := csvLine[32]
 	processName := csvLine[33]
-	removableMediaVendor := csvLine[34]
-	removableMediaName := csvLine[35]
-	removableMediaSerialNumber := csvLine[36]
-	removableMediaCapacityString := csvLine[37] //Converted to int below
-	removableMediaBusType := csvLine[38]
-	removableMediaMediaName := csvLine[39]
-	removableMediaVolumeName := csvLine[40]
-	removableMediaPartitionId := csvLine[41]
-	syncDestination := csvLine[42]
+	tabWindowTitle := csvLine[34]
+	tabUrl := csvLine[35]
+	removableMediaVendor := csvLine[36]
+	removableMediaName := csvLine[37]
+	removableMediaSerialNumber := csvLine[38]
+	removableMediaCapacityString := csvLine[39] //Converted to int below
+	removableMediaBusType := csvLine[40]
+	removableMediaMediaName := csvLine[41]
+	removableMediaVolumeName := csvLine[42]
+	removableMediaPartitionId := csvLine[43]
+	syncDestination := csvLine[44]
 
 
 	//Set err
@@ -365,6 +369,8 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		Exposure:                   exposure,
 		ProcessOwner:               processOwner,
 		ProcessName:                processName,
+		TabWindowTitle:				tabWindowTitle,
+		TabUrl:						tabUrl,
 		RemovableMediaVendor:       removableMediaVendor,
 		RemovableMediaName:         removableMediaName,
 		RemovableMediaSerialNumber: removableMediaSerialNumber,

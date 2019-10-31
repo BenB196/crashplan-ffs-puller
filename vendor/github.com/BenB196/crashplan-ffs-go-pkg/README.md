@@ -132,6 +132,8 @@ FileEvent
     Exposure                    []string        (potentially empty)
     ProcessOwner                string	        (potentially empty)
     ProcessName                 string	        (potentially empty)
+    TabWindowTitle              string          (potentially empty)
+    TabUrl                      string          (potentially empty)
     RemovableMediaVendor        string	        (potentially empty)
     RemovableMediaName          string	        (potentially empty)
     RemovableMediaSerialNumber  string	        (potentially empty)
