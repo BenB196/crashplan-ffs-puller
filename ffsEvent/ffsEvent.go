@@ -381,6 +381,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					process := eventOutput.Process{
 						ProcessOwner: ffsEvent.ProcessOwner,
 						ProcessName:  ffsEvent.ProcessName,
+						TabWindowTitle: ffsEvent.TabWindowTitle,
+						TabUrl: ffsEvent.TabUrl,
 					}
 
 					removableMedia := eventOutput.RemovableMedia{
@@ -529,6 +531,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Exposure:                   ffsEvent.Exposure,
 						ProcessOwner:               ffsEvent.ProcessOwner,
 						ProcessName:                ffsEvent.ProcessName,
+						TabWindowTitle:				ffsEvent.TabWindowTitle,
+						TabUrl:						ffsEvent.TabUrl,
 						RemovableMediaVendor:       ffsEvent.RemovableMediaVendor,
 						RemovableMediaName:         ffsEvent.RemovableMediaName,
 						RemovableMediaSerialNumber: ffsEvent.RemovableMediaSerialNumber,

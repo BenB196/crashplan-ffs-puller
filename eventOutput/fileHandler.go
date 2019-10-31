@@ -60,6 +60,8 @@ type SemiElasticFileEvent struct {
 	Exposure					[]string		`json:"exposure,omitempty"`
 	ProcessOwner				string			`json:"process_owner,omitempty"`
 	ProcessName					string			`json:"process_name,omitempty"`
+	TabWindowTitle				string			`json:"tab_window_title,omitempty"`
+	TabUrl						string			`json:"tab_url,omitempty"`
 	RemovableMediaVendor		string			`json:"removable_media_vendor,omitempty"`
 	RemovableMediaName			string			`json:"removable_media_name,omitempty"`
 	RemovableMediaSerialNumber	string			`json:"removable_media_serial_number,omitempty"`
@@ -137,6 +139,8 @@ type Cloud struct {
 type Process struct {
 	ProcessOwner				string			`json:"owner,omitempty"`
 	ProcessName					string			`json:"name,omitempty"`
+	TabWindowTitle				string			`json:"tab_window_title,omitempty"`
+	TabUrl						string			`json:"tab_url,omitempty"`
 }
 
 type RemovableMedia struct {
