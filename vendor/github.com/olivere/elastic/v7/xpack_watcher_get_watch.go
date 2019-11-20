@@ -168,7 +168,7 @@ type XPackWatchStatus struct {
 	LastChecked      *time.Time                         `json:"last_checked,omitempty"`
 	LastMetCondition *time.Time                         `json:"last_met_condition,omitempty"`
 	Actions          map[string]*XPackWatchActionStatus `json:"actions,omitempty"`
-	ExecutionState   *XPackWatchActionExecutionState    `json:"execution_state,omitempty"`
+	ExecutionState   string                             `json:"execution_state,omitempty"`
 	Headers          map[string]string                  `json:"headers,omitempty"`
 	Version          int64                              `json:"version"`
 }
@@ -179,10 +179,10 @@ type XPackWatchExecutionState struct {
 }
 
 type XPackWatchActionStatus struct {
-	AckStatus               *XPackWatchActionAckStatus `json:"ack"`
-	LastExecution           *time.Time                 `json:"last_execution,omitempty"`
-	LastSuccessfulExecution *time.Time                 `json:"last_successful_execution,omitempty"`
-	LastThrottle            *XPackWatchActionThrottle  `json:"last_throttle,omitempty"`
+	AckStatus               *XPackWatchActionAckStatus      `json:"ack"`
+	LastExecution           *XPackWatchActionExecutionState `json:"last_execution,omitempty"`
+	LastSuccessfulExecution *XPackWatchActionExecutionState `json:"last_successful_execution,omitempty"`
+	LastThrottle            *XPackWatchActionThrottle       `json:"last_throttle,omitempty"`
 }
 
 type XPackWatchActionAckStatus struct {

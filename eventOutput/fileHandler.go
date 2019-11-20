@@ -71,6 +71,11 @@ type SemiElasticFileEvent struct {
 	RemovableMediaVolumeName	string			`json:"removable_media_volume_name,omitempty"`
 	RemovableMediaPartitionId	string			`json:"removable_media_partition_id,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
+	EmailDLPPolicyName			string			`json:"email_dlp_policy_name,omitempty"`
+	EmailDLPSubject				string			`json:"email_dlp_subject,omitempty"`
+	EmailDLPSender				string			`json:"email_dlp_sender,omitempty"`
+	EmailDLPFrom				string			`json:"email_dlp_from,omitempty"`
+	EmailDLPRecipients			[]string		`json:"email_dlp_recipients,omitempty"`
 }
 
 type ElasticFFSEvent struct {
@@ -88,6 +93,7 @@ type ElasticFileEvent struct {
 	Process						*Process		`json:"process,omitempty"`
 	RemovableMedia				*RemovableMedia	`json:"removable_media,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
+	Email						string			`json:"email,omitempty"`
 }
 
 type Event struct {
@@ -152,6 +158,14 @@ type RemovableMedia struct {
 	RemovableMediaMediaName		string			`json:"media_name,omitempty"`
 	RemovableMediaVolumeName	string			`json:"volume_name,omitempty"`
 	RemovableMediaPartitionId	string			`json:"partition_id,omitempty"`
+}
+
+type Email struct {
+	DLPPolicyName			string			`json:"dlp_policy_name,omitempty"`
+	DLPSubject				string			`json:"dlp_subject,omitempty"`
+	DLPSender				string			`json:"dlp_sender,omitempty"`
+	DLPFrom					string			`json:"dlp_from,omitempty"`
+	DLPRecipients			[]string		`json:"dlp_recipients,omitempty"`
 }
 
 type Geoip struct {
