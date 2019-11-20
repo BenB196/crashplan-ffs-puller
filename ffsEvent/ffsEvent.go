@@ -196,7 +196,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
 		//check if recoverable errors are thrown
-		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && (strings.Contains(err.Error(),"INTERNAL_ERROR") || strings.Contains(err.Error(),"PROTOCOL_ERROR"))) || strings.Contains(err.Error(),"read: connection reset by peer") || strings.Contains(err.Error(),"POST: 400 Bad Request") || strings.Contains(err.Error(),"unexpected EOF") || strings.Contains(err.Error(),"POST: 504 Gateway Timeout") {
+		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && (strings.Contains(err.Error(),"INTERNAL_ERROR") || strings.Contains(err.Error(),"PROTOCOL_ERROR"))) || strings.Contains(err.Error(),"read: connection reset by peer") || strings.Contains(err.Error(),"POST: 400 Bad Request") || strings.Contains(err.Error(),"unexpected EOF") || strings.Contains(err.Error(),"POST: 504 Gateway Timeout") || (strings.Contains(err.Error(),"record on line ") && strings.Contains(err.Error(),": wrong number of fields")) {
 			//allow for 10 retries before killing to save resource overload.
 			log.Println("Attempting to recover from error: " + err.Error() + ". Retry number: " + strconv.Itoa(retryCount))
 			if retryCount <= 10 {
@@ -396,6 +396,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
 					}
 
+					email := eventOutput.Email{
+						DLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						DLPSubject:				ffsEvent.EmailDLPSubject,
+						DLPSender:				ffsEvent.EmailDLPSender,
+						DLPFrom:				ffsEvent.EmailDLPSender,
+						DLPRecipients:			ffsEvent.EmailDLPRecipients,
+					}
+
 					elasticFileEvent := eventOutput.ElasticFileEvent{
 						Event:						&event,
 						Insertion:         			&insertion,
@@ -406,6 +414,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Process:					&process,
 						RemovableMedia:				&removableMedia,
 						SyncDestination:            ffsEvent.SyncDestination,
+						Email:						&email,
 					}
 
 					var elasticFFSEvent eventOutput.ElasticFFSEvent
@@ -542,6 +551,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
 						SyncDestination:            ffsEvent.SyncDestination,
+						EmailDLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						EmailDLPSubject:			ffsEvent.EmailDLPSubject,
+						EmailDLPSender:				ffsEvent.EmailDLPSender,
+						EmailDLPFrom:				ffsEvent.EmailDLPSender,
+						EmailDLPRecipients:			ffsEvent.EmailDLPRecipients,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent

@@ -62,10 +62,15 @@ type FileEvent struct {
 	RemovableMediaVolumeName	string			`json:"removableMediaVolumeName,omitempty"`
 	RemovableMediaPartitionId	string			`json:"removableMediaPartitionId,omitempty"`
 	SyncDestination				string			`json:"syncDestination,omitempty"`
+	EmailDLPPolicyName			string			`json:"emailDLPPolicyName,omitempty"`
+	EmailDLPSubject				string			`json:"emailDLPSubject,omitempty"`
+	EmailDLPSender				string			`json:"emailDLPSender,omitempty"`
+	EmailDLPFrom				string			`json:"emailDLPFrom,omitempty"`
+	EmailDLPRecipients			[]string		`json:"emailDLPRecipients,omitempty"`
 }
 
 //Currently recognized csv headers
-var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination"}
+var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Name", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients"}
 
 //Structs of Crashplan FFS API Authentication Token Return
 type AuthData struct {
@@ -207,7 +212,11 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	removableMediaVolumeName := csvLine[42]
 	removableMediaPartitionId := csvLine[43]
 	syncDestination := csvLine[44]
-
+	emailDLPPolicyName := csvLine[45]
+	emailDLPSubject := csvLine[46]
+	emailDLPSender := csvLine[47]
+	emailDLPFrom := csvLine[48]
+	emailDLPRecipientsString := csvLine[49] //Convert to slice below
 
 	//Set err
 	var err error
@@ -318,6 +327,13 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		exposure = strings.Split(exposureString,",")
 	}
 
+	//Convert emailDLPRecipients to string slice
+	var emailDLPRecipients []string
+	if emailDLPRecipientsString != "" {
+		emailDLPRecipientsString := strings.Replace(emailDLPRecipientsString, "\n","",-1)
+		exposure = strings.Split(emailDLPRecipientsString,",")
+	}
+
 	//Convert removableMediaCapacity to int
 	var removableMediaCapacity int
 	if removableMediaCapacityString != "" {
@@ -380,6 +396,11 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		RemovableMediaVolumeName:	removableMediaVolumeName,
 		RemovableMediaPartitionId:	removableMediaPartitionId,
 		SyncDestination:            syncDestination,
+		EmailDLPPolicyName:			emailDLPPolicyName,
+		EmailDLPSubject:			emailDLPSubject,
+		EmailDLPSender:				emailDLPSender,
+		EmailDLPFrom:				emailDLPFrom,
+		EmailDLPRecipients:			emailDLPRecipients,
 	}
 
 	//set eventTimestamp to nil if empty string
