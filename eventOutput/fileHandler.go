@@ -93,7 +93,7 @@ type ElasticFileEvent struct {
 	Process						*Process		`json:"process,omitempty"`
 	RemovableMedia				*RemovableMedia	`json:"removable_media,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
-	Email						string			`json:"email,omitempty"`
+	Email						*Email			`json:"email,omitempty"`
 }
 
 type Event struct {

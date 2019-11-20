@@ -396,6 +396,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
 					}
 
+					email := eventOutput.Email{
+						DLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						DLPSubject:				ffsEvent.EmailDLPSubject,
+						DLPSender:				ffsEvent.EmailDLPSender,
+						DLPFrom:				ffsEvent.EmailDLPSender,
+						DLPRecipients:			ffsEvent.EmailDLPRecipients,
+					}
+
 					elasticFileEvent := eventOutput.ElasticFileEvent{
 						Event:						&event,
 						Insertion:         			&insertion,
@@ -406,6 +414,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Process:					&process,
 						RemovableMedia:				&removableMedia,
 						SyncDestination:            ffsEvent.SyncDestination,
+						Email:						&email,
 					}
 
 					var elasticFFSEvent eventOutput.ElasticFFSEvent
@@ -542,6 +551,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
 						SyncDestination:            ffsEvent.SyncDestination,
+						EmailDLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						EmailDLPSubject:			ffsEvent.EmailDLPSubject,
+						EmailDLPSender:				ffsEvent.EmailDLPSender,
+						EmailDLPFrom:				ffsEvent.EmailDLPSender,
+						EmailDLPRecipients:			ffsEvent.EmailDLPRecipients,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent
