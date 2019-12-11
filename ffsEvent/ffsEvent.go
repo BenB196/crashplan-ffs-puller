@@ -397,7 +397,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 
 					email := eventOutput.Email{
-						DLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						DLPPolicyNames:			ffsEvent.EmailDLPPolicyNames,
 						DLPSubject:				ffsEvent.EmailDLPSubject,
 						DLPSender:				ffsEvent.EmailDLPSender,
 						DLPFrom:				ffsEvent.EmailDLPSender,
@@ -551,7 +551,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
 						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
 						SyncDestination:            ffsEvent.SyncDestination,
-						EmailDLPPolicyName:			ffsEvent.EmailDLPPolicyName,
+						EmailDLPPolicyNames:		ffsEvent.EmailDLPPolicyNames,
 						EmailDLPSubject:			ffsEvent.EmailDLPSubject,
 						EmailDLPSender:				ffsEvent.EmailDLPSender,
 						EmailDLPFrom:				ffsEvent.EmailDLPSender,

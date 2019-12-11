@@ -62,7 +62,7 @@ type FileEvent struct {
 	RemovableMediaVolumeName	string			`json:"removableMediaVolumeName,omitempty"`
 	RemovableMediaPartitionId	string			`json:"removableMediaPartitionId,omitempty"`
 	SyncDestination				string			`json:"syncDestination,omitempty"`
-	EmailDLPPolicyName			string			`json:"emailDLPPolicyName,omitempty"`
+	EmailDLPPolicyNames			[]string		`json:"emailDLPPolicyNames,omitempty"`
 	EmailDLPSubject				string			`json:"emailDLPSubject,omitempty"`
 	EmailDLPSender				string			`json:"emailDLPSender,omitempty"`
 	EmailDLPFrom				string			`json:"emailDLPFrom,omitempty"`
@@ -70,7 +70,7 @@ type FileEvent struct {
 }
 
 //Currently recognized csv headers
-var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Name", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients"}
+var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Names", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients"}
 
 //Structs of Crashplan FFS API Authentication Token Return
 type AuthData struct {
@@ -212,7 +212,7 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	removableMediaVolumeName := csvLine[42]
 	removableMediaPartitionId := csvLine[43]
 	syncDestination := csvLine[44]
-	emailDLPPolicyName := csvLine[45]
+	emailDLPPolicyNamesString := csvLine[45] //Convert to slice below
 	emailDLPSubject := csvLine[46]
 	emailDLPSender := csvLine[47]
 	emailDLPFrom := csvLine[48]
@@ -331,7 +331,14 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	var emailDLPRecipients []string
 	if emailDLPRecipientsString != "" {
 		emailDLPRecipientsString := strings.Replace(emailDLPRecipientsString, "\n","",-1)
-		exposure = strings.Split(emailDLPRecipientsString,",")
+		emailDLPRecipients = strings.Split(emailDLPRecipientsString,",")
+	}
+
+	//Convert emailDLPPolicyNames to string slice
+	var emailDLPPolicyNames []string
+	if emailDLPPolicyNamesString != "" {
+		emailDLPPolicyNamesString := strings.Replace(emailDLPPolicyNamesString, "\n","",-1)
+		emailDLPPolicyNames = strings.Split(emailDLPPolicyNamesString,",")
 	}
 
 	//Convert removableMediaCapacity to int
@@ -396,7 +403,7 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		RemovableMediaVolumeName:	removableMediaVolumeName,
 		RemovableMediaPartitionId:	removableMediaPartitionId,
 		SyncDestination:            syncDestination,
-		EmailDLPPolicyName:			emailDLPPolicyName,
+		EmailDLPPolicyNames:		emailDLPPolicyNames,
 		EmailDLPSubject:			emailDLPSubject,
 		EmailDLPSender:				emailDLPSender,
 		EmailDLPFrom:				emailDLPFrom,
