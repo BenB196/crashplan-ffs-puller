@@ -71,7 +71,7 @@ type SemiElasticFileEvent struct {
 	RemovableMediaVolumeName	string			`json:"removable_media_volume_name,omitempty"`
 	RemovableMediaPartitionId	string			`json:"removable_media_partition_id,omitempty"`
 	SyncDestination				string			`json:"sync_destination,omitempty"`
-	EmailDLPPolicyName			string			`json:"email_dlp_policy_name,omitempty"`
+	EmailDLPPolicyNames			[]string		`json:"email_dlp_policy_names,omitempty"`
 	EmailDLPSubject				string			`json:"email_dlp_subject,omitempty"`
 	EmailDLPSender				string			`json:"email_dlp_sender,omitempty"`
 	EmailDLPFrom				string			`json:"email_dlp_from,omitempty"`
@@ -161,7 +161,7 @@ type RemovableMedia struct {
 }
 
 type Email struct {
-	DLPPolicyName			string			`json:"dlp_policy_name,omitempty"`
+	DLPPolicyNames			[]string		`json:"dlp_policy_names,omitempty"`
 	DLPSubject				string			`json:"dlp_subject,omitempty"`
 	DLPSender				string			`json:"dlp_sender,omitempty"`
 	DLPFrom					string			`json:"dlp_from,omitempty"`

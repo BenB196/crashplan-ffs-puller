@@ -20,6 +20,8 @@ github.com/BenB196/crashplan-ffs-go-pkg v0.0.9 h1:PixXoS8huwmsnfF1pRWqUufjeRDJx0
 github.com/BenB196/crashplan-ffs-go-pkg v0.0.9/go.mod h1:oBwZ5/KfaNokjvI2Hn2e6c5801ir11FOCq4lG5PcniE=
 github.com/BenB196/crashplan-ffs-go-pkg v0.1.0 h1:Mlj+WrZHGBpyq8ArXUeP50rRSEgNZ3QRWQKLcja7CCM=
 github.com/BenB196/crashplan-ffs-go-pkg v0.1.0/go.mod h1:oBwZ5/KfaNokjvI2Hn2e6c5801ir11FOCq4lG5PcniE=
+github.com/BenB196/crashplan-ffs-go-pkg v0.1.1 h1:uUbPTPLoROfGd1B03NUsPdlquR8qN4M1C+IlCug5Wec=
+github.com/BenB196/crashplan-ffs-go-pkg v0.1.1/go.mod h1:oBwZ5/KfaNokjvI2Hn2e6c5801ir11FOCq4lG5PcniE=
 github.com/BenB196/ip-api-go-pkg v0.0.3 h1:FWmM7FkhT1N55jd4jPW7W9LVOQrG89DLlrgwMb5fosw=
 github.com/BenB196/ip-api-go-pkg v0.0.3/go.mod h1:ccPdkBNnzf/uvuk7qXgEO06TCS/qILNJQP/KETQG4jU=
 github.com/BenB196/ip-api-go-pkg v0.0.4 h1:BbWELxooG6l2gaXQ4i4gm6NsyikdbhalF+TKg08gDPQ=
