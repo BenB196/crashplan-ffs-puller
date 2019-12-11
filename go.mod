@@ -1,6 +1,6 @@
 module github.com/BenB196/crashplan-ffs-puller
 
-go 1.12
+go 1.13.5
 
 require (
 	github.com/BenB196/crashplan-ffs-go-pkg v0.1.1
