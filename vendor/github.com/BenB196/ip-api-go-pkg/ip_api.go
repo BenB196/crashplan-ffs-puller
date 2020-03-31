@@ -17,29 +17,30 @@ const FreeAPIURI = "http://ip-api.com/"
 const ProAPIURI = "https://pro.ip-api.com/"
 
 type Location struct {
-	Status 			string	`json:"status,omitempty"`
-	Message			string	`json:"message,omitempty"`
-	Continent		string	`json:"continent,omitempty"`
-	ContinentCode	string	`json:"continentCode,omitempty"`
-	Country			string	`json:"country,omitempty"`
-	CountryCode		string	`json:"countryCode,omitempty"`
-	Region			string	`json:"region,omitempty"`
-	RegionName		string	`json:"regionName,omitempty"`
-	City			string	`json:"city,omitempty"`
-	District		string	`json:"district,omitempty"`
-	ZIP				string	`json:"zip,omitempty"`
-	Lat				float32	`json:"lat,omitempty"`
-	Lon				float32	`json:"lon,omitempty"`
-	Timezone		string	`json:"timezone,omitempty"`
-	Currency		string	`json:"currency,omitempty"`
-	ISP				string	`json:"isp,omitempty"`
-	Org				string	`json:"org,omitempty"`
-	AS				string	`json:"as,omitempty"`
-	ASName			string	`json:"asname,omitempty"`
-	Reverse			string	`json:"reverse,omitempty"`
-	Mobile			bool	`json:"mobile,omitempty"`
-	Proxy			bool	`json:"proxy,omitempty"`
-	Query			string	`json:"query,omitempty"`
+	Status 			string		`json:"status,omitempty"`
+	Message			string		`json:"message,omitempty"`
+	Continent		string		`json:"continent,omitempty"`
+	ContinentCode	string		`json:"continentCode,omitempty"`
+	Country			string		`json:"country,omitempty"`
+	CountryCode		string		`json:"countryCode,omitempty"`
+	Region			string		`json:"region,omitempty"`
+	RegionName		string		`json:"regionName,omitempty"`
+	City			string		`json:"city,omitempty"`
+	District		string		`json:"district,omitempty"`
+	ZIP				string		`json:"zip,omitempty"`
+	Lat				*float32	`json:"lat,omitempty"`
+	Lon				*float32	`json:"lon,omitempty"`
+	Timezone		string		`json:"timezone,omitempty"`
+	Currency		string		`json:"currency,omitempty"`
+	ISP				string		`json:"isp,omitempty"`
+	Org				string		`json:"org,omitempty"`
+	AS				string		`json:"as,omitempty"`
+	ASName			string		`json:"asname,omitempty"`
+	Reverse			string		`json:"reverse,omitempty"`
+	Mobile			*bool		`json:"mobile,omitempty"`
+	Proxy			*bool		`json:"proxy,omitempty"`
+	Hosting			*bool		`json:"hosting,omitempty"`
+	Query			string		`json:"query,omitempty"`
 }
 
 type Query struct {
@@ -55,10 +56,14 @@ type QueryIP struct {
 }
 
 //Execute a single query (queries field should only contain 1 value
-func SingleQuery(query Query, apiKey string, baseURL string) (Location, error) {
+func SingleQuery(query Query, apiKey string, baseURL string, debugging bool) (*Location, error) {
 	//Make sure that there is only 1 query value
 	if len(query.Queries) != 1 {
-		return Location{}, errors.New("error: only 1 query can be passed to single query api")
+		return nil, errors.New("error: only 1 query can be passed to single query api")
+	}
+
+	if debugging {
+		log.Println(query)
 	}
 
 	//Build URI
@@ -68,7 +73,7 @@ func SingleQuery(query Query, apiKey string, baseURL string) (Location, error) {
 	req, err := http.NewRequest("GET",uri,nil)
 
 	if err != nil {
-		return Location{}, err
+		return nil, err
 	}
 
 	//Set request headers
@@ -77,7 +82,7 @@ func SingleQuery(query Query, apiKey string, baseURL string) (Location, error) {
 	resp, err := http.DefaultClient.Do(req)
 
 	if err != nil {
-		return Location{}, err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
@@ -85,14 +90,14 @@ func SingleQuery(query Query, apiKey string, baseURL string) (Location, error) {
 	//Check if invalid api key
 	if resp.StatusCode == 403 {
 		if strings.Contains(uri, "?key=") {
-			return Location{}, errors.New("error: invalid api key")
+			return nil, errors.New("error: invalid api key")
 		} else {
-			return Location{}, errors.New("error: exceeded api calls per minute, you need to un-blacklist yourself")
+			return nil, errors.New("error: exceeded api calls per minute, you need to un-blacklist yourself")
 		}
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return Location{}, errors.New("error querying ip api: " + resp.Status + " " + strconv.Itoa(resp.StatusCode))
+		return nil, errors.New("error querying ip api: " + resp.Status + " " + strconv.Itoa(resp.StatusCode))
 	}
 
 	var location Location
@@ -100,14 +105,14 @@ func SingleQuery(query Query, apiKey string, baseURL string) (Location, error) {
 	err = json.NewDecoder(resp.Body).Decode(&location)
 
 	if err != nil {
-		return Location{}, err
+		return nil, err
 	}
 
-	return location,nil
+	return &location, nil
 }
 
 //Execute a batch query (queries field should contain 1 or more values
-func BatchQuery(query Query, apiKey string, baseURL string) ([]Location, error) {
+func BatchQuery(query Query, apiKey string, baseURL string, debugging bool) ([]Location, error) {
 	//Make sure that there are 1 or more query values
 	if len(query.Queries) < 1 {
 		return nil, errors.New("error: no queries passed to batch query")
@@ -123,7 +128,9 @@ func BatchQuery(query Query, apiKey string, baseURL string) ([]Location, error) 
 		return nil, err
 	}
 
-	log.Println(string(queries))
+	if debugging {
+		log.Println(string(queries))
+	}
 
 	//Execute Query
 	req, err := http.NewRequest("POST",uri,bytes.NewReader(queries))
@@ -234,7 +241,7 @@ func buildLangString(lang string) string {
 	return "lang=" + lang
 }
 
-var AllowedAPIFields = []string{"status","message","continent","continentCode","country","countryCode","region","regionName","city","district","zip","lat","lon","timezone","isp","org","as","asname","reverse","mobile","proxy","query"}
+var AllowedAPIFields = []string{"status","message","continent","continentCode","country","countryCode","region","regionName","city","district","zip","lat","lon","timezone","isp","org","as","asname","reverse","mobile","proxy","hosting","query"}
 
 var AllowedLangs = []string{"en","de","es","pt-BR","fr","ja","zh-CN","ru"}
 

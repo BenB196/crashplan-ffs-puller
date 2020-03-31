@@ -17,66 +17,72 @@ import (
 
 //The main body of a file event record
 type FileEvent struct {
-	EventId						string			`json:"eventId"`
-	EventType					string			`json:"eventType"`
-	EventTimestamp				*time.Time		`json:"eventTimestamp,omitempty"`
-	InsertionTimestamp			*time.Time		`json:"insertionTimestamp,omitempty"`
-	FilePath					string			`json:"filePath,omitempty"`
-	FileName					string			`json:"fileName"`
-	FileType					string			`json:"fileType,omitempty"`
-	FileCategory				string			`json:"fileCategory,omitempty"`
-	FileSize					*int			`json:"fileSize"`
-	FileOwner					[]string		`json:"fileOwner,omitempty"`  //Array of owners
-	Md5Checksum					string			`json:"md5Checksum,omitempty"`
-	Sha256Checksum				string			`json:"sha256Checksum,omitempty"`
-	CreatedTimestamp			*time.Time		`json:"createdTimestamp,omitempty"`
-	ModifyTimestamp				*time.Time		`json:"modifyTimestamp,omitempty"`
-	DeviceUsername				string			`json:"deviceUsername,omitempty"`
-	DeviceUid					string			`json:"deviceUid,omitempty"`
-	UserUid						string			`json:"userUid,omitempty"`
-	OsHostname					string			`json:"osHostname,omitempty"`
-	DomainName					string			`json:"domainName,omitempty"`
-	PublicIpAddress				string			`json:"publicIpAddress,omitempty"`
-	PrivateIpAddresses			[]string		`json:"privateIpAddresses,omitempty"` //Array of IP address strings
-	Actor						string			`json:"actor,omitempty"`
-	DirectoryId					[]string		`json:"directoryId,omitempty"` //An array of something, I am not sure
-	Source						string			`json:"source,omitempty"`
-	Url							string			`json:"url,omitempty"`
-	Shared						string			`json:"shared,omitempty"`
-	SharedWith					[]string		`json:"sharedWith,omitempty"` //An array of strings (Mainly Email Addresses)
-	SharingTypeAdded			[]string		`json:"sharingTypeAdded,omitempty"`
-	CloudDriveId				string			`json:"cloudDriveId,omitempty"`
-	DetectionSourceAlias		string			`json:"detectionSourceAlias,omitempty"`
-	FileId						string			`json:"fileId,omitempty"`
-	Exposure					[]string		`json:"exposure,omitempty"`
-	ProcessOwner				string			`json:"processOwner,omitempty"`
-	ProcessName					string			`json:"processName,omitempty"`
-	TabWindowTitle				string			`json:"tabWindowTitle,omitempty"`
-	TabUrl						string			`json:"tabUrl,omitempty"`
-	RemovableMediaVendor		string			`json:"removableMediaVendor,omitempty"`
-	RemovableMediaName			string			`json:"removableMediaName,omitempty"`
-	RemovableMediaSerialNumber	string			`json:"removableMediaSerialNumber,omitempty"`
-	RemovableMediaCapacity		*int			`json:"removableMediaCapacity,omitempty"`
-	RemovableMediaBusType		string			`json:"removableMediaBusType,omitempty"`
-	RemovableMediaMediaName		string			`json:"removableMediaMediaName,omitempty"`
-	RemovableMediaVolumeName	string			`json:"removableMediaVolumeName,omitempty"`
-	RemovableMediaPartitionId	string			`json:"removableMediaPartitionId,omitempty"`
-	SyncDestination				string			`json:"syncDestination,omitempty"`
-	EmailDLPPolicyNames			[]string		`json:"emailDLPPolicyNames,omitempty"`
-	EmailDLPSubject				string			`json:"emailDLPSubject,omitempty"`
-	EmailDLPSender				string			`json:"emailDLPSender,omitempty"`
-	EmailDLPFrom				string			`json:"emailDLPFrom,omitempty"`
-	EmailDLPRecipients			[]string		`json:"emailDLPRecipients,omitempty"`
+	EventId                     string     `json:"eventId"`
+	EventType                   string     `json:"eventType"`
+	EventTimestamp              *time.Time `json:"eventTimestamp,omitempty"`
+	InsertionTimestamp          *time.Time `json:"insertionTimestamp,omitempty"`
+	FilePath                    string     `json:"filePath,omitempty"`
+	FileName                    string     `json:"fileName"`
+	FileType                    string     `json:"fileType,omitempty"`
+	FileCategory                string     `json:"fileCategory,omitempty"`
+	IdentifiedExtensionCategory string     `json:"identifiedExtensionCategory,omitempty"`
+	CurrentExtensionCategory    string     `json:"currentExtensionCategory,omitempty"`
+	FileSize                    *int       `json:"fileSize"`
+	FileOwner                   []string   `json:"fileOwner,omitempty"` //Array of owners
+	Md5Checksum                 string     `json:"md5Checksum,omitempty"`
+	Sha256Checksum              string     `json:"sha256Checksum,omitempty"`
+	CreatedTimestamp            *time.Time `json:"createdTimestamp,omitempty"`
+	ModifyTimestamp             *time.Time `json:"modifyTimestamp,omitempty"`
+	DeviceUsername              string     `json:"deviceUsername,omitempty"`
+	DeviceUid                   string     `json:"deviceUid,omitempty"`
+	UserUid                     string     `json:"userUid,omitempty"`
+	OsHostname                  string     `json:"osHostname,omitempty"`
+	DomainName                  string     `json:"domainName,omitempty"`
+	PublicIpAddress             string     `json:"publicIpAddress,omitempty"`
+	PrivateIpAddresses          []string   `json:"privateIpAddresses,omitempty"` //Array of IP address strings
+	Actor                       string     `json:"actor,omitempty"`
+	DirectoryId                 []string   `json:"directoryId,omitempty"` //An array of something, I am not sure
+	Source                      string     `json:"source,omitempty"`
+	Url                         string     `json:"url,omitempty"`
+	Shared                      string     `json:"shared,omitempty"`
+	SharedWith                  []string   `json:"sharedWith,omitempty"` //An array of strings (Mainly Email Addresses)
+	SharingTypeAdded            []string   `json:"sharingTypeAdded,omitempty"`
+	CloudDriveId                string     `json:"cloudDriveId,omitempty"`
+	DetectionSourceAlias        string     `json:"detectionSourceAlias,omitempty"`
+	FileId                      string     `json:"fileId,omitempty"`
+	Exposure                    []string   `json:"exposure,omitempty"`
+	ProcessOwner                string     `json:"processOwner,omitempty"`
+	ProcessName                 string     `json:"processName,omitempty"`
+	TabWindowTitle              string     `json:"tabWindowTitle,omitempty"`
+	TabUrl                      string     `json:"tabUrl,omitempty"`
+	RemovableMediaVendor        string     `json:"removableMediaVendor,omitempty"`
+	RemovableMediaName          string     `json:"removableMediaName,omitempty"`
+	RemovableMediaSerialNumber  string     `json:"removableMediaSerialNumber,omitempty"`
+	RemovableMediaCapacity      *int       `json:"removableMediaCapacity,omitempty"`
+	RemovableMediaBusType       string     `json:"removableMediaBusType,omitempty"`
+	RemovableMediaMediaName     string     `json:"removableMediaMediaName,omitempty"`
+	RemovableMediaVolumeName    string     `json:"removableMediaVolumeName,omitempty"`
+	RemovableMediaPartitionId   string     `json:"removableMediaPartitionId,omitempty"`
+	SyncDestination             string     `json:"syncDestination,omitempty"`
+	EmailDLPPolicyNames         []string   `json:"emailDLPPolicyNames,omitempty"`
+	EmailDLPSubject             string     `json:"emailDLPSubject,omitempty"`
+	EmailDLPSender              string     `json:"emailDLPSender,omitempty"`
+	EmailDLPFrom                string     `json:"emailDLPFrom,omitempty"`
+	EmailDLPRecipients          []string   `json:"emailDLPRecipients,omitempty"`
+	OutsideActiveHours          string     `json:"outsideActiveHours,omitempty"`
+	IdentifiedExtensionMIMEType string     `json:"identifiedExtensionMimeType,omitempty"`
+	CurrentExtensionMIMEType    string     `json:"currentExtensionMimeType,omitempty"`
+	SuspiciousFileTypeMismatch  string     `json:"suspiciousFileTypeMismatch,omitempty"`
 }
 
 //Currently recognized csv headers
-var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Names", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients"}
+var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "Identified Extension Category", "Current Extension Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Names", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients", "Outside Active Hours", "Identified Extension MIME Type", "Current Extension MIME Type", "Suspicious File Type Mismatch"}
 
 //Structs of Crashplan FFS API Authentication Token Return
 type AuthData struct {
-	Data 		AuthToken 	`json:"data"`
-	Error       string 		`json:"error,omitempty"`
-	Warnings    string 		`json:"warnings,omitempty"`
+	Data     AuthToken `json:"data"`
+	Error    string    `json:"error,omitempty"`
+	Warnings string    `json:"warnings,omitempty"`
 }
 type AuthToken struct {
 	V3UserToken string `json:"v3_user_token"`
@@ -84,30 +90,30 @@ type AuthToken struct {
 
 //Structs for FFS Queries
 type Query struct {
-	Groups 			[]Group 	`json:"groups"`
-	GroupClause 	string 		`json:"groupClause,omitempty"`
-	PgNum 			int 		`json:"pgNum,omitempty"`
-	PgSize 			int 		`json:"pgSize,omitempty"`
-	SrtDir 			string 		`json:"srtDir,omitempty"`
-	SrtKey 			string 		`json:"srtKey,omitempty"`
+	Groups      []Group `json:"groups"`
+	GroupClause string  `json:"groupClause,omitempty"`
+	PgNum       int     `json:"pgNum,omitempty"`
+	PgSize      int     `json:"pgSize,omitempty"`
+	SrtDir      string  `json:"srtDir,omitempty"`
+	SrtKey      string  `json:"srtKey,omitempty"`
 }
 
 type Group struct {
-	Filters 		[]Filter 	`json:"filters"`
-	FilterClause 	string 		`json:"filterClause,omitempty"`
+	Filters      []Filter `json:"filters"`
+	FilterClause string   `json:"filterClause,omitempty"`
 }
 
 type Filter struct {
-	Operator 		string 		`json:"operator"`
-	Term 			string 		`json:"term"`
-	Value 			string 		`json:"value"`
+	Operator string `json:"operator"`
+	Term     string `json:"term"`
+	Value    string `json:"value"`
 }
 
 /*
 GetAuthData - Function to get the Authentication data (mainly the authentication token) which will be needed for the rest of the API calls
 The authentication token is good for up to 1 hour before it expires
- */
-func GetAuthData(uri string, username string, password string) (AuthData,error) {
+*/
+func GetAuthData(uri string, username string, password string) (AuthData, error) {
 	//Build HTTP GET request
 	req, err := http.NewRequest("GET", uri, nil)
 
@@ -119,7 +125,7 @@ func GetAuthData(uri string, username string, password string) (AuthData,error) 
 	//Set Basic Auth Header
 	req.SetBasicAuth(username, password)
 	//Set Accept Header
-	req.Header.Set("Accept","application/json")
+	req.Header.Set("Accept", "application/json")
 
 	//Make the HTTP Call
 	resp, err := http.DefaultClient.Do(req)
@@ -143,7 +149,7 @@ func GetAuthData(uri string, username string, password string) (AuthData,error) 
 
 	responseBytes, _ := ioutil.ReadAll(respData)
 
-	if strings.Contains(string(responseBytes),"Service Under Maintenance") {
+	if strings.Contains(string(responseBytes), "Service Under Maintenance") {
 		return AuthData{}, errors.New("error: auth api service is under maintenance")
 	}
 
@@ -164,59 +170,65 @@ func GetAuthData(uri string, username string, password string) (AuthData,error) 
 csvLineToFileEvent - Converts a CSV Line into a File Event Struct
 []string - csv line. DO NOT PASS Line 0 (Headers) if they exist
 This function contains panics in order to prevent messed up CSV parsing
- */
+*/
 func csvLineToFileEvent(csvLine []string) FileEvent {
 	//Convert []string to designated variables
 	eventId := csvLine[0]
 	eventType := csvLine[1]
-	eventTimestampString := csvLine[2] //Converted to time below
+	eventTimestampString := csvLine[2]     //Converted to time below
 	insertionTimestampString := csvLine[3] //Converted to time below
 	filePath := csvLine[4]
 	fileName := csvLine[5]
 	fileType := csvLine[6]
 	fileCategory := csvLine[7]
-	fileSizeString := csvLine[8] //Converted to int below
-	fileOwnerString := csvLine[9] //Converted to slice below
-	md5Checksum := csvLine[10]
-	sha256Checksum := csvLine[11]
-	createdTimestampString := csvLine[12] //Converted to time below
-	modifyTimestampString := csvLine[13] //Converted to time below
-	deviceUserName := csvLine[14]
-	deviceUid := csvLine[15]
-	userUid := csvLine[16]
-	osHostName := csvLine[17]
-	domainName := csvLine[18]
-	publicIpAddress := csvLine[19]
-	privateIpAddressesString := csvLine[20] //Converted to slice below
-	actor := csvLine[21]
-	directoryIdString := csvLine[22] //Converted to slice below
-	source := csvLine[23]
-	url := csvLine[24]
-	shared := csvLine[25]
-	sharedWithString := csvLine[26] //Converted to slice below
-	sharingTypeAddedString := csvLine[27] //Converted to slice below
-	cloudDriveId := csvLine[28]
-	detectionSourceAlias := csvLine[29]
-	fileId := csvLine[30]
-	exposureString := csvLine[31] //Convert to slice below
-	processOwner := csvLine[32]
-	processName := csvLine[33]
-	tabWindowTitle := csvLine[34]
-	tabUrl := csvLine[35]
-	removableMediaVendor := csvLine[36]
-	removableMediaName := csvLine[37]
-	removableMediaSerialNumber := csvLine[38]
-	removableMediaCapacityString := csvLine[39] //Converted to int below
-	removableMediaBusType := csvLine[40]
-	removableMediaMediaName := csvLine[41]
-	removableMediaVolumeName := csvLine[42]
-	removableMediaPartitionId := csvLine[43]
-	syncDestination := csvLine[44]
-	emailDLPPolicyNamesString := csvLine[45] //Convert to slice below
-	emailDLPSubject := csvLine[46]
-	emailDLPSender := csvLine[47]
-	emailDLPFrom := csvLine[48]
-	emailDLPRecipientsString := csvLine[49] //Convert to slice below
+	identifiedExtensionCategory := csvLine[8]
+	currentExtensionCategory := csvLine[9]
+	fileSizeString := csvLine[10]  //Converted to int below
+	fileOwnerString := csvLine[11] //Converted to slice below
+	md5Checksum := csvLine[12]
+	sha256Checksum := csvLine[13]
+	createdTimestampString := csvLine[14] //Converted to time below
+	modifyTimestampString := csvLine[15]  //Converted to time below
+	deviceUserName := csvLine[16]
+	deviceUid := csvLine[17]
+	userUid := csvLine[18]
+	osHostName := csvLine[19]
+	domainName := csvLine[20]
+	publicIpAddress := csvLine[21]
+	privateIpAddressesString := csvLine[22] //Converted to slice below
+	actor := csvLine[23]
+	directoryIdString := csvLine[24] //Converted to slice below
+	source := csvLine[25]
+	url := csvLine[26]
+	shared := csvLine[27]
+	sharedWithString := csvLine[28]       //Converted to slice below
+	sharingTypeAddedString := csvLine[29] //Converted to slice below
+	cloudDriveId := csvLine[30]
+	detectionSourceAlias := csvLine[31]
+	fileId := csvLine[32]
+	exposureString := csvLine[33] //Convert to slice below
+	processOwner := csvLine[34]
+	processName := csvLine[35]
+	tabWindowTitle := csvLine[36]
+	tabUrl := csvLine[37]
+	removableMediaVendor := csvLine[38]
+	removableMediaName := csvLine[39]
+	removableMediaSerialNumber := csvLine[40]
+	removableMediaCapacityString := csvLine[41] //Converted to int below
+	removableMediaBusType := csvLine[42]
+	removableMediaMediaName := csvLine[43]
+	removableMediaVolumeName := csvLine[44]
+	removableMediaPartitionId := csvLine[45]
+	syncDestination := csvLine[46]
+	emailDLPPolicyNamesString := csvLine[47] //Convert to slice below
+	emailDLPSubject := csvLine[48]
+	emailDLPSender := csvLine[49]
+	emailDLPFrom := csvLine[50]
+	emailDLPRecipientsString := csvLine[51] //Convert to slice below
+	outsideActiveHours := csvLine[52]
+	identifiedExtensionMimeType := csvLine[53]
+	currentExtensionMimeType := csvLine[54]
+	suspiciousFileTypeMismatch := csvLine[55]
 
 	//Set err
 	var err error
@@ -263,7 +275,7 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	//Convert fileOwnerString to string slice
 	var fileOwner []string
 	if fileOwnerString != "" {
-		fileOwner = strings.Split(fileOwnerString,",")
+		fileOwner = strings.Split(fileOwnerString, ",")
 	}
 
 	//Convert createdTimestamp to time
@@ -295,50 +307,50 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	//Convert privateIpAddresses to string slice
 	var privateIpAddresses []string
 	if privateIpAddressesString != "" {
-		privateIpAddressesString := strings.Replace(privateIpAddressesString, "\n","",-1)
-		privateIpAddresses = strings.Split(privateIpAddressesString,",")
+		privateIpAddressesString := strings.Replace(privateIpAddressesString, "\n", "", -1)
+		privateIpAddresses = strings.Split(privateIpAddressesString, ",")
 	}
 
 	//Convert directoryId to string slice
 	var directoryId []string
 	if directoryIdString != "" {
-		directoryIdString := strings.Replace(directoryIdString, "\n","",-1)
-		directoryId = strings.Split(directoryIdString,",")
+		directoryIdString := strings.Replace(directoryIdString, "\n", "", -1)
+		directoryId = strings.Split(directoryIdString, ",")
 	}
 
 	//Convert sharedWith to string slice
 	var sharedWith []string
 	if sharedWithString != "" {
-		sharedWithString := strings.Replace(sharedWithString, "\n","",-1)
-		sharedWith = strings.Split(sharedWithString,",")
+		sharedWithString := strings.Replace(sharedWithString, "\n", "", -1)
+		sharedWith = strings.Split(sharedWithString, ",")
 	}
 
 	//Convert sharingTypeAdded to string slice
 	var sharingTypeAdded []string
 	if sharingTypeAddedString != "" {
-		sharingTypeAddedString := strings.Replace(sharingTypeAddedString, "\n","",-1)
-		sharingTypeAdded = strings.Split(sharingTypeAddedString,",")
+		sharingTypeAddedString := strings.Replace(sharingTypeAddedString, "\n", "", -1)
+		sharingTypeAdded = strings.Split(sharingTypeAddedString, ",")
 	}
 
 	//Convert exposure to string slice
 	var exposure []string
 	if exposureString != "" {
-		exposureString := strings.Replace(exposureString, "\n","",-1)
-		exposure = strings.Split(exposureString,",")
+		exposureString := strings.Replace(exposureString, "\n", "", -1)
+		exposure = strings.Split(exposureString, ",")
 	}
 
 	//Convert emailDLPRecipients to string slice
 	var emailDLPRecipients []string
 	if emailDLPRecipientsString != "" {
-		emailDLPRecipientsString := strings.Replace(emailDLPRecipientsString, "\n","",-1)
-		emailDLPRecipients = strings.Split(emailDLPRecipientsString,",")
+		emailDLPRecipientsString := strings.Replace(emailDLPRecipientsString, "\n", "", -1)
+		emailDLPRecipients = strings.Split(emailDLPRecipientsString, ",")
 	}
 
 	//Convert emailDLPPolicyNames to string slice
 	var emailDLPPolicyNames []string
 	if emailDLPPolicyNamesString != "" {
-		emailDLPPolicyNamesString := strings.Replace(emailDLPPolicyNamesString, "\n","",-1)
-		emailDLPPolicyNames = strings.Split(emailDLPPolicyNamesString,",")
+		emailDLPPolicyNamesString := strings.Replace(emailDLPPolicyNamesString, "\n", "", -1)
+		emailDLPPolicyNames = strings.Split(emailDLPPolicyNamesString, ",")
 	}
 
 	//Convert removableMediaCapacity to int
@@ -358,56 +370,62 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 
 	//Build FileEvent struct
 	fileEvent = FileEvent{
-		EventId:                    eventId,
-		EventType:                  eventType,
-		EventTimestamp:             &eventTimeStamp,
-		InsertionTimestamp:         &insertionTimestamp,
-		FilePath:                   filePath,
-		FileName:                   fileName,
-		FileType:                   fileType,
-		FileCategory:               fileCategory,
-		FileSize:                   &fileSize,
-		FileOwner:                  fileOwner,
-		Md5Checksum:                md5Checksum,
-		Sha256Checksum:             sha256Checksum,
-		CreatedTimestamp:           &createdTimestamp,
-		ModifyTimestamp:            &modifyTimestamp,
-		DeviceUsername:             deviceUserName,
-		DeviceUid:                  deviceUid,
-		UserUid:                    userUid,
-		OsHostname:                 osHostName,
-		DomainName:                 domainName,
-		PublicIpAddress:            publicIpAddress,
-		PrivateIpAddresses:         privateIpAddresses,
-		Actor:                      actor,
-		DirectoryId:                directoryId,
-		Source:                     source,
-		Url:                        url,
-		Shared:                     shared,
-		SharedWith:                 sharedWith,
-		SharingTypeAdded:           sharingTypeAdded,
-		CloudDriveId:               cloudDriveId,
-		DetectionSourceAlias:       detectionSourceAlias,
-		FileId:                     fileId,
-		Exposure:                   exposure,
-		ProcessOwner:               processOwner,
-		ProcessName:                processName,
-		TabWindowTitle:				tabWindowTitle,
-		TabUrl:						tabUrl,
-		RemovableMediaVendor:       removableMediaVendor,
-		RemovableMediaName:         removableMediaName,
-		RemovableMediaSerialNumber: removableMediaSerialNumber,
-		RemovableMediaCapacity:     &removableMediaCapacity,
-		RemovableMediaBusType:      removableMediaBusType,
-		RemovableMediaMediaName:	removableMediaMediaName,
-		RemovableMediaVolumeName:	removableMediaVolumeName,
-		RemovableMediaPartitionId:	removableMediaPartitionId,
-		SyncDestination:            syncDestination,
-		EmailDLPPolicyNames:		emailDLPPolicyNames,
-		EmailDLPSubject:			emailDLPSubject,
-		EmailDLPSender:				emailDLPSender,
-		EmailDLPFrom:				emailDLPFrom,
-		EmailDLPRecipients:			emailDLPRecipients,
+		EventId:                     eventId,
+		EventType:                   eventType,
+		EventTimestamp:              &eventTimeStamp,
+		InsertionTimestamp:          &insertionTimestamp,
+		FilePath:                    filePath,
+		FileName:                    fileName,
+		FileType:                    fileType,
+		FileCategory:                fileCategory,
+		IdentifiedExtensionCategory: identifiedExtensionCategory,
+		CurrentExtensionCategory:    currentExtensionCategory,
+		FileSize:                    &fileSize,
+		FileOwner:                   fileOwner,
+		Md5Checksum:                 md5Checksum,
+		Sha256Checksum:              sha256Checksum,
+		CreatedTimestamp:            &createdTimestamp,
+		ModifyTimestamp:             &modifyTimestamp,
+		DeviceUsername:              deviceUserName,
+		DeviceUid:                   deviceUid,
+		UserUid:                     userUid,
+		OsHostname:                  osHostName,
+		DomainName:                  domainName,
+		PublicIpAddress:             publicIpAddress,
+		PrivateIpAddresses:          privateIpAddresses,
+		Actor:                       actor,
+		DirectoryId:                 directoryId,
+		Source:                      source,
+		Url:                         url,
+		Shared:                      shared,
+		SharedWith:                  sharedWith,
+		SharingTypeAdded:            sharingTypeAdded,
+		CloudDriveId:                cloudDriveId,
+		DetectionSourceAlias:        detectionSourceAlias,
+		FileId:                      fileId,
+		Exposure:                    exposure,
+		ProcessOwner:                processOwner,
+		ProcessName:                 processName,
+		TabWindowTitle:              tabWindowTitle,
+		TabUrl:                      tabUrl,
+		RemovableMediaVendor:        removableMediaVendor,
+		RemovableMediaName:          removableMediaName,
+		RemovableMediaSerialNumber:  removableMediaSerialNumber,
+		RemovableMediaCapacity:      &removableMediaCapacity,
+		RemovableMediaBusType:       removableMediaBusType,
+		RemovableMediaMediaName:     removableMediaMediaName,
+		RemovableMediaVolumeName:    removableMediaVolumeName,
+		RemovableMediaPartitionId:   removableMediaPartitionId,
+		SyncDestination:             syncDestination,
+		EmailDLPPolicyNames:         emailDLPPolicyNames,
+		EmailDLPSubject:             emailDLPSubject,
+		EmailDLPSender:              emailDLPSender,
+		EmailDLPFrom:                emailDLPFrom,
+		EmailDLPRecipients:          emailDLPRecipients,
+		OutsideActiveHours:          outsideActiveHours,
+		IdentifiedExtensionMIMEType: identifiedExtensionMimeType,
+		CurrentExtensionMIMEType:    currentExtensionMimeType,
+		SuspiciousFileTypeMismatch:  suspiciousFileTypeMismatch,
 	}
 
 	//set eventTimestamp to nil if empty string
@@ -452,8 +470,8 @@ ffsURI - the URI for where to pull the FFS events
 query - query struct which contains the actual FFS query and a golang valid form
 This function contains a panic if the csv columns do not match the currently specified list.
 This is to prevent data from being messed up during parsing.
- */
-func GetFileEvents(authData AuthData, ffsURI string, query Query) ([]FileEvent,error) {
+*/
+func GetFileEvents(authData AuthData, ffsURI string, query Query) ([]FileEvent, error) {
 
 	//Validate jsonQuery is valid JSON
 	ffsQuery, err := json.Marshal(query)
@@ -475,8 +493,8 @@ func GetFileEvents(authData AuthData, ffsURI string, query Query) ([]FileEvent,e
 	}
 
 	//Set request headers
-	req.Header.Set("Content-Type","application/json")
-	req.Header.Set("Authorization","v3_user_token " + authData.Data.V3UserToken)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "v3_user_token "+authData.Data.V3UserToken)
 
 	//Get Response
 	resp, err := http.DefaultClient.Do(req)
@@ -521,7 +539,7 @@ func GetFileEvents(authData AuthData, ffsURI string, query Query) ([]FileEvent,e
 				differences := difference(lineContent, csvHeaders)
 
 				if len(differences) > 0 {
-					panic(errors.New("number of columns in CSV file does not match expected number, API changed, panicking to keep data integrity. columns that changed: " + strings.Join(differences,",")))
+					panic(errors.New("number of columns in CSV file does not match expected number, API changed, panicking to keep data integrity. columns that changed: " + strings.Join(differences, ",")))
 				}
 			}
 			wg.Done()
@@ -530,13 +548,13 @@ func GetFileEvents(authData AuthData, ffsURI string, query Query) ([]FileEvent,e
 
 	wg.Wait()
 
-	return fileEvents,nil
+	return fileEvents, nil
 }
 
 /*
 Calculate the difference between two different slices
 Used in this case to tell if the csv columns have changed
- */
+*/
 func difference(slice1 []string, slice2 []string) []string {
 	var diff []string
 

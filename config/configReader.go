@@ -7,6 +7,7 @@ import (
 	"github.com/BenB196/crashplan-ffs-puller/utils"
 	"github.com/BenB196/ip-api-go-pkg"
 	"io/ioutil"
+	"log"
 	"net/url"
 	"os"
 	"path"
@@ -21,6 +22,7 @@ type Config struct {
 	FFSURI   		string 			`json:"ffsURI"`
 	FFSQueries		[]FFSQuery		`json:"ffsQueries"`
 	Prometheus		Prometheus		`json:"prometheus,omitempty"`
+	Debugging		*bool			`json:"debugging,omitempty"`
 }
 
 type FFSQuery struct {
@@ -465,6 +467,10 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 				}
 			}
 		}
+	}
+
+	if config.Debugging != nil && *config.Debugging {
+		log.Println("Debugging Enabled.")
 	}
 
 	return config, nil
