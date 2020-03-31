@@ -69,10 +69,10 @@ type FileEvent struct {
 	EmailDLPSender              string     `json:"emailDLPSender,omitempty"`
 	EmailDLPFrom                string     `json:"emailDLPFrom,omitempty"`
 	EmailDLPRecipients          []string   `json:"emailDLPRecipients,omitempty"`
-	OutsideActiveHours          string     `json:"outsideActiveHours,omitempty"`
+	OutsideActiveHours          *bool      `json:"outsideActiveHours,omitempty"`
 	IdentifiedExtensionMIMEType string     `json:"identifiedExtensionMimeType,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"currentExtensionMimeType,omitempty"`
-	SuspiciousFileTypeMismatch  string     `json:"suspiciousFileTypeMismatch,omitempty"`
+	SuspiciousFileTypeMismatch  *bool      `json:"suspiciousFileTypeMismatch,omitempty"`
 }
 
 //Currently recognized csv headers
@@ -225,10 +225,10 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 	emailDLPSender := csvLine[49]
 	emailDLPFrom := csvLine[50]
 	emailDLPRecipientsString := csvLine[51] //Convert to slice below
-	outsideActiveHours := csvLine[52]
+	outsideActiveHoursString := csvLine[52] //Convert to bool below
 	identifiedExtensionMimeType := csvLine[53]
 	currentExtensionMimeType := csvLine[54]
-	suspiciousFileTypeMismatch := csvLine[55]
+	suspiciousFileTypeMismatchString := csvLine[55] //Convert to bool below
 
 	//Set err
 	var err error
@@ -366,6 +366,30 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		}
 	}
 
+	var outsideActiveHours bool
+	if outsideActiveHoursString != "" {
+		outsideActiveHours, err = strconv.ParseBool(outsideActiveHoursString)
+
+		//Panic if this fails, that means something is wrong with CSV handling
+		if err != nil {
+			log.Println("Error parsing outsideActiveHoursString, something must be wrong with CSV parsing.")
+			log.Println(csvLine)
+			panic(err)
+		}
+	}
+
+	var suspiciousFileTypeMismatch bool
+	if suspiciousFileTypeMismatchString != "" {
+		suspiciousFileTypeMismatch, err = strconv.ParseBool(suspiciousFileTypeMismatchString)
+
+		//Panic if this fails, that means something is wrong with CSV handling
+		if err != nil {
+			log.Println("Error parsing suspiciousFileTypeMismatchString, something must be wrong with CSV parsing.")
+			log.Println(csvLine)
+			panic(err)
+		}
+	}
+
 	var fileEvent FileEvent
 
 	//Build FileEvent struct
@@ -422,10 +446,10 @@ func csvLineToFileEvent(csvLine []string) FileEvent {
 		EmailDLPSender:              emailDLPSender,
 		EmailDLPFrom:                emailDLPFrom,
 		EmailDLPRecipients:          emailDLPRecipients,
-		OutsideActiveHours:          outsideActiveHours,
+		OutsideActiveHours:          &outsideActiveHours,
 		IdentifiedExtensionMIMEType: identifiedExtensionMimeType,
 		CurrentExtensionMIMEType:    currentExtensionMimeType,
-		SuspiciousFileTypeMismatch:  suspiciousFileTypeMismatch,
+		SuspiciousFileTypeMismatch:  &suspiciousFileTypeMismatch,
 	}
 
 	//set eventTimestamp to nil if empty string

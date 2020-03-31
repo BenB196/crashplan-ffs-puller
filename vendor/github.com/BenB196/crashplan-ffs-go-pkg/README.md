@@ -106,7 +106,9 @@ FileEvent
     FileName                    string
     FileType                    string          (potentially empty)
     FileCategory                string          (potentially empty)
-    FileSize                    int
+    IdentifiedExtensionCategory string          (potentially empty)
+    CurrentExtensionCategory    string          (potentially empty)
+    FileSize                    *int
     FileOwner                   []string        (potentially empty)
     Md5Checksum                 string	        (potentially empty)
     Sha256Checksum              string	        (potentially empty)
@@ -137,7 +139,7 @@ FileEvent
     RemovableMediaVendor        string	        (potentially empty)
     RemovableMediaName          string	        (potentially empty)
     RemovableMediaSerialNumber  string	        (potentially empty)
-    RemovableMediaCapacity      int             (potentially empty)
+    RemovableMediaCapacity      *int             (potentially empty)
     RemovableMediaBusType       string	        (potentially empty)
     RemovableMediaMediaName     string          (potentially empty)
     RemovableMediaVolumeName    string          (potentially empty)
@@ -148,6 +150,10 @@ FileEvent
     EmailDLPSender              string          (potentially empty)
     EmailDLPFrom                string          (potentially empty)
     EmailDLPRecipients          []string        (potentially empty)
+    OutsideActiveHours          *bool           (potentially empty)
+    IdentifiedExtensionMIMEType string          (potentially empty)
+    CurrentExtensionMIMEType    string          (potentially empty)
+    SuspiciousFileTypeMismatch  *bool           (potentially empty)
 ```
 
 - error - Any errors.

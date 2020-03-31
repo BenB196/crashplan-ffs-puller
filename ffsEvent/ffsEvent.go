@@ -264,7 +264,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			locations, err = ip_api.BatchQuery(ipApiQuery, query.IPAPI.APIKey, query.IPAPI.URL, *configuration.Debugging)
 
 			if err != nil {
-				log.Println(err)
+				log.Println("error processing batch query: " + err.Error())
 			}
 
 			//Move slice to map for easy lookups
@@ -327,14 +327,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
 
 		//remap ffsEvents to ElasticFFSEvent
-		var elasticFFSEvents []eventOutput.ElasticFFSEvent
+		var elasticFFSEvents []eventOutput.ElasticFileEvent
 		var semiElasticFFSEvents []eventOutput.SemiElasticFFSEvent
 		if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "full") {
 			var remapWg sync.WaitGroup
 			remapWg.Add(len(ffsEvents))
 			go func() {
 				for _, ffsEvent := range ffsEvents {
-					event := eventOutput.Event{
+					event := &eventOutput.Event{
 						Id:                 ffsEvent.EventId,
 						Type:               ffsEvent.EventType,
 						Ingested:           ffsEvent.InsertionTimestamp,
@@ -356,12 +356,20 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						extensions = append(extensions, ffsEvent.CurrentExtensionCategory)
 					}
 
-					hash := eventOutput.Hash{
+					hash := &eventOutput.Hash{
 						Md5:    ffsEvent.Md5Checksum,
 						Sha256: ffsEvent.Sha256Checksum,
 					}
 
-					url := eventOutput.URL{Full: ffsEvent.Url}
+					if *hash == (eventOutput.Hash{}) {
+						hash = nil
+					}
+
+					url := &eventOutput.URL{Full: ffsEvent.Url}
+
+					if *url == (eventOutput.URL{}) {
+						url = nil
+					}
 
 					var shared bool
 					if ffsEvent.Shared != "" {
@@ -372,7 +380,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						}
 					}
 
-					file := eventOutput.File{
+					file := &eventOutput.File{
 						Path:                        ffsEvent.FilePath,
 						Name:                        ffsEvent.FileName,
 						Type:                        ffsEvent.FileType,
@@ -382,11 +390,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Extension:                   extensions,
 						Size:                        ffsEvent.FileSize,
 						Owner:                       ffsEvent.FileOwner,
-						Hash:                        &hash,
+						Hash:                        hash,
 						Created:                     ffsEvent.CreatedTimestamp,
 						Mtime:                       ffsEvent.ModifyTimestamp,
 						Directory:                   ffsEvent.DirectoryId,
-						URL:                         &url,
+						URL:                         url,
 						Shared:                      &shared,
 						SharedWith:                  ffsEvent.SharedWith,
 						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
@@ -399,29 +407,43 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
 					}
 
-					var user eventOutput.User
+					var user *eventOutput.User
 
 					if ffsEvent.DeviceUsername == "NAME_NOT_AVAILABLE" {
-						user = eventOutput.User{
+						user = &eventOutput.User{
 							Email: ffsEvent.Actor,
 							Id:    ffsEvent.UserUid,
 							Actor: ffsEvent.Actor,
 						}
 					} else {
-						user = eventOutput.User{
+						user = &eventOutput.User{
 							Email: ffsEvent.DeviceUsername,
 							Id:    ffsEvent.UserUid,
 							Actor: ffsEvent.Actor,
 						}
 					}
 
-					host := eventOutput.Host{
+					if *user == (eventOutput.User{}) {
+						user = nil
+					}
+
+					host := &eventOutput.Host{
 						Id:       ffsEvent.DeviceUid,
 						Name:     ffsEvent.OsHostname,
 						Hostname: ffsEvent.DomainName,
 					}
 
-					nat := eventOutput.Nat{Ip: ffsEvent.PrivateIpAddresses}
+					if *host == (eventOutput.Host{}) {
+						host = nil
+					}
+
+					var nat *eventOutput.Nat
+
+					if ffsEvent.PrivateIpAddresses != nil {
+						nat = &eventOutput.Nat{Ip: ffsEvent.PrivateIpAddresses}
+					} else {
+						nat = nil
+					}
 
 					var geo *eventOutput.Geo
 					var as *eventOutput.AS
@@ -465,32 +487,48 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						if geo.ISP != "" {
 							as = &eventOutput.AS{Organization: &eventOutput.Organization{Name: geo.ISP}}
 						} else {
-							as = &eventOutput.AS{Organization: &eventOutput.Organization{Name: ""}}
+							as = nil
 						}
 					} else {
 						geo = nil
 					}
 
-					client := eventOutput.Client{
+					client := &eventOutput.Client{
 						Ip:  ffsEvent.PublicIpAddress,
-						Nat: &nat,
+						Nat: nat,
 						Geo: geo,
 						AS:  as,
 					}
 
-					process := eventOutput.Process{
+					if *client == (eventOutput.Client{}) {
+						client = nil
+					}
+
+					process := &eventOutput.Process{
 						ProcessOwner: ffsEvent.ProcessOwner,
 						ProcessName:  ffsEvent.ProcessName,
 					}
 
-					tabUrl := eventOutput.URL{Full: ffsEvent.TabUrl}
-
-					tab := eventOutput.Tab{
-						WindowTitle: ffsEvent.TabWindowTitle,
-						URL:         &tabUrl,
+					if *process == (eventOutput.Process{}) {
+						process = nil
 					}
 
-					removableMedia := eventOutput.RemovableMedia{
+					tabUrl := &eventOutput.URL{Full: ffsEvent.TabUrl}
+
+					if *tabUrl == (eventOutput.URL{}) {
+						tabUrl = nil
+					}
+
+					tab := &eventOutput.Tab{
+						WindowTitle: ffsEvent.TabWindowTitle,
+						URL:         tabUrl,
+					}
+
+					if *tab == (eventOutput.Tab{}) {
+						tab = nil
+					}
+
+					removableMedia := &eventOutput.RemovableMedia{
 						Vendor:       ffsEvent.RemovableMediaVendor,
 						Name:         ffsEvent.RemovableMediaName,
 						SerialNumber: ffsEvent.RemovableMediaSerialNumber,
@@ -501,34 +539,36 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						PartitionId:  ffsEvent.RemovableMediaPartitionId,
 					}
 
-					email := eventOutput.EmailDlp{
+					if *removableMedia == (eventOutput.RemovableMedia{}) {
+						removableMedia = nil
+					}
+
+					emailDlp := &eventOutput.EmailDlp{
 						PolicyNames: ffsEvent.EmailDLPPolicyNames,
 						Subject:     ffsEvent.EmailDLPSubject,
 						Sender:      ffsEvent.EmailDLPSender,
-						From:        ffsEvent.EmailDLPSender,
+						From:        ffsEvent.EmailDLPFrom,
 						Recipients:  ffsEvent.EmailDLPRecipients,
 					}
 
-					elasticFileEvent := eventOutput.ElasticFileEvent{
-						Event:          &event,
+					if ffsEvent.EmailDLPPolicyNames == nil && ffsEvent.EmailDLPSubject == "" && ffsEvent.EmailDLPSender == "" && ffsEvent.EmailDLPFrom == "" && ffsEvent.EmailDLPRecipients == nil {
+						emailDlp = nil
+					}
+
+					elasticFileEvent := &eventOutput.ElasticFileEvent{
+						Event:          event,
 						Timestamp:      timestamp,
-						File:           &file,
-						User:           &user,
-						Host:           &host,
-						Client:         &client,
-						Process:        &process,
-						Tab:            &tab,
-						RemovableMedia: &removableMedia,
-						EmailDlp:       &email,
+						File:           file,
+						User:           user,
+						Host:           host,
+						Client:         client,
+						Process:        process,
+						Tab:            tab,
+						RemovableMedia: removableMedia,
+						EmailDlp:       emailDlp,
 					}
 
-					var elasticFFSEvent eventOutput.ElasticFFSEvent
-
-					elasticFFSEvent = eventOutput.ElasticFFSEvent{
-						FileEvent: elasticFileEvent,
-					}
-
-					elasticFFSEvents = append(elasticFFSEvents, elasticFFSEvent)
+					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
 					remapWg.Done()
 				}
 			}()
@@ -780,9 +820,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -880,9 +920,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.Event.Ingested.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Ingested.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)

@@ -17,12 +17,12 @@ import (
 type FFSEvent struct {
 	ffs.FileEvent
 	*ip_api.Location `json:",omitempty"`
-	GeoLocation *Location        `json:"geoPoint,omitempty"`
+	GeoLocation      *Location `json:"geoPoint,omitempty"`
 }
 
 type SemiElasticFFSEvent struct {
 	FileEvent SemiElasticFileEvent `json:"file_event"`
-	Geo     *Geo               `json:"geo,omitempty"`
+	Geo       *Geo                 `json:"geo,omitempty"`
 }
 
 type SemiElasticFileEvent struct {
@@ -78,14 +78,10 @@ type SemiElasticFileEvent struct {
 	EmailDLPSender              string     `json:"email_dlp_sender,omitempty"`
 	EmailDLPFrom                string     `json:"email_dlp_from,omitempty"`
 	EmailDLPRecipients          []string   `json:"email_dlp_recipients,omitempty"`
-	OutsideActiveHours          string     `json:"outside_active_hours,omitempty"`
+	OutsideActiveHours          *bool      `json:"outside_active_hours,omitempty"`
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
-	SuspiciousFileTypeMismatch  string     `json:"suspicious_file_type_mismatch,omitempty"`
-}
-
-type ElasticFFSEvent struct {
-	FileEvent ElasticFileEvent `json:",omitempty"`
+	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
 }
 
 type ElasticFileEvent struct {
@@ -108,7 +104,7 @@ type Event struct {
 	Created            *time.Time `json:"created,omitempty"`
 	Module             string     `json:"module,omitempty"`
 	Dataset            []string   `json:"dataset,omitempty"`
-	OutsideActiveHours string     `json:"outside_active_hours,omitempty"`
+	OutsideActiveHours *bool      `json:"outside_active_hours,omitempty"`
 }
 
 type Hash struct {
@@ -128,7 +124,7 @@ type File struct {
 	IdentifiedExtensionCategory string     `json:"identified_extension_category,omitempty"`
 	CurrentExtensionCategory    string     `json:"current_extension_category,omitempty"`
 	Extension                   []string   `json:"extension,omitempty"` //Array of extensions
-	Size                        *int       `json:"size.bytes,omitempty"`
+	Size                        *int       `json:"size,omitempty"`
 	Owner                       []string   `json:"owner,omitempty"` //Array of owners
 	Hash                        *Hash      `json:"hash,omitempty"`
 	Created                     *time.Time `json:"created,omitempty"`
@@ -144,7 +140,7 @@ type File struct {
 	Id                          string     `json:"id,omitempty"`
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
-	SuspiciousFileTypeMismatch  string     `json:"suspicious_file_type_mismatch,omitempty"`
+	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
 }
 
 type User struct {
