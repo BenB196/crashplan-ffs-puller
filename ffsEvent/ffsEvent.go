@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func FFSQuery (configuration config.Config, query config.FFSQuery) {
+func FFSQuery(configuration config.Config, query config.FFSQuery) {
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -55,7 +55,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	}
 
 	//Get initial authData
-	authData, err := ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+	authData, err := ffs.GetAuthData(configuration.AuthURI, query.Username, query.Password)
 
 	if err != nil {
 		log.Println("error getting auth data for ffs query: " + query.Name)
@@ -71,14 +71,14 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	go func() {
 		for {
 			select {
-			case <- authTimeTicker.C:
-				authData, err = ffs.GetAuthData(configuration.AuthURI,query.Username,query.Password)
+			case <-authTimeTicker.C:
+				authData, err = ffs.GetAuthData(configuration.AuthURI, query.Username, query.Password)
 
 				if err != nil {
 					log.Println("error with getting authentication data for ffs query: " + query.Name)
 					panic(err)
 				}
-			case <- quit:
+			case <-quit:
 				authTimeTicker.Stop()
 				return
 			}
@@ -118,7 +118,7 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	if len(inProgressQueries) > 0 {
 		go func() {
 			for _, inProgressQuery := range inProgressQueries {
-				query = setOnOrBeforeAndAfter(query,inProgressQuery.OnOrBefore,inProgressQuery.OnOrAfter)
+				query = setOnOrBeforeAndAfter(query, inProgressQuery.OnOrBefore, inProgressQuery.OnOrAfter)
 				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, true, elasticClient, ctx, nil, 0, false)
 			}
 		}()
@@ -135,9 +135,9 @@ func FFSQuery (configuration config.Config, query config.FFSQuery) {
 	go func() {
 		for {
 			select {
-			case <- queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime,false, elasticClient, ctx, quit, 0, false)
-			case <- quit:
+			case <-queryIntervalTimeTicker.C:
+				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, false, elasticClient, ctx, quit, 0, false)
+			case <-quit:
 				queryIntervalTimeTicker.Stop()
 				wgQuery.Done()
 				return
@@ -181,7 +181,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	}
 
 	if !cleanUpQuery && !retryQuery {
-		*inProgressQueries = append(*inProgressQueries,inProgressQuery)
+		*inProgressQueries = append(*inProgressQueries, inProgressQuery)
 
 		//Write in progress queries to file
 		err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
@@ -191,12 +191,12 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 
-	fileEvents, err := ffs.GetFileEvents(authData,configuration.FFSURI, query.Query)
+	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, query.Query)
 
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
 		//check if recoverable errors are thrown
-		if strings.Contains(err.Error(),"Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(),"stream error: stream ID") && (strings.Contains(err.Error(),"INTERNAL_ERROR") || strings.Contains(err.Error(),"PROTOCOL_ERROR"))) || strings.Contains(err.Error(),"read: connection reset by peer") || strings.Contains(err.Error(),"POST: 400 Bad Request") || strings.Contains(err.Error(),"unexpected EOF") || strings.Contains(err.Error(),"POST: 504 Gateway Timeout") || (strings.Contains(err.Error(),"record on line ") && strings.Contains(err.Error(),": wrong number of fields") || (strings.Contains(err.Error(),"record on line") && strings.Contains(err.Error(),"; parse error on line") && strings.Contains(err.Error(),", column") && strings.Contains(err.Error(),": extraneous or missing \" in quoted-field"))) {
+		if strings.Contains(err.Error(), "Error with gathering file events POST: 500 Internal Server Error") || (strings.Contains(err.Error(), "stream error: stream ID") && (strings.Contains(err.Error(), "INTERNAL_ERROR") || strings.Contains(err.Error(), "PROTOCOL_ERROR"))) || strings.Contains(err.Error(), "read: connection reset by peer") || strings.Contains(err.Error(), "POST: 400 Bad Request") || strings.Contains(err.Error(), "unexpected EOF") || strings.Contains(err.Error(), "POST: 504 Gateway Timeout") || (strings.Contains(err.Error(), "record on line ") && strings.Contains(err.Error(), ": wrong number of fields") || (strings.Contains(err.Error(), "record on line") && strings.Contains(err.Error(), "; parse error on line") && strings.Contains(err.Error(), ", column") && strings.Contains(err.Error(), ": extraneous or missing \" in quoted-field"))) {
 			//allow for 10 retries before killing to save resource overload.
 			log.Println("Attempting to recover from error: " + err.Error() + ". Retry number: " + strconv.Itoa(retryCount))
 			if retryCount <= 10 {
@@ -242,14 +242,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					if len(queryIPs) > 0 {
 						//check to make sure map does not already contain ip, don't want to query same IP multiple times
 						if _, ok := queryMap[event.PublicIpAddress]; !ok {
-							queryIPs = append(queryIPs,ip_api.QueryIP{
-								Query:  event.PublicIpAddress,
+							queryIPs = append(queryIPs, ip_api.QueryIP{
+								Query: event.PublicIpAddress,
 							})
 							queryMap[event.PublicIpAddress] = nil
 						}
 					} else {
-						queryIPs = append(queryIPs,ip_api.QueryIP{
-							Query:  event.PublicIpAddress,
+						queryIPs = append(queryIPs, ip_api.QueryIP{
+							Query: event.PublicIpAddress,
 						})
 						queryMap[event.PublicIpAddress] = nil
 					}
@@ -261,10 +261,10 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 			ipApiQuery.Queries = queryIPs
 
-			locations, err = ip_api.BatchQuery(ipApiQuery,query.IPAPI.APIKey,query.IPAPI.URL)
+			locations, err = ip_api.BatchQuery(ipApiQuery, query.IPAPI.APIKey, query.IPAPI.URL, *configuration.Debugging)
 
 			if err != nil {
-				log.Println(err)
+				log.Println("error processing batch query: " + err.Error())
 			}
 
 			//Move slice to map for easy lookups
@@ -279,22 +279,22 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			for _, event := range fileEvents {
 				if event.PublicIpAddress != "" {
 					if len(locationMap) == 0 {
-						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoPoint: nil})
+						ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoLocation: nil})
 					} else if location, ok := locationMap[event.PublicIpAddress]; ok {
 						//nil this as it is not needed, we already have event.publicIpAddress
 						location.Query = ""
-						geoPoint := eventOutput.GeoPoint{
+						geoPoint := eventOutput.Location{
 							Lat: location.Lat,
 							Lon: location.Lon,
 						}
-						ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: &location, GeoPoint: &geoPoint})
+						ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: &location, GeoLocation: &geoPoint})
 					} else {
 						b, _ := json.Marshal(event)
 						log.Println("error getting location for fileEvent: " + string(b))
 						panic("Unable to find location which should exist.")
 					}
 				} else {
-					ffsEvents = append(ffsEvents,eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoPoint: nil})
+					ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoLocation: nil})
 				}
 				defer eventWg.Done()
 			}
@@ -311,7 +311,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						privateIpWg.Add(len(fileEvent.PrivateIpAddresses))
 						go func() {
 							for x, privateIpAddress := range fileEvent.PrivateIpAddresses {
-								fileEvents[i].PrivateIpAddresses[x] = strings.Split(privateIpAddress,"%")[0]
+								fileEvents[i].PrivateIpAddresses[x] = strings.Split(privateIpAddress, "%")[0]
 								privateIpWg.Done()
 							}
 						}()
@@ -327,313 +327,364 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
 
 		//remap ffsEvents to ElasticFFSEvent
-		var elasticFFSEvents []eventOutput.ElasticFFSEvent
+		var elasticFFSEvents []eventOutput.ElasticFileEvent
 		var semiElasticFFSEvents []eventOutput.SemiElasticFFSEvent
-		if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized,"full") {
+		if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "full") {
 			var remapWg sync.WaitGroup
 			remapWg.Add(len(ffsEvents))
 			go func() {
 				for _, ffsEvent := range ffsEvents {
-					event := eventOutput.Event{
-						EventId:        ffsEvent.EventId,
-						EventType:      ffsEvent.EventType,
-						EventTimestamp: ffsEvent.EventTimestamp,
+					event := &eventOutput.Event{
+						Id:                 ffsEvent.EventId,
+						Type:               ffsEvent.EventType,
+						Ingested:           ffsEvent.InsertionTimestamp,
+						Created:            ffsEvent.EventTimestamp,
+						Module:             ffsEvent.Source,
+						Dataset:            ffsEvent.Exposure,
+						OutsideActiveHours: ffsEvent.OutsideActiveHours,
 					}
 
-					insertion := eventOutput.Insertion{InsertionTimestamp:ffsEvent.InsertionTimestamp}
+					timestamp := ffsEvent.EventTimestamp
 
-					file := eventOutput.File{
-						FilePath:         ffsEvent.FilePath,
-						FileName:         ffsEvent.FileName,
-						FileType:         ffsEvent.FileType,
-						FileCategory:     ffsEvent.FileCategory,
-						FileSize:         ffsEvent.FileSize,
-						FileOwner:        ffsEvent.FileOwner,
-						Md5Checksum:      ffsEvent.Md5Checksum,
-						Sha256Checksum:   ffsEvent.Sha256Checksum,
-						CreatedTimestamp: ffsEvent.CreatedTimestamp,
-						ModifyTimestamp:  ffsEvent.ModifyTimestamp,
+					var extensions []string
+
+					if ffsEvent.IdentifiedExtensionCategory != "" {
+						extensions = append(extensions, ffsEvent.IdentifiedExtensionCategory)
 					}
 
-					device := eventOutput.Device{
-						DeviceUsername:     ffsEvent.DeviceUsername,
-						DeviceUid:          ffsEvent.DeviceUid,
-						UserUid:            ffsEvent.UserUid,
-						OsHostname:         ffsEvent.OsHostname,
-						DomainName:         ffsEvent.DomainName,
-						PublicIpAddress:    ffsEvent.PublicIpAddress,
-						PrivateIpAddresses: ffsEvent.PrivateIpAddresses,
+					if ffsEvent.CurrentExtensionCategory != "" {
+						extensions = append(extensions, ffsEvent.CurrentExtensionCategory)
 					}
 
-					cloud := eventOutput.Cloud{
-						Actor:                ffsEvent.Actor,
-						DirectoryId:          ffsEvent.DirectoryId,
-						Source:               ffsEvent.Source,
-						Url:                  ffsEvent.Url,
-						Shared:               ffsEvent.Shared,
-						SharedWith:           ffsEvent.SharedWith,
-						SharingTypeAdded:     ffsEvent.SharingTypeAdded,
-						CloudDriveId:         ffsEvent.CloudDriveId,
-						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
-						FileId:               ffsEvent.FileId,
+					hash := &eventOutput.Hash{
+						Md5:    ffsEvent.Md5Checksum,
+						Sha256: ffsEvent.Sha256Checksum,
 					}
 
-					process := eventOutput.Process{
-						ProcessOwner: ffsEvent.ProcessOwner,
-						ProcessName:  ffsEvent.ProcessName,
-						TabWindowTitle: ffsEvent.TabWindowTitle,
-						TabUrl: ffsEvent.TabUrl,
+					if *hash == (eventOutput.Hash{}) {
+						hash = nil
 					}
 
-					removableMedia := eventOutput.RemovableMedia{
-						RemovableMediaVendor:       ffsEvent.RemovableMediaVendor,
-						RemovableMediaName:         ffsEvent.RemovableMediaName,
-						RemovableMediaSerialNumber: ffsEvent.RemovableMediaSerialNumber,
-						RemovableMediaCapacity:     ffsEvent.RemovableMediaCapacity,
-						RemovableMediaBusType:      ffsEvent.RemovableMediaBusType,
-						RemovableMediaMediaName:    ffsEvent.RemovableMediaMediaName,
-						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
-						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
+					url := &eventOutput.URL{Full: ffsEvent.Url}
+
+					if *url == (eventOutput.URL{}) {
+						url = nil
 					}
 
-					email := eventOutput.Email{
-						DLPPolicyNames:			ffsEvent.EmailDLPPolicyNames,
-						DLPSubject:				ffsEvent.EmailDLPSubject,
-						DLPSender:				ffsEvent.EmailDLPSender,
-						DLPFrom:				ffsEvent.EmailDLPSender,
-						DLPRecipients:			ffsEvent.EmailDLPRecipients,
+					var shared bool
+					if ffsEvent.Shared != "" {
+						shared, err = strconv.ParseBool(ffsEvent.Shared)
+
+						if err != nil {
+							log.Println("Error parsing shared value")
+						}
 					}
 
-					elasticFileEvent := eventOutput.ElasticFileEvent{
-						Event:						&event,
-						Insertion:         			&insertion,
-						File:						&file,
-						Device:						&device,
-						Cloud:						&cloud,
-						Exposure:             		ffsEvent.Exposure,
-						Process:					&process,
-						RemovableMedia:				&removableMedia,
-						SyncDestination:            ffsEvent.SyncDestination,
-						Email:						&email,
+					file := &eventOutput.File{
+						Path:                        ffsEvent.FilePath,
+						Name:                        ffsEvent.FileName,
+						Type:                        ffsEvent.FileType,
+						Category:                    ffsEvent.FileCategory,
+						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
+						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
+						Extension:                   extensions,
+						Size:                        ffsEvent.FileSize,
+						Owner:                       ffsEvent.FileOwner,
+						Hash:                        hash,
+						Created:                     ffsEvent.CreatedTimestamp,
+						Mtime:                       ffsEvent.ModifyTimestamp,
+						Directory:                   ffsEvent.DirectoryId,
+						URL:                         url,
+						Shared:                      &shared,
+						SharedWith:                  ffsEvent.SharedWith,
+						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
+						CloudDriveId:                ffsEvent.CloudDriveId,
+						DetectionSourceAlias:        ffsEvent.DetectionSourceAlias,
+						SyncDestination:             ffsEvent.SyncDestination,
+						Id:                          ffsEvent.FileId,
+						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
+						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
+						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
 					}
 
-					var elasticFFSEvent eventOutput.ElasticFFSEvent
-					var geoPoint eventOutput.GeoPoint
-					var geoip eventOutput.Geoip
+					var user *eventOutput.User
+
+					if ffsEvent.DeviceUsername == "NAME_NOT_AVAILABLE" {
+						user = &eventOutput.User{
+							Email: ffsEvent.Actor,
+							Id:    ffsEvent.UserUid,
+							Actor: ffsEvent.Actor,
+						}
+					} else {
+						user = &eventOutput.User{
+							Email: ffsEvent.DeviceUsername,
+							Id:    ffsEvent.UserUid,
+							Actor: ffsEvent.Actor,
+						}
+					}
+
+					if *user == (eventOutput.User{}) {
+						user = nil
+					}
+
+					host := &eventOutput.Host{
+						Id:       ffsEvent.DeviceUid,
+						Name:     ffsEvent.OsHostname,
+						Hostname: ffsEvent.DomainName,
+					}
+
+					if *host == (eventOutput.Host{}) {
+						host = nil
+					}
+
+					var nat *eventOutput.Nat
+
+					if ffsEvent.PrivateIpAddresses != nil {
+						nat = &eventOutput.Nat{Ip: ffsEvent.PrivateIpAddresses}
+					} else {
+						nat = nil
+					}
+
+					var geo *eventOutput.Geo
+					var as *eventOutput.AS
 					if ffsEvent.Location != nil {
-						if ffsEvent.Location.Lat != 0 && ffsEvent.Location.Lon != 0 {
-							geoPoint = eventOutput.GeoPoint{
+						geo = &eventOutput.Geo{
+							Status:        ffsEvent.Location.Status,
+							Message:       ffsEvent.Location.Message,
+							Continent:     ffsEvent.Location.Continent,
+							ContinentCode: ffsEvent.Location.ContinentCode,
+							Country:       ffsEvent.Location.Country,
+							CountryCode:   ffsEvent.Location.CountryCode,
+							Region:        ffsEvent.Location.Region,
+							RegionName:    ffsEvent.Location.RegionName,
+							City:          ffsEvent.Location.City,
+							District:      ffsEvent.Location.District,
+							ZIP:           ffsEvent.Location.ZIP,
+							Lat:           ffsEvent.Location.Lat,
+							Lon:           ffsEvent.Location.Lon,
+							Timezone:      ffsEvent.Location.Timezone,
+							Currency:      ffsEvent.Location.Currency,
+							ISP:           ffsEvent.Location.ISP,
+							Org:           ffsEvent.Location.Org,
+							AS:            ffsEvent.Location.AS,
+							ASName:        ffsEvent.Location.ASName,
+							Reverse:       ffsEvent.Location.Reverse,
+							Mobile:        ffsEvent.Location.Mobile,
+							Proxy:         ffsEvent.Location.Proxy,
+							Hosting:       ffsEvent.Location.Hosting,
+							Query:         ffsEvent.Location.Query,
+						}
+
+						if (ffsEvent.Location.Lat != nil && *ffsEvent.Location.Lat != 0) && (ffsEvent.Location.Lon != nil && *ffsEvent.Location.Lon != 0) {
+							geo.Location = &eventOutput.Location{
 								Lat: ffsEvent.Location.Lat,
 								Lon: ffsEvent.Location.Lon,
 							}
-
-							geoip = eventOutput.Geoip{
-								Status:        ffsEvent.Location.Status,
-								Message:       ffsEvent.Location.Message,
-								Continent:     ffsEvent.Location.Continent,
-								ContinentCode: ffsEvent.Location.ContinentCode,
-								Country:       ffsEvent.Location.Country,
-								CountryCode:   ffsEvent.Location.CountryCode,
-								Region:        ffsEvent.Location.Region,
-								RegionName:    ffsEvent.Location.RegionName,
-								City:          ffsEvent.Location.City,
-								District:      ffsEvent.Location.District,
-								ZIP:           ffsEvent.Location.ZIP,
-								Lat:           ffsEvent.Location.Lat,
-								Lon:           ffsEvent.Location.Lon,
-								Timezone:      ffsEvent.Location.Timezone,
-								Currency:      ffsEvent.Location.Currency,
-								ISP:           ffsEvent.Location.ISP,
-								Org:           ffsEvent.Location.Org,
-								AS:            ffsEvent.Location.AS,
-								ASName:        ffsEvent.Location.ASName,
-								Reverse:       ffsEvent.Location.Reverse,
-								Mobile:        ffsEvent.Location.Mobile,
-								Proxy:         ffsEvent.Location.Proxy,
-								Query:         ffsEvent.Location.Query,
-								GeoPoint:      &geoPoint,
-							}
 						} else {
-							geoip = eventOutput.Geoip{
-								Status:        ffsEvent.Location.Status,
-								Message:       ffsEvent.Location.Message,
-								Continent:     ffsEvent.Location.Continent,
-								ContinentCode: ffsEvent.Location.ContinentCode,
-								Country:       ffsEvent.Location.Country,
-								CountryCode:   ffsEvent.Location.CountryCode,
-								Region:        ffsEvent.Location.Region,
-								RegionName:    ffsEvent.Location.RegionName,
-								City:          ffsEvent.Location.City,
-								District:      ffsEvent.Location.District,
-								ZIP:           ffsEvent.Location.ZIP,
-								Lat:           ffsEvent.Location.Lat,
-								Lon:           ffsEvent.Location.Lon,
-								Timezone:      ffsEvent.Location.Timezone,
-								Currency:      ffsEvent.Location.Currency,
-								ISP:           ffsEvent.Location.ISP,
-								Org:           ffsEvent.Location.Org,
-								AS:            ffsEvent.Location.AS,
-								ASName:        ffsEvent.Location.ASName,
-								Reverse:       ffsEvent.Location.Reverse,
-								Mobile:        ffsEvent.Location.Mobile,
-								Proxy:         ffsEvent.Location.Proxy,
-								Query:         ffsEvent.Location.Query,
-								GeoPoint:      nil,
-							}
+							geo.Location = nil
 						}
-					}
 
-					if ffsEvent.Location != nil && ffsEvent.Location.Status == "" {
-						elasticFFSEvent = eventOutput.ElasticFFSEvent{
-							FileEvent: elasticFileEvent,
-							Geoip:     nil,
+						if geo.ISP != "" {
+							as = &eventOutput.AS{Organization: &eventOutput.Organization{Name: geo.ISP}}
+						} else {
+							as = nil
 						}
 					} else {
-						elasticFFSEvent = eventOutput.ElasticFFSEvent{
-							FileEvent: elasticFileEvent,
-							Geoip:     &geoip,
-						}
+						geo = nil
 					}
 
-					elasticFFSEvents = append(elasticFFSEvents, elasticFFSEvent)
+					client := &eventOutput.Client{
+						Ip:  ffsEvent.PublicIpAddress,
+						Nat: nat,
+						Geo: geo,
+						AS:  as,
+					}
+
+					if *client == (eventOutput.Client{}) {
+						client = nil
+					}
+
+					process := &eventOutput.Process{
+						ProcessOwner: ffsEvent.ProcessOwner,
+						ProcessName:  ffsEvent.ProcessName,
+					}
+
+					if *process == (eventOutput.Process{}) {
+						process = nil
+					}
+
+					tabUrl := &eventOutput.URL{Full: ffsEvent.TabUrl}
+
+					if *tabUrl == (eventOutput.URL{}) {
+						tabUrl = nil
+					}
+
+					tab := &eventOutput.Tab{
+						WindowTitle: ffsEvent.TabWindowTitle,
+						URL:         tabUrl,
+					}
+
+					if *tab == (eventOutput.Tab{}) {
+						tab = nil
+					}
+
+					removableMedia := &eventOutput.RemovableMedia{
+						Vendor:       ffsEvent.RemovableMediaVendor,
+						Name:         ffsEvent.RemovableMediaName,
+						SerialNumber: ffsEvent.RemovableMediaSerialNumber,
+						Capacity:     ffsEvent.RemovableMediaCapacity,
+						BusType:      ffsEvent.RemovableMediaBusType,
+						MediaName:    ffsEvent.RemovableMediaMediaName,
+						VolumeName:   ffsEvent.RemovableMediaVolumeName,
+						PartitionId:  ffsEvent.RemovableMediaPartitionId,
+					}
+
+					if *removableMedia == (eventOutput.RemovableMedia{}) {
+						removableMedia = nil
+					}
+
+					emailDlp := &eventOutput.EmailDlp{
+						PolicyNames: ffsEvent.EmailDLPPolicyNames,
+						Subject:     ffsEvent.EmailDLPSubject,
+						Sender:      ffsEvent.EmailDLPSender,
+						From:        ffsEvent.EmailDLPFrom,
+						Recipients:  ffsEvent.EmailDLPRecipients,
+					}
+
+					if ffsEvent.EmailDLPPolicyNames == nil && ffsEvent.EmailDLPSubject == "" && ffsEvent.EmailDLPSender == "" && ffsEvent.EmailDLPFrom == "" && ffsEvent.EmailDLPRecipients == nil {
+						emailDlp = nil
+					}
+
+					elasticFileEvent := &eventOutput.ElasticFileEvent{
+						Event:          event,
+						Timestamp:      timestamp,
+						File:           file,
+						User:           user,
+						Host:           host,
+						Client:         client,
+						Process:        process,
+						Tab:            tab,
+						RemovableMedia: removableMedia,
+						EmailDlp:       emailDlp,
+					}
+
+					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
 					remapWg.Done()
 				}
 			}()
 			remapWg.Wait()
-		} else if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized,"half") {
+		} else if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "half") {
 			var remapWg sync.WaitGroup
 			remapWg.Add(len(ffsEvents))
 			go func() {
 				for _, ffsEvent := range ffsEvents {
 					semiElasticFileEvent := eventOutput.SemiElasticFileEvent{
-						EventId:                    ffsEvent.EventId,
-						EventType:                  ffsEvent.EventType,
-						EventTimestamp:             ffsEvent.EventTimestamp,
-						InsertionTimestamp:         ffsEvent.InsertionTimestamp,
-						FilePath:                   ffsEvent.FilePath,
-						FileName:                   ffsEvent.FileName,
-						FileType:                   ffsEvent.FileType,
-						FileCategory:               ffsEvent.FileCategory,
-						FileSize:                   ffsEvent.FileSize,
-						FileOwner:                  ffsEvent.FileOwner,
-						Md5Checksum:                ffsEvent.Md5Checksum,
-						Sha256Checksum:             ffsEvent.Sha256Checksum,
-						CreatedTimestamp:           ffsEvent.CreatedTimestamp,
-						ModifyTimestamp:            ffsEvent.ModifyTimestamp,
-						DeviceUsername:             ffsEvent.DeviceUsername,
-						DeviceUid:                  ffsEvent.DeviceUid,
-						UserUid:                    ffsEvent.UserUid,
-						OsHostname:                 ffsEvent.OsHostname,
-						DomainName:                 ffsEvent.DomainName,
-						PublicIpAddress:            ffsEvent.PublicIpAddress,
-						PrivateIpAddresses:         ffsEvent.PrivateIpAddresses,
-						Actor:                      ffsEvent.Actor,
-						DirectoryId:                ffsEvent.DirectoryId,
-						Source:                     ffsEvent.Source,
-						Url:                        ffsEvent.Url,
-						Shared:                     ffsEvent.Shared,
-						SharedWith:                 ffsEvent.SharedWith,
-						SharingTypeAdded:           ffsEvent.SharingTypeAdded,
-						CloudDriveId:               ffsEvent.CloudDriveId,
-						DetectionSourceAlias:       ffsEvent.DetectionSourceAlias,
-						FileId:                     ffsEvent.FileId,
-						Exposure:                   ffsEvent.Exposure,
-						ProcessOwner:               ffsEvent.ProcessOwner,
-						ProcessName:                ffsEvent.ProcessName,
-						TabWindowTitle:				ffsEvent.TabWindowTitle,
-						TabUrl:						ffsEvent.TabUrl,
-						RemovableMediaVendor:       ffsEvent.RemovableMediaVendor,
-						RemovableMediaName:         ffsEvent.RemovableMediaName,
-						RemovableMediaSerialNumber: ffsEvent.RemovableMediaSerialNumber,
-						RemovableMediaCapacity:     ffsEvent.RemovableMediaCapacity,
-						RemovableMediaBusType:      ffsEvent.RemovableMediaBusType,
-						RemovableMediaMediaName:    ffsEvent.RemovableMediaMediaName,
-						RemovableMediaVolumeName:   ffsEvent.RemovableMediaVolumeName,
-						RemovableMediaPartitionId:  ffsEvent.RemovableMediaPartitionId,
-						SyncDestination:            ffsEvent.SyncDestination,
-						EmailDLPPolicyNames:		ffsEvent.EmailDLPPolicyNames,
-						EmailDLPSubject:			ffsEvent.EmailDLPSubject,
-						EmailDLPSender:				ffsEvent.EmailDLPSender,
-						EmailDLPFrom:				ffsEvent.EmailDLPSender,
-						EmailDLPRecipients:			ffsEvent.EmailDLPRecipients,
+						EventId:                     ffsEvent.EventId,
+						EventType:                   ffsEvent.EventType,
+						EventTimestamp:              ffsEvent.EventTimestamp,
+						InsertionTimestamp:          ffsEvent.InsertionTimestamp,
+						FilePath:                    ffsEvent.FilePath,
+						FileName:                    ffsEvent.FileName,
+						FileType:                    ffsEvent.FileType,
+						FileCategory:                ffsEvent.FileCategory,
+						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
+						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
+						FileSize:                    ffsEvent.FileSize,
+						FileOwner:                   ffsEvent.FileOwner,
+						Md5Checksum:                 ffsEvent.Md5Checksum,
+						Sha256Checksum:              ffsEvent.Sha256Checksum,
+						CreatedTimestamp:            ffsEvent.CreatedTimestamp,
+						ModifyTimestamp:             ffsEvent.ModifyTimestamp,
+						DeviceUsername:              ffsEvent.DeviceUsername,
+						DeviceUid:                   ffsEvent.DeviceUid,
+						UserUid:                     ffsEvent.UserUid,
+						OsHostname:                  ffsEvent.OsHostname,
+						DomainName:                  ffsEvent.DomainName,
+						PublicIpAddress:             ffsEvent.PublicIpAddress,
+						PrivateIpAddresses:          ffsEvent.PrivateIpAddresses,
+						Actor:                       ffsEvent.Actor,
+						DirectoryId:                 ffsEvent.DirectoryId,
+						Source:                      ffsEvent.Source,
+						Url:                         ffsEvent.Url,
+						Shared:                      ffsEvent.Shared,
+						SharedWith:                  ffsEvent.SharedWith,
+						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
+						CloudDriveId:                ffsEvent.CloudDriveId,
+						DetectionSourceAlias:        ffsEvent.DetectionSourceAlias,
+						FileId:                      ffsEvent.FileId,
+						Exposure:                    ffsEvent.Exposure,
+						ProcessOwner:                ffsEvent.ProcessOwner,
+						ProcessName:                 ffsEvent.ProcessName,
+						TabWindowTitle:              ffsEvent.TabWindowTitle,
+						TabUrl:                      ffsEvent.TabUrl,
+						RemovableMediaVendor:        ffsEvent.RemovableMediaVendor,
+						RemovableMediaName:          ffsEvent.RemovableMediaName,
+						RemovableMediaSerialNumber:  ffsEvent.RemovableMediaSerialNumber,
+						RemovableMediaCapacity:      ffsEvent.RemovableMediaCapacity,
+						RemovableMediaBusType:       ffsEvent.RemovableMediaBusType,
+						RemovableMediaMediaName:     ffsEvent.RemovableMediaMediaName,
+						RemovableMediaVolumeName:    ffsEvent.RemovableMediaVolumeName,
+						RemovableMediaPartitionId:   ffsEvent.RemovableMediaPartitionId,
+						SyncDestination:             ffsEvent.SyncDestination,
+						EmailDLPPolicyNames:         ffsEvent.EmailDLPPolicyNames,
+						EmailDLPSubject:             ffsEvent.EmailDLPSubject,
+						EmailDLPSender:              ffsEvent.EmailDLPSender,
+						EmailDLPFrom:                ffsEvent.EmailDLPSender,
+						EmailDLPRecipients:          ffsEvent.EmailDLPRecipients,
+						OutsideActiveHours:          ffsEvent.OutsideActiveHours,
+						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
+						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
+						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent
-					var geoPoint eventOutput.GeoPoint
-					var geoip eventOutput.Geoip
+					var geo *eventOutput.Geo
 					if ffsEvent.Location != nil {
-						if ffsEvent.Location.Lat != 0 && ffsEvent.Location.Lon != 0 {
-							geoPoint = eventOutput.GeoPoint{
+						geo = &eventOutput.Geo{
+							Status:        ffsEvent.Location.Status,
+							Message:       ffsEvent.Location.Message,
+							Continent:     ffsEvent.Location.Continent,
+							ContinentCode: ffsEvent.Location.ContinentCode,
+							Country:       ffsEvent.Location.Country,
+							CountryCode:   ffsEvent.Location.CountryCode,
+							Region:        ffsEvent.Location.Region,
+							RegionName:    ffsEvent.Location.RegionName,
+							City:          ffsEvent.Location.City,
+							District:      ffsEvent.Location.District,
+							ZIP:           ffsEvent.Location.ZIP,
+							Lat:           ffsEvent.Location.Lat,
+							Lon:           ffsEvent.Location.Lon,
+							Timezone:      ffsEvent.Location.Timezone,
+							Currency:      ffsEvent.Location.Currency,
+							ISP:           ffsEvent.Location.ISP,
+							Org:           ffsEvent.Location.Org,
+							AS:            ffsEvent.Location.AS,
+							ASName:        ffsEvent.Location.ASName,
+							Reverse:       ffsEvent.Location.Reverse,
+							Mobile:        ffsEvent.Location.Mobile,
+							Proxy:         ffsEvent.Location.Proxy,
+							Hosting:       ffsEvent.Location.Hosting,
+							Query:         ffsEvent.Location.Query,
+						}
+
+						if (ffsEvent.Location.Lat != nil && *ffsEvent.Location.Lat != 0) && (ffsEvent.Location.Lon != nil && *ffsEvent.Location.Lon != 0) {
+							geo.Location = &eventOutput.Location{
 								Lat: ffsEvent.Location.Lat,
 								Lon: ffsEvent.Location.Lon,
 							}
-
-							geoip = eventOutput.Geoip{
-								Status:        ffsEvent.Location.Status,
-								Message:       ffsEvent.Location.Message,
-								Continent:     ffsEvent.Location.Continent,
-								ContinentCode: ffsEvent.Location.ContinentCode,
-								Country:       ffsEvent.Location.Country,
-								CountryCode:   ffsEvent.Location.CountryCode,
-								Region:        ffsEvent.Location.Region,
-								RegionName:    ffsEvent.Location.RegionName,
-								City:          ffsEvent.Location.City,
-								District:      ffsEvent.Location.District,
-								ZIP:           ffsEvent.Location.ZIP,
-								Lat:           ffsEvent.Location.Lat,
-								Lon:           ffsEvent.Location.Lon,
-								Timezone:      ffsEvent.Location.Timezone,
-								Currency:      ffsEvent.Location.Currency,
-								ISP:           ffsEvent.Location.ISP,
-								Org:           ffsEvent.Location.Org,
-								AS:            ffsEvent.Location.AS,
-								ASName:        ffsEvent.Location.ASName,
-								Reverse:       ffsEvent.Location.Reverse,
-								Mobile:        ffsEvent.Location.Mobile,
-								Proxy:         ffsEvent.Location.Proxy,
-								Query:         ffsEvent.Location.Query,
-								GeoPoint:      &geoPoint,
-							}
 						} else {
-							geoip = eventOutput.Geoip{
-								Status:        ffsEvent.Location.Status,
-								Message:       ffsEvent.Location.Message,
-								Continent:     ffsEvent.Location.Continent,
-								ContinentCode: ffsEvent.Location.ContinentCode,
-								Country:       ffsEvent.Location.Country,
-								CountryCode:   ffsEvent.Location.CountryCode,
-								Region:        ffsEvent.Location.Region,
-								RegionName:    ffsEvent.Location.RegionName,
-								City:          ffsEvent.Location.City,
-								District:      ffsEvent.Location.District,
-								ZIP:           ffsEvent.Location.ZIP,
-								Lat:           ffsEvent.Location.Lat,
-								Lon:           ffsEvent.Location.Lon,
-								Timezone:      ffsEvent.Location.Timezone,
-								Currency:      ffsEvent.Location.Currency,
-								ISP:           ffsEvent.Location.ISP,
-								Org:           ffsEvent.Location.Org,
-								AS:            ffsEvent.Location.AS,
-								ASName:        ffsEvent.Location.ASName,
-								Reverse:       ffsEvent.Location.Reverse,
-								Mobile:        ffsEvent.Location.Mobile,
-								Proxy:         ffsEvent.Location.Proxy,
-								Query:         ffsEvent.Location.Query,
-								GeoPoint:      nil,
-							}
+							geo.Location = nil
 						}
 					}
 
+					semiElasticFFSEvent = eventOutput.SemiElasticFFSEvent{
+						FileEvent: semiElasticFileEvent,
+					}
+
 					if ffsEvent.Location != nil && ffsEvent.Location.Status == "" {
-						semiElasticFFSEvent = eventOutput.SemiElasticFFSEvent{
-							FileEvent: semiElasticFileEvent,
-							Geoip:     nil,
-						}
+						semiElasticFFSEvent.Geo = nil
 					} else {
-						semiElasticFFSEvent = eventOutput.SemiElasticFFSEvent{
-							FileEvent: semiElasticFileEvent,
-							Geoip:     &geoip,
-						}
+						semiElasticFFSEvent.Geo = geo
 					}
 
 					semiElasticFFSEvents = append(semiElasticFFSEvents, semiElasticFFSEvent)
@@ -669,7 +720,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				if query.Elasticsearch.IndexTimeGen == "timeNow" {
 					indexName = elasticsearch.BuildIndexName(query.Elasticsearch)
 				} else {
-					indexName = elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,inProgressQuery.OnOrBefore)
+					indexName = elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, inProgressQuery.OnOrBefore)
 				}
 
 				//check if index exists if not create
@@ -750,9 +801,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, ffsEvent := range ffsEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -769,9 +820,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -788,9 +839,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range semiElasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -810,7 +861,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				go func() {
 					for timestamp, _ := range requiredIndexTimestamps {
 						//generate indexName
-						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,timestamp)
+						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, timestamp)
 						exists, err := client.IndexExists(indexName).Do(ctx)
 
 						if err != nil {
@@ -827,7 +878,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								createIndex, err = client.CreateIndex(indexName).Do(ctx)
 							}
-
 
 							if err != nil {
 								//TODO handle err
@@ -854,11 +904,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, ffsEvent := range ffsEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -870,11 +920,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range elasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Insertion.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Ingested.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.Event.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -886,11 +936,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, elasticFileEvent := range semiElasticFFSEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend,elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch,indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -1023,7 +1073,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				}()
 			}
 
-
 			logstashWg.Wait()
 
 			err = writer.Flush()
@@ -1057,7 +1106,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	tempInProgress := temp[:0]
 	for _, query := range *inProgressQueries {
 		if !cmp.Equal(query, inProgressQuery) {
-			tempInProgress = append(tempInProgress,query)
+			tempInProgress = append(tempInProgress, query)
 		}
 	}
 	*inProgressQueries = tempInProgress
@@ -1073,20 +1122,20 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	promMetrics.DecreaseInProgressQueries()
 }
 
-func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
+func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error) {
 	for _, group := range query.Groups {
 		for _, filter := range group.Filters {
 			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
 				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
 					return time.Time{}, nil
 				} else {
-					return time.Parse(time.RFC3339Nano,filter.Value)
+					return time.Parse(time.RFC3339Nano, filter.Value)
 				}
 			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
 				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
 					return time.Time{}, nil
 				} else {
-					return time.Parse(time.RFC3339Nano,filter.Value)
+					return time.Parse(time.RFC3339Nano, filter.Value)
 				}
 			}
 		}
@@ -1095,7 +1144,7 @@ func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error){
 	return time.Time{}, nil
 }
 
-func getOnOrBeforeAndAfter(query config.FFSQuery) (eventOutput.InProgressQuery,error) {
+func getOnOrBeforeAndAfter(query config.FFSQuery) (eventOutput.InProgressQuery, error) {
 	onOrAfter, err := getOnOrTime("after", query.Query)
 
 	if err != nil {
@@ -1189,7 +1238,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 			}
 		}
 	} else {
-		lastInProgressQuery := inProgressQueries[len(inProgressQueries) - 1]
+		lastInProgressQuery := inProgressQueries[len(inProgressQueries)-1]
 		if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
 			lastQueryInterval = getNewerTimeQuery(lastInProgressQuery, lastCompletedQuery)
 		} else {
@@ -1200,7 +1249,6 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	//set time variables
 	newOnOrAfter := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond)
 	newOnOrBefore := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond).Add(timeGap)
-
 
 	//TODO implement a check for "max time"
 	var done bool
@@ -1218,7 +1266,7 @@ func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCo
 	}
 
 	//Increment time
-	return setOnOrBeforeAndAfter(query,newOnOrBefore,newOnOrAfter), done, nil
+	return setOnOrBeforeAndAfter(query, newOnOrBefore, newOnOrAfter), done, nil
 }
 
 func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery) eventOutput.InProgressQuery {
