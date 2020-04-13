@@ -893,7 +893,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	//Write in progress queries to file
 	err = eventOutput.WriteInProgressQueries(query, inProgressQueries)
 
-	removeInprogressQueryTime := time.Now()
+	removeInProgressQueryTime := time.Now()
 
 	if err != nil {
 		panic(err)
@@ -911,7 +911,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	enrichmentDuration := enrichmentTime.Sub(retryGetFileEventsTime)
 	outputDuration := outputTime.Sub(enrichmentTime)
 	writeLastCompletedQueryDuration := writeLastCompletedQueryTime.Sub(outputTime)
-	removeInProgressQueryDuration := removeInprogressQueryTime.Sub(writeLastCompletedQueryTime)
+	removeInProgressQueryDuration := removeInProgressQueryTime.Sub(writeLastCompletedQueryTime)
 	log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(*fileEvents)) +
 		" - Clean Up Duration: " + cleanupDuration.String() + " - " +
 		"On Or Before And After Duration: " + onOrBeforeAndAfterDuration.String() + " - Not In-progress Duration: " +
