@@ -125,7 +125,7 @@ FileEvent
     DirectoryId                 []string        (potentially empty)
     Source                      string          (potentially empty)
     Url                         string	        (potentially empty)
-    Shared                      string	        (potentially empty)
+    Shared                      *bool	        (potentially empty)
     SharedWith                  []string        (potentially empty)
     SharingTypeAdded            []string        (potentially empty)
     CloudDriveId                string	        (potentially empty)
