@@ -86,7 +86,7 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 		ctx = context.Background()
 
 		//Create elastic client
-		elasticClient, err = elasticsearch.BuildElasticClient(*query.Elasticsearch)
+		elasticClient, err = elasticsearch.BuildElasticClient(query.Elasticsearch)
 
 		if err != nil {
 			//TODO handle error

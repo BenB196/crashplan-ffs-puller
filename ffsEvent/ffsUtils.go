@@ -31,13 +31,13 @@ func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error) {
 }
 
 func getOnOrBeforeAndAfter(query config.FFSQuery) (*eventOutput.InProgressQuery, error) {
-	onOrAfter, err := getOnOrTime("after", *query.Query)
+	onOrAfter, err := getOnOrTime("after", query.Query)
 
 	if err != nil {
 		return nil, errors.New("error parsing onOrAfter time for ffs query: " + query.Name + " " + err.Error())
 	}
 
-	onOrBefore, err := getOnOrTime("before", *query.Query)
+	onOrBefore, err := getOnOrTime("before", query.Query)
 
 	if err != nil {
 		return nil, errors.New("error parsing onOrBefore time for ffs query: " + query.Name + " " + err.Error())
@@ -64,8 +64,8 @@ func setOnOrTime(beforeAfter string, query ffs.Query, timeStamp time.Time) ffs.Q
 }
 
 func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTime time.Time) config.FFSQuery {
-	*query.Query = setOnOrTime("before", *query.Query, beforeTime)
-	*query.Query = setOnOrTime("after", *query.Query, afterTime)
+	query.Query = setOnOrTime("before", query.Query, beforeTime)
+	query.Query = setOnOrTime("after", query.Query, afterTime)
 
 	return query
 }

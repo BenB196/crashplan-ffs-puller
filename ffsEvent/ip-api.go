@@ -23,7 +23,7 @@ func getIpApiLocation(configuration config.Config, publicIpAddress string) *ip_a
 		promMetrics.IncrementCacheHits()
 		promMetrics.IncrementSuccessfulQueries()
 		promMetrics.IncrementSuccessfulSingeQueries()
-		if *configuration.Debugging {
+		if configuration.Debugging {
 			log.Println("Found: " + publicIpAddress + " in cache.")
 		}
 		return location
@@ -37,7 +37,7 @@ func getIpApiLocation(configuration config.Config, publicIpAddress string) *ip_a
 
 	promMetrics.IncrementRequestsForwarded()
 	promMetrics.IncrementQueriesForwarded()
-	location, err = ip_api.SingleQuery(ipApiQuery, configuration.IPAPI.APIKey, configuration.IPAPI.URL, *configuration.Debugging)
+	location, err = ip_api.SingleQuery(ipApiQuery, configuration.IPAPI.APIKey, configuration.IPAPI.URL, configuration.Debugging)
 
 	if err != nil {
 		if location == nil {
@@ -55,14 +55,14 @@ func getIpApiLocation(configuration config.Config, publicIpAddress string) *ip_a
 		//Re-get request with specified fields
 		location, _, err = ip_api_local.GetLocation(publicIpAddress + configuration.IPAPI.Lang,configuration.IPAPI.Fields)
 		if err != nil {
+			if configuration.Debugging {
+				log.Println("Failed single request: " + err.Error())
+			}
 			log.Println(err)
-		}
-		if *configuration.Debugging {
-			log.Println("Failed single request: " + err.Error())
 		}
 		return location
 	} else if location.Status == "success" {
-		if *configuration.Debugging {
+		if configuration.Debugging {
 			log.Println("Added: " + publicIpAddress + configuration.IPAPI.Lang + " to cache.")
 		}
 		promMetrics.IncrementHandlerRequests("200")
@@ -79,7 +79,7 @@ func getIpApiLocation(configuration config.Config, publicIpAddress string) *ip_a
 		promMetrics.IncrementSuccessfulSingeQueries()
 		return location
 	} else if location.Status == "fail" {
-		if *configuration.Debugging {
+		if configuration.Debugging {
 			log.Println("Failed single query: " + publicIpAddress)
 		}
 		promMetrics.IncrementHandlerRequests("400")

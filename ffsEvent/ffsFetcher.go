@@ -20,6 +20,7 @@ import (
 )
 
 func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, cleanUpQuery bool, client *elastic.Client, ctx context.Context, quit chan<- struct{}, retryCount int, retryQuery bool) {
+	startTime := time.Now()
 	var done bool
 	var err error
 	//Increment time
@@ -39,6 +40,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			return
 		}
 	}
+	cleanUpQueryTime := time.Now()
 
 	//increase in progress queries
 	if !retryQuery {
@@ -51,6 +53,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		panic(err)
 	}
 
+	onOrBeforeAndAfterTime := time.Now()
+
 	if !cleanUpQuery && !retryQuery {
 		*inProgressQueries = append(*inProgressQueries, *inProgressQuery)
 
@@ -62,7 +66,11 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 
-	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, *query.Query)
+	notInProgressTime := time.Now()
+
+	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, query.Query)
+
+	getFileEventsTime := time.Now()
 
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
@@ -87,12 +95,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 
+	retryGetFileEventsTime := time.Now()
+
 	//Write events
 	var ffsEvents []eventOutput.FFSEvent
 
-	if len(*fileEvents) > 0 {
-		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(*fileEvents)))
+	var enrichmentTime time.Time
 
+	if len(*fileEvents) > 0 {
 		//remap ffsEvents to ElasticFFSEvent
 		var elasticFFSEvents []eventOutput.ElasticFileEvent
 		var semiElasticFFSEvents []eventOutput.SemiElasticFFSEvent
@@ -102,12 +112,12 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			for _, ffsEvent := range *fileEvents {
 				//IP API Lookup
 				var location *ip_api.Location
-				if configuration.IPAPI.Enabled != nil && *configuration.IPAPI.Enabled {
+				if configuration.IPAPI.Enabled {
 					location = getIpApiLocation(configuration, ffsEvent.PublicIpAddress)
 				}
 
 				//convert to valid IP addresses if enabled
-				if query.ValidIpAddressesOnly != nil && *query.ValidIpAddressesOnly && len(ffsEvent.PrivateIpAddresses) > 0 {
+				if query.ValidIpAddressesOnly && len(ffsEvent.PrivateIpAddresses) > 0 {
 					for x, privateIpAddress := range ffsEvent.PrivateIpAddresses {
 						ffsEvent.PrivateIpAddresses[x] = strings.Split(privateIpAddress,"%")[0]
 					}
@@ -458,6 +468,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}()
 		remapWg.Wait()
 
+		enrichmentTime = time.Now()
+
 		switch query.OutputType {
 		case "file":
 			if query.EsStandardized == "" {
@@ -482,9 +494,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			if query.Elasticsearch.IndexTimeGen == "timeNow" || query.Elasticsearch.IndexTimeGen == "onOrBefore" {
 				var indexName string
 				if query.Elasticsearch.IndexTimeGen == "timeNow" {
-					indexName = elasticsearch.BuildIndexName(*query.Elasticsearch)
+					indexName = elasticsearch.BuildIndexName(query.Elasticsearch)
 				} else {
-					indexName = elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, inProgressQuery.OnOrBefore)
+					indexName = elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, inProgressQuery.OnOrBefore)
 				}
 
 				//check if index exists if not create
@@ -499,8 +511,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				if !exists {
 					//create index
 					var createIndex *elastic.IndicesCreateResult
-					if !*query.Elasticsearch.UseCustomIndexPattern {
-						createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(*query.Elasticsearch)).Do(ctx)
+					if !query.Elasticsearch.UseCustomIndexPattern {
+						createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
 					} else {
 						createIndex, err = client.CreateIndex(indexName).Do(ctx)
 					}
@@ -508,7 +520,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					if err != nil {
 						//TODO handle err
 						log.Println("error creating elastic index: " + indexName)
-						log.Println(elasticsearch.BuildIndexPattern(*query.Elasticsearch))
+						log.Println(elasticsearch.BuildIndexPattern(query.Elasticsearch))
 						panic(err)
 					}
 
@@ -625,7 +637,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				go func() {
 					for timestamp, _ := range requiredIndexTimestamps {
 						//generate indexName
-						indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, timestamp)
+						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, timestamp)
 						exists, err := client.IndexExists(indexName).Do(ctx)
 
 						if err != nil {
@@ -637,8 +649,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						if !exists {
 							//create index
 							var createIndex *elastic.IndicesCreateResult
-							if !*query.Elasticsearch.UseCustomIndexPattern {
-								createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(*query.Elasticsearch)).Do(ctx)
+							if !query.Elasticsearch.UseCustomIndexPattern {
+								createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
 							} else {
 								createIndex, err = client.CreateIndex(indexName).Do(ctx)
 							}
@@ -646,7 +658,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							if err != nil {
 								//TODO handle err
 								log.Println("error creating elastic index: " + indexName)
-								log.Println(elasticsearch.BuildIndexPattern(*query.Elasticsearch))
+								log.Println(elasticsearch.BuildIndexPattern(query.Elasticsearch))
 								panic(err)
 							}
 
@@ -672,7 +684,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -688,7 +700,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -704,7 +716,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -854,6 +866,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			}
 		}
 	}
+	outputTime := time.Now()
 
 	//Check if this query is the newest completed query, if it is, set last completed query to query times
 	if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
@@ -864,6 +877,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			panic(err)
 		}
 	}
+
+	writeLastCompletedQueryTime := time.Now()
 
 	//Remove from in progress query slice
 	temp := *inProgressQueries
@@ -878,10 +893,30 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	//Write in progress queries to file
 	err = eventOutput.WriteInProgressQueries(query, inProgressQueries)
 
+	removeInprogressQueryTime := time.Now()
+
 	if err != nil {
 		panic(err)
 	}
 
 	promMetrics.IncrementEventsProcessed(len(ffsEvents))
 	promMetrics.DecreaseInProgressQueries()
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	cleanupDuration := cleanUpQueryTime.Sub(startTime)
+	onOrBeforeAndAfterDuration := onOrBeforeAndAfterTime.Sub(cleanUpQueryTime)
+	notInProgressDuration := notInProgressTime.Sub(onOrBeforeAndAfterTime)
+	getFileEventsDuration := getFileEventsTime.Sub(notInProgressTime)
+	retryGetFileEventsDuration := retryGetFileEventsTime.Sub(getFileEventsTime)
+	enrichmentDuration := enrichmentTime.Sub(retryGetFileEventsTime)
+	outputDuration := outputTime.Sub(enrichmentTime)
+	writeLastCompletedQueryDuration := writeLastCompletedQueryTime.Sub(outputTime)
+	removeInProgressQueryDuration := removeInprogressQueryTime.Sub(writeLastCompletedQueryTime)
+	log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(*fileEvents)) +
+		" - Clean Up Duration: " + cleanupDuration.String() + " - " +
+		"On Or Before And After Duration: " + onOrBeforeAndAfterDuration.String() + " - Not In-progress Duration: " +
+		notInProgressDuration.String() + " - Get File Events Duration: " + getFileEventsDuration.String() + " - Retry Get File Events Duration: " +
+		retryGetFileEventsDuration.String() + " - Enrichment Duration: " + enrichmentDuration.String() + " - Output Duration: " + outputDuration.String() +
+		" - Write Last Completed Query Duration: " + writeLastCompletedQueryDuration.String() +
+		" - Remove In Progress Query Duration: " + removeInProgressQueryDuration.String() + " - Duration: " + duration.String())
 }

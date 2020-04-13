@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/BenB196/crashplan-ffs-puller/config"
 	"github.com/BenB196/crashplan-ffs-puller/ffsEvent"
-	ip_api_local "github.com/BenB196/crashplan-ffs-puller/ip-api-local"
+	"github.com/BenB196/crashplan-ffs-puller/ip-api-local"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
@@ -40,9 +40,8 @@ func main() {
 	log.Println(configuration.AuthURI)
 	log.Println(configuration.FFSURI)
 
-	if configuration.IPAPI.Enabled != nil && *configuration.IPAPI.Enabled &&
-		configuration.IPAPI.LocalCache.Enabled != nil && *configuration.IPAPI.LocalCache.Enabled &&
-		configuration.IPAPI.LocalCache.Persist != nil && *configuration.IPAPI.LocalCache.Persist {
+	if configuration.IPAPI.Enabled && configuration.IPAPI.LocalCache.Enabled &&
+		configuration.IPAPI.LocalCache.Persist {
 		//read ip-api proxy if enabled
 		ip_api_local.ReadCache(&configuration.IPAPI.LocalCache.WriteLocation)
 
@@ -70,11 +69,11 @@ func main() {
 		}
 	}()
 
-	if *configuration.Prometheus.Enabled {
+	if configuration.Prometheus.Enabled {
 		//startup prometheus metrics port
 		http.Handle("/metrics",promhttp.Handler())
 
-		log.Fatal(http.ListenAndServe(":" + strconv.Itoa(*configuration.Prometheus.Port), nil))
+		log.Fatal(http.ListenAndServe(":" + strconv.Itoa(configuration.Prometheus.Port), nil))
 	}
 
 	wg.Wait()

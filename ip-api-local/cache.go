@@ -163,7 +163,7 @@ writeLocation - string containing the write path
 func WriteCache(writeLocation *string) {
 	log.Println("Starting Cache Write")
 	//create file name
-	fileName := *writeLocation + "cache.gob"
+	fileName := *writeLocation + "ip_api_proxy_cache.gob"
 
 	err := FastCacheCache.SaveToFile(fileName)
 
@@ -180,7 +180,7 @@ writeLocation - string containing the file path.
 */
 func ReadCache(writeLocation *string) {
 	//create filename
-	fileName := *writeLocation + "cache.gob"
+	fileName := *writeLocation + "ip_api_proxy_cache.gob"
 
 	FastCacheCache = fastcache.LoadFromFileOrNew(fileName, 32000000)
 }
