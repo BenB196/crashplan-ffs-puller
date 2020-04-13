@@ -14,6 +14,7 @@ import (
 )
 
 func FFSQuery(configuration config.Config, query config.FFSQuery) {
+
 	//Initialize query waitGroup
 	var wgQuery sync.WaitGroup
 
@@ -38,7 +39,7 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 	}
 
 	//Keep track of the last successfully completed query
-	var lastCompletedQuery eventOutput.InProgressQuery
+	var lastCompletedQuery *eventOutput.InProgressQuery
 	lastCompletedQuery, err = eventOutput.ReadLastCompletedQuery(query)
 
 	if err != nil {
@@ -107,17 +108,17 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 	}
 
 	//Handle old in progress queries that never completed when programmed died
-	if len(inProgressQueries) > 0 {
+	if inProgressQueries != nil && len(*inProgressQueries) > 0 {
 		go func() {
-			for _, inProgressQuery := range inProgressQueries {
+			for _, inProgressQuery := range *inProgressQueries {
 				query = setOnOrBeforeAndAfter(query, inProgressQuery.OnOrBefore, inProgressQuery.OnOrAfter)
-				queryFetcher(query, &inProgressQueries, *authData, configuration, &lastCompletedQuery, maxTime, true, elasticClient, ctx, nil, 0, false)
+				queryFetcher(query, inProgressQueries, *authData, configuration, lastCompletedQuery, maxTime, true, elasticClient, ctx, nil, 0, false)
 			}
 		}()
 	}
 
 	//Handle setting the initial ON_OR_BEFORE and ON_OR_AFTER depending on the saved lastCompletedQuery
-	if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
+	if *lastCompletedQuery != (eventOutput.InProgressQuery{}) {
 		//TODO handle setting correct times
 	}
 
@@ -128,7 +129,7 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 		for {
 			select {
 			case <-queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, *authData, configuration, &lastCompletedQuery, maxTime, false, elasticClient, ctx, quit, 0, false)
+				go queryFetcher(query, inProgressQueries, *authData, configuration, lastCompletedQuery, maxTime, false, elasticClient, ctx, quit, 0, false)
 			case <-quit:
 				queryIntervalTimeTicker.Stop()
 				wgQuery.Done()
