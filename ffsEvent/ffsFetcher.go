@@ -4,14 +4,12 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/BenB196/crashplan-ffs-go-pkg"
 	"github.com/BenB196/crashplan-ffs-puller/config"
 	"github.com/BenB196/crashplan-ffs-puller/elasticsearch"
 	"github.com/BenB196/crashplan-ffs-puller/eventOutput"
 	"github.com/BenB196/crashplan-ffs-puller/promMetrics"
-	"github.com/BenB196/ip-api-go-pkg"
+	ip_api "github.com/BenB196/ip-api-go-pkg"
 	"github.com/google/go-cmp/cmp"
 	"github.com/olivere/elastic/v7"
 	"log"
@@ -20,133 +18,6 @@ import (
 	"sync"
 	"time"
 )
-
-func FFSQuery(configuration config.Config, query config.FFSQuery) {
-	//Initialize query waitGroup
-	var wgQuery sync.WaitGroup
-
-	//Check if there is a "max" time and set
-	var maxTime time.Time
-	defaultQueryTimes, err := getOnOrBeforeAndAfter(query)
-
-	if err != nil {
-		log.Println("error getting default query times")
-		panic(err)
-	}
-
-	maxTime = defaultQueryTimes.OnOrBefore
-
-	//Keep track of in progress queries by storing their ON_OR_AFTER and ON_OR_BEFORE times
-	//Load saved in progress queries from last program stop
-	inProgressQueries, err := eventOutput.ReadInProgressQueries(query)
-
-	if err != nil {
-		log.Println("error getting old in progress queries")
-		panic(err)
-	}
-
-	//Keep track of the last successfully completed query
-	var lastCompletedQuery eventOutput.InProgressQuery
-	lastCompletedQuery, err = eventOutput.ReadLastCompletedQuery(query)
-
-	if err != nil {
-		log.Println("error getting old last completed query")
-		panic(err)
-	}
-
-	//Get initial authData
-	authData, err := ffs.GetAuthData(configuration.AuthURI, query.Username, query.Password)
-
-	if err != nil {
-		log.Println("error getting auth data for ffs query: " + query.Name)
-		panic(err)
-	}
-
-	//Make quit chan to close go routines
-	quit := make(chan struct{})
-
-	//Init goroutine for getting authData ever 55 minutes
-	//Handle getting API AuthTokens every 55 minutes
-	authTimeTicker := time.NewTicker(55 * time.Minute)
-	go func() {
-		for {
-			select {
-			case <-authTimeTicker.C:
-				authData, err = ffs.GetAuthData(configuration.AuthURI, query.Username, query.Password)
-
-				if err != nil {
-					log.Println("error with getting authentication data for ffs query: " + query.Name)
-					panic(err)
-				}
-			case <-quit:
-				authTimeTicker.Stop()
-				return
-			}
-		}
-	}()
-
-	//Init elastic client if output type == elastic
-	var elasticClient *elastic.Client
-	var ctx context.Context
-
-	if query.OutputType == "elastic" {
-		//Create context
-		ctx = context.Background()
-
-		//Create elastic client
-		elasticClient, err = elasticsearch.BuildElasticClient(query.Elasticsearch)
-
-		if err != nil {
-			//TODO handle error
-			log.Println("error building elastic client")
-			panic(err)
-		}
-
-		//get elastic info
-		info, code, err := elasticClient.Ping(query.Elasticsearch.ElasticURL).Do(ctx)
-
-		if err != nil {
-			//TODO handle error
-			log.Println("error reaching elastic server")
-			panic(err)
-		}
-
-		fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
-	}
-
-	//Handle old in progress queries that never completed when programmed died
-	if len(inProgressQueries) > 0 {
-		go func() {
-			for _, inProgressQuery := range inProgressQueries {
-				query = setOnOrBeforeAndAfter(query, inProgressQuery.OnOrBefore, inProgressQuery.OnOrAfter)
-				queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, true, elasticClient, ctx, nil, 0, false)
-			}
-		}()
-	}
-
-	//Handle setting the initial ON_OR_BEFORE and ON_OR_AFTER depending on the saved lastCompletedQuery
-	if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
-		//TODO handle setting correct times
-	}
-
-	queryInterval, _ := time.ParseDuration(query.Interval)
-	queryIntervalTimeTicker := time.NewTicker(queryInterval)
-	wgQuery.Add(1)
-	go func() {
-		for {
-			select {
-			case <-queryIntervalTimeTicker.C:
-				go queryFetcher(query, &inProgressQueries, authData, configuration, &lastCompletedQuery, maxTime, false, elasticClient, ctx, quit, 0, false)
-			case <-quit:
-				queryIntervalTimeTicker.Stop()
-				wgQuery.Done()
-				return
-			}
-		}
-	}()
-	wgQuery.Wait()
-	return
-}
 
 func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProgressQuery, authData ffs.AuthData, configuration config.Config, lastCompletedQuery *eventOutput.InProgressQuery, maxTime time.Time, cleanUpQuery bool, client *elastic.Client, ctx context.Context, quit chan<- struct{}, retryCount int, retryQuery bool) {
 	var done bool
@@ -181,7 +52,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	}
 
 	if !cleanUpQuery && !retryQuery {
-		*inProgressQueries = append(*inProgressQueries, inProgressQuery)
+		*inProgressQueries = append(*inProgressQueries, *inProgressQuery)
 
 		//Write in progress queries to file
 		err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
@@ -191,7 +62,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		}
 	}
 
-	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, query.Query)
+	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, *query.Query)
 
 	if err != nil {
 		log.Println("error getting file events for ffs query: " + query.Name)
@@ -219,121 +90,30 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	//Write events
 	var ffsEvents []eventOutput.FFSEvent
 
-	if len(fileEvents) > 0 {
-		//TODO this is where the data should be enriched
-		//Add ip-api data if enabled
-		var locationMap = map[string]ip_api.Location{}
-		if query.IPAPI.Enabled {
-			//Build ip api query
-			//init vars
-			var ipApiQuery ip_api.Query
-			ipApiQuery.Fields = query.IPAPI.Fields
-			ipApiQuery.Lang = query.IPAPI.Lang
-			var queryMap = map[string]interface{}{}
-			var queryIPs []ip_api.QueryIP
-			var locations []ip_api.Location
-			var ipApiWg sync.WaitGroup
-
-			//Loop through events and build batch query
-			ipApiWg.Add(len(fileEvents))
-			for _, event := range fileEvents {
-				if event.PublicIpAddress != "" {
-					//if queryIPs is not new
-					if len(queryIPs) > 0 {
-						//check to make sure map does not already contain ip, don't want to query same IP multiple times
-						if _, ok := queryMap[event.PublicIpAddress]; !ok {
-							queryIPs = append(queryIPs, ip_api.QueryIP{
-								Query: event.PublicIpAddress,
-							})
-							queryMap[event.PublicIpAddress] = nil
-						}
-					} else {
-						queryIPs = append(queryIPs, ip_api.QueryIP{
-							Query: event.PublicIpAddress,
-						})
-						queryMap[event.PublicIpAddress] = nil
-					}
-				}
-				ipApiWg.Done()
-			}
-
-			ipApiWg.Wait()
-
-			ipApiQuery.Queries = queryIPs
-
-			locations, err = ip_api.BatchQuery(ipApiQuery, query.IPAPI.APIKey, query.IPAPI.URL, *configuration.Debugging)
-
-			if err != nil {
-				log.Println("error processing batch query: " + err.Error())
-			}
-
-			//Move slice to map for easy lookups
-			for _, location := range locations {
-				locationMap[location.Query] = location
-			}
-		}
-
-		var eventWg sync.WaitGroup
-		eventWg.Add(len(fileEvents))
-		go func() {
-			for _, event := range fileEvents {
-				if event.PublicIpAddress != "" {
-					if len(locationMap) == 0 {
-						ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoLocation: nil})
-					} else if location, ok := locationMap[event.PublicIpAddress]; ok {
-						//nil this as it is not needed, we already have event.publicIpAddress
-						location.Query = ""
-						geoPoint := eventOutput.Location{
-							Lat: location.Lat,
-							Lon: location.Lon,
-						}
-						ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: &location, GeoLocation: &geoPoint})
-					} else {
-						b, _ := json.Marshal(event)
-						log.Println("error getting location for fileEvent: " + string(b))
-						panic("Unable to find location which should exist.")
-					}
-				} else {
-					ffsEvents = append(ffsEvents, eventOutput.FFSEvent{FileEvent: event, Location: nil, GeoLocation: nil})
-				}
-				defer eventWg.Done()
-			}
-		}()
-
-		//check if validIpAddressesOnly is true and if so convert all non-valid ip addresses to valid ones
-		if query.ValidIpAddressesOnly {
-			var validIpAddressesWg sync.WaitGroup
-			validIpAddressesWg.Add(len(fileEvents))
-			go func() {
-				for i, fileEvent := range fileEvents {
-					if len(fileEvent.PrivateIpAddresses) > 0 {
-						var privateIpWg sync.WaitGroup
-						privateIpWg.Add(len(fileEvent.PrivateIpAddresses))
-						go func() {
-							for x, privateIpAddress := range fileEvent.PrivateIpAddresses {
-								fileEvents[i].PrivateIpAddresses[x] = strings.Split(privateIpAddress, "%")[0]
-								privateIpWg.Done()
-							}
-						}()
-						privateIpWg.Wait()
-					}
-					validIpAddressesWg.Done()
-				}
-			}()
-			validIpAddressesWg.Wait()
-		}
-
-		eventWg.Wait()
-		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(ffsEvents)))
+	if len(*fileEvents) > 0 {
+		log.Println("Number of events for query: " + query.Name + " - " + strconv.Itoa(len(*fileEvents)))
 
 		//remap ffsEvents to ElasticFFSEvent
 		var elasticFFSEvents []eventOutput.ElasticFileEvent
 		var semiElasticFFSEvents []eventOutput.SemiElasticFFSEvent
-		if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "full") {
-			var remapWg sync.WaitGroup
-			remapWg.Add(len(ffsEvents))
-			go func() {
-				for _, ffsEvent := range ffsEvents {
+		var remapWg sync.WaitGroup
+		remapWg.Add(len(*fileEvents))
+		go func() {
+			for _, ffsEvent := range *fileEvents {
+				//IP API Lookup
+				var location *ip_api.Location
+				if configuration.IPAPI.Enabled != nil && *configuration.IPAPI.Enabled {
+					location = getIpApiLocation(configuration, ffsEvent.PublicIpAddress)
+				}
+
+				//convert to valid IP addresses if enabled
+				if query.ValidIpAddressesOnly != nil && *query.ValidIpAddressesOnly && len(ffsEvent.PrivateIpAddresses) > 0 {
+					for x, privateIpAddress := range ffsEvent.PrivateIpAddresses {
+						ffsEvent.PrivateIpAddresses[x] = strings.Split(privateIpAddress,"%")[0]
+					}
+				}
+
+				if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "full") {
 					event := &eventOutput.Event{
 						Id:                 ffsEvent.EventId,
 						Type:               ffsEvent.EventType,
@@ -371,15 +151,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						url = nil
 					}
 
-					var shared bool
-					if ffsEvent.Shared != "" {
-						shared, err = strconv.ParseBool(ffsEvent.Shared)
-
-						if err != nil {
-							log.Println("Error parsing shared value")
-						}
-					}
-
 					file := &eventOutput.File{
 						Path:                        ffsEvent.FilePath,
 						Name:                        ffsEvent.FileName,
@@ -395,7 +166,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Mtime:                       ffsEvent.ModifyTimestamp,
 						Directory:                   ffsEvent.DirectoryId,
 						URL:                         url,
-						Shared:                      &shared,
+						Shared:                      ffsEvent.Shared,
 						SharedWith:                  ffsEvent.SharedWith,
 						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
 						CloudDriveId:                ffsEvent.CloudDriveId,
@@ -447,38 +218,38 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					var geo *eventOutput.Geo
 					var as *eventOutput.AS
-					if ffsEvent.Location != nil {
+					if location != nil {
 						geo = &eventOutput.Geo{
-							Status:        ffsEvent.Location.Status,
-							Message:       ffsEvent.Location.Message,
-							Continent:     ffsEvent.Location.Continent,
-							ContinentCode: ffsEvent.Location.ContinentCode,
-							Country:       ffsEvent.Location.Country,
-							CountryCode:   ffsEvent.Location.CountryCode,
-							Region:        ffsEvent.Location.Region,
-							RegionName:    ffsEvent.Location.RegionName,
-							City:          ffsEvent.Location.City,
-							District:      ffsEvent.Location.District,
-							ZIP:           ffsEvent.Location.ZIP,
-							Lat:           ffsEvent.Location.Lat,
-							Lon:           ffsEvent.Location.Lon,
-							Timezone:      ffsEvent.Location.Timezone,
-							Currency:      ffsEvent.Location.Currency,
-							ISP:           ffsEvent.Location.ISP,
-							Org:           ffsEvent.Location.Org,
-							AS:            ffsEvent.Location.AS,
-							ASName:        ffsEvent.Location.ASName,
-							Reverse:       ffsEvent.Location.Reverse,
-							Mobile:        ffsEvent.Location.Mobile,
-							Proxy:         ffsEvent.Location.Proxy,
-							Hosting:       ffsEvent.Location.Hosting,
-							Query:         ffsEvent.Location.Query,
+							Status:        location.Status,
+							Message:       location.Message,
+							Continent:     location.Continent,
+							ContinentCode: location.ContinentCode,
+							Country:       location.Country,
+							CountryCode:   location.CountryCode,
+							Region:        location.Region,
+							RegionName:    location.RegionName,
+							City:          location.City,
+							District:      location.District,
+							ZIP:           location.ZIP,
+							Lat:           location.Lat,
+							Lon:           location.Lon,
+							Timezone:      location.Timezone,
+							Currency:      location.Currency,
+							ISP:           location.ISP,
+							Org:           location.Org,
+							AS:            location.AS,
+							ASName:        location.ASName,
+							Reverse:       location.Reverse,
+							Mobile:        location.Mobile,
+							Proxy:         location.Proxy,
+							Hosting:       location.Hosting,
+							Query:         location.Query,
 						}
 
-						if (ffsEvent.Location.Lat != nil && *ffsEvent.Location.Lat != 0) && (ffsEvent.Location.Lon != nil && *ffsEvent.Location.Lon != 0) {
+						if (location.Lat != nil && *location.Lat != 0) && (location.Lon != nil && *location.Lon != 0) {
 							geo.Location = &eventOutput.Location{
-								Lat: ffsEvent.Location.Lat,
-								Lon: ffsEvent.Location.Lon,
+								Lat: location.Lat,
+								Lon: location.Lon,
 							}
 						} else {
 							geo.Location = nil
@@ -570,14 +341,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
 					remapWg.Done()
-				}
-			}()
-			remapWg.Wait()
-		} else if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "half") {
-			var remapWg sync.WaitGroup
-			remapWg.Add(len(ffsEvents))
-			go func() {
-				for _, ffsEvent := range ffsEvents {
+				} else if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "half") {
 					semiElasticFileEvent := eventOutput.SemiElasticFileEvent{
 						EventId:                     ffsEvent.EventId,
 						EventType:                   ffsEvent.EventType,
@@ -639,38 +403,38 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent
 					var geo *eventOutput.Geo
-					if ffsEvent.Location != nil {
+					if location != nil {
 						geo = &eventOutput.Geo{
-							Status:        ffsEvent.Location.Status,
-							Message:       ffsEvent.Location.Message,
-							Continent:     ffsEvent.Location.Continent,
-							ContinentCode: ffsEvent.Location.ContinentCode,
-							Country:       ffsEvent.Location.Country,
-							CountryCode:   ffsEvent.Location.CountryCode,
-							Region:        ffsEvent.Location.Region,
-							RegionName:    ffsEvent.Location.RegionName,
-							City:          ffsEvent.Location.City,
-							District:      ffsEvent.Location.District,
-							ZIP:           ffsEvent.Location.ZIP,
-							Lat:           ffsEvent.Location.Lat,
-							Lon:           ffsEvent.Location.Lon,
-							Timezone:      ffsEvent.Location.Timezone,
-							Currency:      ffsEvent.Location.Currency,
-							ISP:           ffsEvent.Location.ISP,
-							Org:           ffsEvent.Location.Org,
-							AS:            ffsEvent.Location.AS,
-							ASName:        ffsEvent.Location.ASName,
-							Reverse:       ffsEvent.Location.Reverse,
-							Mobile:        ffsEvent.Location.Mobile,
-							Proxy:         ffsEvent.Location.Proxy,
-							Hosting:       ffsEvent.Location.Hosting,
-							Query:         ffsEvent.Location.Query,
+							Status:        location.Status,
+							Message:       location.Message,
+							Continent:     location.Continent,
+							ContinentCode: location.ContinentCode,
+							Country:       location.Country,
+							CountryCode:   location.CountryCode,
+							Region:        location.Region,
+							RegionName:    location.RegionName,
+							City:          location.City,
+							District:      location.District,
+							ZIP:           location.ZIP,
+							Lat:           location.Lat,
+							Lon:           location.Lon,
+							Timezone:      location.Timezone,
+							Currency:      location.Currency,
+							ISP:           location.ISP,
+							Org:           location.Org,
+							AS:            location.AS,
+							ASName:        location.ASName,
+							Reverse:       location.Reverse,
+							Mobile:        location.Mobile,
+							Proxy:         location.Proxy,
+							Hosting:       location.Hosting,
+							Query:         location.Query,
 						}
 
-						if (ffsEvent.Location.Lat != nil && *ffsEvent.Location.Lat != 0) && (ffsEvent.Location.Lon != nil && *ffsEvent.Location.Lon != 0) {
+						if (location.Lat != nil && *location.Lat != 0) && (location.Lon != nil && *location.Lon != 0) {
 							geo.Location = &eventOutput.Location{
-								Lat: ffsEvent.Location.Lat,
-								Lon: ffsEvent.Location.Lon,
+								Lat: location.Lat,
+								Lon: location.Lon,
 							}
 						} else {
 							geo.Location = nil
@@ -681,7 +445,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						FileEvent: semiElasticFileEvent,
 					}
 
-					if ffsEvent.Location != nil && ffsEvent.Location.Status == "" {
+					if location != nil && location.Status == "" {
 						semiElasticFFSEvent.Geo = nil
 					} else {
 						semiElasticFFSEvent.Geo = geo
@@ -690,9 +454,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					semiElasticFFSEvents = append(semiElasticFFSEvents, semiElasticFFSEvent)
 					remapWg.Done()
 				}
-			}()
-			remapWg.Wait()
-		}
+			}
+		}()
+		remapWg.Wait()
 
 		switch query.OutputType {
 		case "file":
@@ -718,9 +482,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 			if query.Elasticsearch.IndexTimeGen == "timeNow" || query.Elasticsearch.IndexTimeGen == "onOrBefore" {
 				var indexName string
 				if query.Elasticsearch.IndexTimeGen == "timeNow" {
-					indexName = elasticsearch.BuildIndexName(query.Elasticsearch)
+					indexName = elasticsearch.BuildIndexName(*query.Elasticsearch)
 				} else {
-					indexName = elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, inProgressQuery.OnOrBefore)
+					indexName = elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, inProgressQuery.OnOrBefore)
 				}
 
 				//check if index exists if not create
@@ -735,8 +499,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				if !exists {
 					//create index
 					var createIndex *elastic.IndicesCreateResult
-					if !query.Elasticsearch.UseCustomIndexPattern {
-						createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+					if !*query.Elasticsearch.UseCustomIndexPattern {
+						createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(*query.Elasticsearch)).Do(ctx)
 					} else {
 						createIndex, err = client.CreateIndex(indexName).Do(ctx)
 					}
@@ -744,7 +508,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					if err != nil {
 						//TODO handle err
 						log.Println("error creating elastic index: " + indexName)
-						log.Println(elasticsearch.BuildIndexPattern(query.Elasticsearch))
+						log.Println(elasticsearch.BuildIndexPattern(*query.Elasticsearch))
 						panic(err)
 					}
 
@@ -861,7 +625,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				go func() {
 					for timestamp, _ := range requiredIndexTimestamps {
 						//generate indexName
-						indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, timestamp)
+						indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, timestamp)
 						exists, err := client.IndexExists(indexName).Do(ctx)
 
 						if err != nil {
@@ -873,8 +637,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						if !exists {
 							//create index
 							var createIndex *elastic.IndicesCreateResult
-							if !query.Elasticsearch.UseCustomIndexPattern {
-								createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(query.Elasticsearch)).Do(ctx)
+							if !*query.Elasticsearch.UseCustomIndexPattern {
+								createIndex, err = client.CreateIndex(indexName).BodyString(elasticsearch.BuildIndexPattern(*query.Elasticsearch)).Do(ctx)
 							} else {
 								createIndex, err = client.CreateIndex(indexName).Do(ctx)
 							}
@@ -882,7 +646,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							if err != nil {
 								//TODO handle err
 								log.Println("error creating elastic index: " + indexName)
-								log.Println(elasticsearch.BuildIndexPattern(query.Elasticsearch))
+								log.Println(elasticsearch.BuildIndexPattern(*query.Elasticsearch))
 								panic(err)
 							}
 
@@ -908,7 +672,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -924,7 +688,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -940,7 +704,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
+							indexName := elasticsearch.BuildIndexNameWithTime(*query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
 							processor.Add(r)
 							elasticWg.Done()
@@ -1093,9 +857,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	//Check if this query is the newest completed query, if it is, set last completed query to query times
 	if lastCompletedQuery.OnOrBefore.Sub(inProgressQuery.OnOrAfter) <= 0 {
-		*lastCompletedQuery = inProgressQuery
+		*lastCompletedQuery = *inProgressQuery
 
-		err := eventOutput.WriteLastCompletedQuery(query, inProgressQuery)
+		err := eventOutput.WriteLastCompletedQuery(query, *inProgressQuery)
 		if err != nil {
 			panic(err)
 		}
@@ -1120,159 +884,4 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	promMetrics.IncrementEventsProcessed(len(ffsEvents))
 	promMetrics.DecreaseInProgressQueries()
-}
-
-func getOnOrTime(beforeAfter string, query ffs.Query) (time.Time, error) {
-	for _, group := range query.Groups {
-		for _, filter := range group.Filters {
-			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
-				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
-					return time.Time{}, nil
-				} else {
-					return time.Parse(time.RFC3339Nano, filter.Value)
-				}
-			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
-				if filter.Value == "" || filter.Value == (time.Time{}.String()) {
-					return time.Time{}, nil
-				} else {
-					return time.Parse(time.RFC3339Nano, filter.Value)
-				}
-			}
-		}
-	}
-
-	return time.Time{}, nil
-}
-
-func getOnOrBeforeAndAfter(query config.FFSQuery) (eventOutput.InProgressQuery, error) {
-	onOrAfter, err := getOnOrTime("after", query.Query)
-
-	if err != nil {
-		return eventOutput.InProgressQuery{}, errors.New("error parsing onOrAfter time for ffs query: " + query.Name + " " + err.Error())
-	}
-
-	onOrBefore, err := getOnOrTime("before", query.Query)
-
-	if err != nil {
-		return eventOutput.InProgressQuery{}, errors.New("error parsing onOrBefore time for ffs query: " + query.Name + " " + err.Error())
-	}
-
-	return eventOutput.InProgressQuery{
-		OnOrAfter:  onOrAfter,
-		OnOrBefore: onOrBefore,
-	}, nil
-}
-
-func setOnOrTime(beforeAfter string, query ffs.Query, timeStamp time.Time) ffs.Query {
-	for k, group := range query.Groups {
-		for i, filter := range group.Filters {
-			if beforeAfter == "before" && filter.Operator == "ON_OR_BEFORE" {
-				query.Groups[k].Filters[i].Value = timeStamp.Format("2006-01-02T15:04:05.000Z")
-			} else if beforeAfter == "after" && filter.Operator == "ON_OR_AFTER" {
-				query.Groups[k].Filters[i].Value = timeStamp.Format("2006-01-02T15:04:05.000Z")
-			}
-		}
-	}
-
-	return query
-}
-
-func setOnOrBeforeAndAfter(query config.FFSQuery, beforeTime time.Time, afterTime time.Time) config.FFSQuery {
-	query.Query = setOnOrTime("before", query.Query, beforeTime)
-	query.Query = setOnOrTime("after", query.Query, afterTime)
-
-	return query
-}
-
-//Logic for setting the correct times
-//TODO make sure on or before never exceeds time.Now -15 minutes. This is what Code42 sets as expected time for logs to be ready for pulling
-//If len(inProgressQueries) == 0
-//then check last completed query
-//If last completed query is "empty"
-//then get ffs query times
-//If ffs query on or after is empty
-//then set to time.now
-//else do nothing
-//If ffs query on or before is empty
-//then set to on or after + query time Interval
-//else this is max time and should not be exceeded TODO save this to a "max time variable" that is checked only on program startup
-//else set time based off of last completed query + time gap
-//else get last inProgressQuery
-//then check if last completed query is set
-//if last completed query is set
-//then compare last in progress query to last completed query and see which is newer
-//else set time based off of last in progress query + time gap
-
-func calculateTimeStamps(inProgressQueries []eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery, query config.FFSQuery, maxTime time.Time) (config.FFSQuery, bool, error) {
-	//Create variable which will be used to store the latest query to have run
-	var lastQueryInterval eventOutput.InProgressQuery
-
-	//Set timezone
-	loc, _ := time.LoadLocation("UTC")
-	timeNow := time.Now().Add(-15 * time.Minute).In(loc)
-
-	//Get time gap as a duration
-	timeGap, err := time.ParseDuration(query.TimeGap)
-	if err != nil {
-		return query, false, err
-	}
-
-	if len(inProgressQueries) == 0 {
-		if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
-			lastQueryInterval = lastCompletedQuery
-		} else {
-			currentQuery, err := getOnOrBeforeAndAfter(query)
-			if err != nil {
-				return query, false, err
-			}
-			if currentQuery.OnOrAfter == (time.Time{}) {
-				lastQueryInterval = eventOutput.InProgressQuery{
-					OnOrAfter:  timeNow.Add(-timeGap),
-					OnOrBefore: timeNow.Add(timeGap),
-				}
-			} else {
-				lastQueryInterval = eventOutput.InProgressQuery{
-					OnOrAfter:  currentQuery.OnOrAfter.Add(1 * time.Millisecond),
-					OnOrBefore: currentQuery.OnOrAfter.Add(1 * time.Millisecond).Add(timeGap),
-				}
-			}
-		}
-	} else {
-		lastInProgressQuery := inProgressQueries[len(inProgressQueries)-1]
-		if lastCompletedQuery != (eventOutput.InProgressQuery{}) {
-			lastQueryInterval = getNewerTimeQuery(lastInProgressQuery, lastCompletedQuery)
-		} else {
-			lastQueryInterval = lastInProgressQuery
-		}
-	}
-
-	//set time variables
-	newOnOrAfter := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond)
-	newOnOrBefore := lastQueryInterval.OnOrBefore.Add(1 * time.Millisecond).Add(timeGap)
-
-	//TODO implement a check for "max time"
-	var done bool
-	if maxTime != (time.Time{}) {
-		if maxTime.Sub(newOnOrAfter) <= 0 {
-			done = true
-		} else if maxTime.Sub(newOnOrBefore) <= 0 {
-			newOnOrBefore = maxTime
-		}
-	}
-
-	//Truncate time if within the 15 minute no go window
-	if timeNow.Sub(newOnOrBefore) <= 0 {
-		newOnOrBefore = timeNow
-	}
-
-	//Increment time
-	return setOnOrBeforeAndAfter(query, newOnOrBefore, newOnOrAfter), done, nil
-}
-
-func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastCompletedQuery eventOutput.InProgressQuery) eventOutput.InProgressQuery {
-	if lastCompletedQuery.OnOrBefore.Sub(lastInProgressQuery.OnOrAfter) <= 0 {
-		return lastInProgressQuery
-	} else {
-		return lastCompletedQuery
-	}
 }

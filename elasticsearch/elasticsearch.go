@@ -16,11 +16,11 @@ func BuildElasticClient(elasticConfig config.Elasticsearch) (*elastic.Client, er
 		client, err = elastic.NewClient(
 			elastic.SetURL(elasticConfig.ElasticURL),
 			elastic.SetBasicAuth(elasticConfig.BasicAuth.User,elasticConfig.BasicAuth.Password),
-			elastic.SetSniff(elasticConfig.Sniffing))
+			elastic.SetSniff(*elasticConfig.Sniffing))
 	} else {
 		client, err = elastic.NewClient(
 			elastic.SetURL(elasticConfig.ElasticURL),
-			elastic.SetSniff(elasticConfig.Sniffing))
+			elastic.SetSniff(*elasticConfig.Sniffing))
 	}
 
 	if err != nil {
@@ -54,25 +54,25 @@ func BuildIndexNameWithTime(elasticConfig config.Elasticsearch, timeToAppend tim
 
 func BuildIndexPattern(elasticConfig config.Elasticsearch) string {
 	var codec string
-	if elasticConfig.BestCompression {
+	if *elasticConfig.BestCompression {
 		codec = "    \"codec\": \"best_compression\","
 	} else {
 		codec = ""
 	}
 
 	var refreshInterval string
-	if elasticConfig.RefreshInterval == 0 {
+	if *elasticConfig.RefreshInterval == 0 {
 		refreshInterval = "-1"
 	} else {
-		refreshInterval = strconv.Itoa(elasticConfig.RefreshInterval) + "s"
+		refreshInterval = strconv.Itoa(*elasticConfig.RefreshInterval) + "s"
 	}
 
 	index := "{" +
 		"  \"settings\": {" +
 		codec +
 		"    \"refresh_interval\": \"" + refreshInterval + "\"," +
-		"    \"number_of_shards\": " + strconv.Itoa(elasticConfig.NumberOfShards) + "," +
-		"    \"number_of_replicas\": " + strconv.Itoa(elasticConfig.NumberOfReplicas) + "" +
+		"    \"number_of_shards\": " + strconv.Itoa(*elasticConfig.NumberOfShards) + "," +
+		"    \"number_of_replicas\": " + strconv.Itoa(*elasticConfig.NumberOfReplicas) + "" +
 		"  }," +
 		"  \"mappings\": {" +
 		"    \"_source\": {" +

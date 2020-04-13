@@ -53,7 +53,7 @@ type SemiElasticFileEvent struct {
 	DirectoryId                 []string   `json:"directory_id,omitempty"` //An array of something, I am not sure
 	Source                      string     `json:"source,omitempty"`
 	Url                         string     `json:"url,omitempty"`
-	Shared                      string     `json:"shared,omitempty"`
+	Shared                      *bool      `json:"shared,omitempty"`
 	SharedWith                  []string   `json:"shared_with,omitempty"` //An array of strings (Mainly Email Addresses)
 	SharingTypeAdded            []string   `json:"sharing_type_added,omitempty"`
 	CloudDriveId                string     `json:"cloud_drive_id,omitempty"`

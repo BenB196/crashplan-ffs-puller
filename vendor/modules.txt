@@ -4,6 +4,8 @@ github.com/BenB196/crashplan-ffs-go-pkg
 # github.com/BenB196/ip-api-go-pkg v0.0.8
 ## explicit
 github.com/BenB196/ip-api-go-pkg
+# github.com/VictoriaMetrics/fastcache v1.5.7
+## explicit
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
 # github.com/cespare/xxhash/v2 v2.1.1
