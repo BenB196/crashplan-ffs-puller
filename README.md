@@ -80,6 +80,7 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
     "password": "<password>",                                                                                               #Password, if it contains double quotes they must be escaped.
     "interval": "5s",                                                                                                       #Query interval, how often the query should be executed, must be in a Golang duration format.
     "timeGap": "10s",                                                                                                       #Query time gap, the amount of time that should be scraped during each query execution, must be in a Golang duration format.
+    "max_concurrent_queries": 2,
     "query": {                                                                                                              #The actual FFS Query to execute
       "groups": [
         {
@@ -106,13 +107,6 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
     },
     "outputType": "elastic",                                                                                                #Output type, supports either file, elastic, logstash
     "outputLocation": "/path/to/output",                                                                                    #This is needed even if not using file output type, as there are stateful files which need to be written and stored.
-    "ip-api": {                                                                                                             #IP-API Integration
-      "enabled": true,                                                                                                      #Enable IP-API support? Default = false
-      "url": "http://ip-api.com/",                                                                                          #URL to use for IP-API. Default = http://ip-api.com/
-      "apiKey": "",                                                                                                         #API Key if you are using the pro version of IP-API
-      "fields": "status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy",   #IP-API fields
-      "lang": ""                                                                                                            #IP-API out language
-    },
     "elasticsearch": {                                                                                                      #Elasticsearch output information. Only matters if output type = elastic
       "numberOfShards": 1,                                                                                                  #The number of shards the index should be created with
       "numberOfReplicas": 0,                                                                                                #The number of replicas the index should be created with
@@ -172,7 +166,15 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
   "prometheus": {                                                                                                           #Enable Prometheus Monitoring Support
     "enabled": true,                                                                                                        #Enable? Default = false
     "port": 8080                                                                                                            #Port for Prometheus /metric endpoint to listen on. Default = 8080 if enabled
-  }
+  },
+  "ip-api": {                                                                                                             #IP-API Integration
+    "enabled": true,                                                                                                      #Enable IP-API support? Default = false
+    "url": "http://ip-api.com/",                                                                                          #URL to use for IP-API. Default = http://ip-api.com/
+    "apiKey": "",                                                                                                         #API Key if you are using the pro version of IP-API
+    "fields": "status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,isp,org,as,asname,reverse,mobile,proxy",   #IP-API fields
+    "lang": ""                                                                                                            #IP-API out language
+  },
+  "debugging": true
 }
 ```
 

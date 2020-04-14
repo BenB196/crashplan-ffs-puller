@@ -18,64 +18,78 @@ import (
 
 //Configuration File structs
 type Config struct {
-	AuthURI  		string 			`json:"authURI"`
-	FFSURI   		string 			`json:"ffsURI"`
-	FFSQueries		[]FFSQuery		`json:"ffsQueries"`
-	Prometheus		Prometheus		`json:"prometheus,omitempty"`
-	Debugging		*bool			`json:"debugging,omitempty"`
+	AuthURI    string     `json:"authURI"`
+	FFSURI     string     `json:"ffsURI"`
+	FFSQueries []FFSQuery `json:"ffsQueries"`
+	Prometheus Prometheus `json:"prometheus,omitempty"`
+	Debugging  bool       `json:"debugging,omitempty"`
+	IPAPI      IPAPI      `json:"ip-api,omitempty"`
 }
 
 type FFSQuery struct {
-	Name					string			`json:"name"`
-	Username 				string			`json:"username"`
-	Password 				string 			`json:"password"`
-	Interval				string			`json:"interval"`
-	TimeGap					string			`json:"timeGap"`
-	Query					ffs.Query 		`json:"query"`
-	OutputType				string			`json:"outputType"`
-	OutputLocation  		string			`json:"outputLocation,omitempty"`
-	IPAPI					IPAPI			`json:"ip-api,omitempty"`
-	Elasticsearch			Elasticsearch	`json:"elasticsearch,omitempty"`
-	Logstash				Logstash		`json:"logstash,omitempty"`
-	EsStandardized			string			`json:"esStandardized,omitempty"`
-	ValidIpAddressesOnly	bool			`json:"validIpAddressesOnly"`
+	Name                 string        `json:"name"`
+	Username             string        `json:"username"`
+	Password             string        `json:"password"`
+	Interval             string        `json:"interval"`
+	TimeGap              string        `json:"timeGap"`
+	Query                ffs.Query     `json:"query"`
+	OutputType           string        `json:"outputType"`
+	OutputLocation       string        `json:"outputLocation,omitempty"`
+	Elasticsearch        Elasticsearch `json:"elasticsearch,omitempty"`
+	Logstash             Logstash      `json:"logstash,omitempty"`
+	EsStandardized       string        `json:"esStandardized,omitempty"`
+	ValidIpAddressesOnly bool          `json:"validIpAddressesOnly"`
+	MaxConcurrentQueries *int          `json:"max_concurrent_queries,omitempty"`
 }
 
 type IPAPI struct {
-	Enabled			bool			`json:"enabled,omitempty"`
-	URL				string			`json:"url,omitempty"`
-	APIKey			string			`json:"apiKey,omitempty"`
-	Fields			string			`json:"fields,omitempty"`
-	Lang			string			`json:"lang,omitempty"`
+	Enabled    bool        `json:"enabled,omitempty"`
+	URL        string      `json:"url,omitempty"`
+	APIKey     string      `json:"apiKey,omitempty"`
+	Fields     string      `json:"fields,omitempty"`
+	Lang       string      `json:"lang,omitempty"`
+	LocalCache *LocalCache `json:"local_cache,omitempty"`
+}
+
+type LocalCache struct {
+	Enabled               bool           `json:"enabled,omitempty"`
+	Persist               bool           `json:"persist,omitempty"`
+	WriteInterval         string         `json:"write_interval,omitempty"`
+	WriteIntervalDuration *time.Duration `json:"write_interval_duration,omitempty"`
+	WriteLocation         string         `json:"write_location,omitempty"`
+	SuccessAge            string         `json:"success_age,omitempty"`
+	SuccessAgeDuration    *time.Duration `json:"success_age_duration,omitempty"`
+	FailedAge             string         `json:"failed_age,omitempty"`
+	FailedAgeDuration     *time.Duration `json:"failed_age_duration,omitempty"`
 }
 
 type Elasticsearch struct {
-	NumberOfShards			int			`json:"numberOfShards,omitempty"`
-	NumberOfReplicas		int			`json:"numberOfReplicas,omitempty"`
-	IndexName				string		`json:"indexName,omitempty"`
-	IndexTimeAppend			string		`json:"indexTimeAppend,omitempty"`
-	IndexTimeGen			string		`json:"indexTimeGen,omitempty"`
-	ElasticURL				string		`json:"elasticUrl,omitempty"`
-	UseCustomIndexPattern	bool		`json:"useCustomIndexPattern"`
-	BasicAuth				BasicAuth	`json:"basicAuth,omitempty"`
-	Sniffing				bool		`json:"sniffing,omitempty"`
-	BestCompression			bool		`json:"bestCompression,omitempty"`
-	RefreshInterval			int			`json:"refreshInterval,omitempty"`
-	Aliases					[]string	`json:"aliases,omitempty"`
+	NumberOfShards        int       `json:"numberOfShards,omitempty"`
+	NumberOfReplicas      int       `json:"numberOfReplicas,omitempty"`
+	IndexName             string    `json:"indexName,omitempty"`
+	IndexTimeAppend       string    `json:"indexTimeAppend,omitempty"`
+	IndexTimeGen          string    `json:"indexTimeGen,omitempty"`
+	ElasticURL            []string  `json:"elasticUrl,omitempty"`
+	UseCustomIndexPattern bool      `json:"useCustomIndexPattern"`
+	BasicAuth             BasicAuth `json:"basicAuth,omitempty"`
+	Sniffing              bool      `json:"sniffing,omitempty"`
+	BestCompression       bool      `json:"bestCompression,omitempty"`
+	RefreshInterval       int       `json:"refreshInterval,omitempty"`
+	Aliases               []string  `json:"aliases,omitempty"`
 }
 
 type Logstash struct {
-	LogstashURL string 	`json:"logstashURL"`
+	LogstashURL []string `json:"logstashURL"`
 }
 
 type BasicAuth struct {
-	User			string			`json:"user,omitempty"`
-	Password		string			`json:"password,omitempty"`
+	User     string `json:"user,omitempty"`
+	Password string `json:"password,omitempty"`
 }
 
 type Prometheus struct {
-	Enabled			bool			`json:"enabled,omitempty"`
-	Port			int				`json:"port,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
+	Port    int  `json:"port,omitempty"`
 }
 
 /*
@@ -84,15 +98,15 @@ configLocation - string which contains the location of the configuration file
 Returns
 Config - config struct of the configuration file (can be a "new" struct as well)
 error - any errors which have been caught
- */
-func ReadConfig(configLocation string) (Config, error) {
+*/
+func ReadConfig(configLocation string) (*Config, error) {
 
 	//Make sure absolute file path is gotten
 	configLocation, err := filepath.Abs(configLocation)
 
 	//error if abs path cannot be gotten
 	if err != nil {
-		return Config{}, errors.New("error getting absolute configuration file path: " + err.Error())
+		panic("error getting absolute configuration file path: " + err.Error())
 	}
 
 	//open config file
@@ -100,7 +114,7 @@ func ReadConfig(configLocation string) (Config, error) {
 
 	//return err if failure
 	if err != nil {
-		return Config{}, errors.New("error opening configuration file: " + err.Error())
+		panic("error opening configuration file: " + err.Error())
 	}
 
 	//Convert file to byteValue
@@ -108,7 +122,7 @@ func ReadConfig(configLocation string) (Config, error) {
 
 	//return err if failure
 	if err != nil {
-		return Config{}, errors.New("error reading configuration file: " + err.Error())
+		panic("error reading configuration file: " + err.Error())
 	}
 
 	//Check file extension
@@ -118,14 +132,14 @@ func ReadConfig(configLocation string) (Config, error) {
 	//If no file extension err
 	switch fileExtension {
 	case "":
-		return Config{}, errors.New("no file extension found on configuration file, unable to properly parse")
+		panic("no file extension found on configuration file, unable to properly parse")
 	case ".json":
 		return validateConfigJson(byteValue)
-	case ".yaml",".yml":
+	case ".yaml", ".yml":
 		//TODO parse file as yaml
-		return Config{}, nil
+		return nil, nil
 	default:
-		return Config{}, errors.New("unknown file extension: " + fileExtension + ", supported file extensions: json, yaml, yml")
+		return nil, errors.New("unknown file extension: " + fileExtension + ", supported file extensions: json, yaml, yml")
 	}
 }
 
@@ -135,8 +149,8 @@ fileBytes - the bytes of the configuration file
 Returns
 Config - config struct of the configuration file (can be a "new" struct as well)
 error - any errors which have been caught
- */
-func validateConfigJson(fileBytes []byte) (Config, error) {
+*/
+func validateConfigJson(fileBytes []byte) (*Config, error) {
 	//create config struct
 	var config Config
 	//Make sure file is valid JSON
@@ -144,43 +158,44 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 
 	//return error if unmarshal fails
 	if err != nil {
-		return config, errors.New("error parsing JSON configuration file: " + err.Error())
+		panic("error parsing JSON configuration file: " + err.Error())
 	}
 
 	//Validate JSON fields
 	//Validate AuthURI
 	//check if empty
 	if config.AuthURI == "" {
-		return config, errors.New("error: authURI cannot be blank")
+		panic("error: authURI cannot be blank")
 	} else {
 		//check if valid URI
 		_, err := url.ParseRequestURI(config.AuthURI)
 		if err != nil {
-			return config, errors.New("error: bad authURI provided: " + err.Error())
+			panic("error: bad authURI provided: " + err.Error())
 		}
 	}
 
 	//Validate FFSURI
 	//check if empty
 	if config.FFSURI == "" {
-		return config, errors.New("error: FFSURI cannot be blank")
+		panic("error: FFSURI cannot be blank")
 	} else {
 		//check if valid URI
 		_, err := url.ParseRequestURI(config.FFSURI)
 		if err != nil {
-			return config, errors.New("error: bad FFSURI provided: " + err.Error())
+			panic("error: bad FFSURI provided: " + err.Error())
 		}
 	}
 
-	//Validate prometheus port
+	//Validate prometheus
+	defaultPrometheusPort := 8080
 	if config.Prometheus.Enabled {
 		//Set default port to 8080 if port == 0
 		if config.Prometheus.Port == 0 {
-			config.Prometheus.Port = 8080
+			config.Prometheus.Port = defaultPrometheusPort
 		} else if config.Prometheus.Port < 1024 {
-			return config, errors.New("error: prometheus port is below 1024, port must be between 1024 and 65535")
+			panic("error: prometheus port is below 1024, port must be between 1024 and 65535")
 		} else if config.Prometheus.Port > 65535 {
-			return config, errors.New("error: prometheus port is above 65535, port must be between 1024 and 65535")
+			panic("error: prometheus port is above 65535, port must be between 1024 and 65535")
 		}
 	}
 
@@ -189,23 +204,23 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 
 	//Validate FFS Queries
 	if config.FFSQueries == nil {
-		return config, errors.New("error: no ffs queries provided")
+		panic("error: no ffs queries provided")
 	} else {
 		for i, query := range config.FFSQueries {
 
 			//Validate query.Name
 			//check if empty
 			if query.Name == "" {
-				return config, errors.New("error: query name is empty")
+				panic("error: query name is empty")
 			} else if len(query.Name) > 100 {
 				//check if greater than 100 characters
-				return config, errors.New("error: query name: " + query.Name + ", is greater than 100 characters")
+				panic("error: query name: " + query.Name + ", is greater than 100 characters")
 			} else {
 				//Check if query name is unique
 				if len(queryNames) > 0 {
 					for _, name := range queryNames {
 						if name == query.Name {
-							return config, errors.New("error: duplicate query names provided, query names must be unique")
+							panic("error: duplicate query names provided, query names must be unique")
 						}
 					}
 				} else {
@@ -216,43 +231,49 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 			//Validate username
 			//check if empty
 			if query.Username == "" {
-				return config, errors.New("error: username in ffs query: " + query.Name + ", is blank")
+				panic("error: username in ffs query: " + query.Name + ", is blank")
 			} else {
 				//check if valid email address
 				err = utils.ValidateUsernameRegexp(query.Username)
 				if err != nil {
-					return config, errors.New("error: in ffs query: " + query.Name + ", " + err.Error())
+					panic("error: in ffs query: " + query.Name + ", " + err.Error())
 				}
 			}
 
 			//Validate password
 			//check if empty
 			if query.Password == "" {
-				return config, errors.New("error: password in ffs query: " + query.Name + ", is blank")
+				panic("error: password in ffs query: " + query.Name + ", is blank")
 			}
 
 			//Validate interval
 			//check if empty
 			if query.Interval == "" {
-				return config, errors.New("error: interval in ffs query: " + query.Name + ", is blank")
+				panic("error: interval in ffs query: " + query.Name + ", is blank")
 			} else {
 				//check if real duration value is passed
 				_, err := time.ParseDuration(query.Interval)
 				if err != nil {
-					return config, errors.New("error: invalid duration provide in ffs query for interval: " + query.Name)
+					panic("error: invalid duration provide in ffs query for interval: " + query.Name)
 				}
 			}
 
 			//Validate time gap
 			//check if empty
 			if query.TimeGap == "" {
-				return config, errors.New("error: time gap in ffs query: " + query.Name + ", is blank")
+				panic("error: time gap in ffs query: " + query.Name + ", is blank")
 			} else {
 				//check if real duration value is passed
 				_, err := time.ParseDuration(query.TimeGap)
 				if err != nil {
-					return config, errors.New("error: invalid duration provide in ffs query for time gap: " + query.Name)
+					panic("error: invalid duration provide in ffs query for time gap: " + query.Name)
 				}
+			}
+
+			//validate max concurrent queries
+			defaultMaxConcurrentQueries := 5
+			if query.MaxConcurrentQueries == nil {
+				config.FFSQueries[i].MaxConcurrentQueries = &defaultMaxConcurrentQueries
 			}
 
 			//TODO figure out how to best validate FFSQueries
@@ -261,7 +282,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 			//Validate Output Type
 			//check if empty
 			if query.OutputType == "" {
-				return config, errors.New("error: output type ")
+				panic("error: output type ")
 			} else {
 				switch query.OutputType {
 				case "file":
@@ -271,13 +292,13 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						dir, err := os.Getwd()
 						//return any errors
 						if err != nil {
-							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+							panic("error: unable to get working directory for ffs query: " + query.Name)
 						}
 						//check if directory is writable
 						err = utils.IsWritable(dir)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 						//update output location to absolute path
 						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
@@ -287,7 +308,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						err = utils.IsWritable(query.OutputLocation)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 
 						//Append a / or \\ to end of path if not there
@@ -303,13 +324,13 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						dir, err := os.Getwd()
 						//return any errors
 						if err != nil {
-							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+							panic("error: unable to get working directory for ffs query: " + query.Name)
 						}
 						//check if directory is writable
 						err = utils.IsWritable(dir)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 						//update output location to absolute path
 						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
@@ -319,7 +340,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						err = utils.IsWritable(query.OutputLocation)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 
 						//Append a / or \\ to end of path if not there
@@ -331,26 +352,26 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 
 					//validate number of shards
 					if !query.Elasticsearch.UseCustomIndexPattern && query.Elasticsearch.NumberOfShards < 1 {
-						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 1")
+						panic("error: number of shards for ffs query: " + query.Name + " cannot be lower than 1")
 					}
 
 					//validate number of replicas
 					if !query.Elasticsearch.UseCustomIndexPattern && query.Elasticsearch.NumberOfReplicas < 0 {
-						return config, errors.New("error: number of shards for ffs query: " + query.Name + " cannot be lower than 0")
+						panic("error: number of shards for ffs query: " + query.Name + " cannot be lower than 0")
 					}
 
 					//validate index name
 					err = utils.ValidateIndexName(query.Elasticsearch.IndexName)
 
 					if err != nil {
-						return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
+						panic("error: in ffs query: " + query.Name + " : " + err.Error())
 					}
 
 					//check if indexTimeAppend is set, validate and get length, will need to add to length of index name and validate not > 255 characters
 					if query.Elasticsearch.IndexTimeAppend != "" {
 						//TODO figure out a way to validate golang time format
-						if len(query.Elasticsearch.IndexTimeAppend) + len(query.Elasticsearch.IndexName) + 1 > 255 {
-							return config, errors.New("error: index name cannot be longer than 255 characters")
+						if len(query.Elasticsearch.IndexTimeAppend)+len(query.Elasticsearch.IndexName)+1 > 255 {
+							panic("error: index name cannot be longer than 255 characters")
 						}
 					} else {
 						config.FFSQueries[i].Elasticsearch.IndexTimeAppend = "2006-01-02"
@@ -360,18 +381,18 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					if query.Elasticsearch.IndexTimeGen == "" {
 						config.FFSQueries[i].Elasticsearch.IndexTimeGen = "timeNow"
 					} else if query.Elasticsearch.IndexTimeGen != "timeNow" && query.Elasticsearch.IndexTimeGen != "onOrBefore" && query.Elasticsearch.IndexTimeGen != "eventTimestamp" && query.Elasticsearch.IndexTimeGen != "insertionTimestamp" {
-						return config, errors.New("error: elasticsearch indexTimeGen must be timeNow, onOrBefore, eventTimestamp, or insertionTimestamp")
+						panic("error: elasticsearch indexTimeGen must be timeNow, onOrBefore, eventTimestamp, or insertionTimestamp")
 					}
 
 					//Validate elasticUrl
 					//check if empty
 					if query.Elasticsearch.ElasticURL == "" {
-						return config, errors.New("error: elastic url cannot be blank")
+						panic("error: elastic url cannot be blank")
 					} else {
 						//check if valid URI
 						_, err := url.ParseRequestURI(query.Elasticsearch.ElasticURL)
 						if err != nil {
-							return config, errors.New("error: invalid elastic url provided: " + err.Error())
+							panic("error: invalid elastic url provided: " + err.Error())
 						}
 					}
 
@@ -382,7 +403,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 							err = utils.ValidateIndexName(alias)
 
 							if err != nil {
-								return config, errors.New("error: in ffs query: " + query.Name + " : " + err.Error())
+								panic("error: in ffs query: " + query.Name + " : " + err.Error())
 							}
 						}
 					}
@@ -393,13 +414,13 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						dir, err := os.Getwd()
 						//return any errors
 						if err != nil {
-							return config, errors.New("error: unable to get working directory for ffs query: " + query.Name)
+							panic("error: unable to get working directory for ffs query: " + query.Name)
 						}
 						//check if directory is writable
 						err = utils.IsWritable(dir)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 						//update output location to absolute path
 						config.FFSQueries[i].OutputLocation = dir + utils.DirPath
@@ -409,7 +430,7 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 						err = utils.IsWritable(query.OutputLocation)
 						//return any errors
 						if err != nil {
-							return config, err
+							panic(err)
 						}
 
 						//Append a / or \\ to end of path if not there
@@ -420,58 +441,134 @@ func validateConfigJson(fileBytes []byte) (Config, error) {
 					}
 
 					if query.Logstash.LogstashURL == "" {
-						return config, errors.New("error: logstash url cannot be blank")
+						panic("error: logstash url cannot be blank")
 					}
 				default:
-					return config, errors.New("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
+					panic("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
 				}
 			}
 
 			//validate esStandardized
-			if query.EsStandardized != "" && !strings.EqualFold(query.EsStandardized,"full") && !strings.EqualFold(query.EsStandardized,"half") {
-				return config, errors.New("unknown value for esStandardized, values can either be full, half, or \"\"")
+			if query.EsStandardized != "" && !strings.EqualFold(query.EsStandardized, "full") && !strings.EqualFold(query.EsStandardized, "half") {
+				panic("unknown value for esStandardized, values can either be full, half, or \"\"")
 			}
 
 			//Validate ip-api
-			if query.IPAPI != (IPAPI{}) && query.IPAPI.Enabled {
+			if config.IPAPI != (IPAPI{}) && config.IPAPI.Enabled {
 
 				//validate URL is valid if provided
-				if query.IPAPI.URL != "" {
-					_, err := url.ParseRequestURI(query.IPAPI.URL)
+				if config.IPAPI.URL != "" {
+					_, err := url.ParseRequestURI(config.IPAPI.URL)
 					if err != nil {
-						return config, errors.New("error: bad ip api URL provided: " + err.Error())
+						panic("error: bad ip api URL provided: " + err.Error())
 					}
 				}
 
 				//validate fields
-				if query.IPAPI.Fields != "" {
-					_, err = ip_api.ValidateFields(query.IPAPI.Fields)
+				if config.IPAPI.Fields != "" {
+					_, err = ip_api.ValidateFields(config.IPAPI.Fields)
 
 					if err != nil {
-						return config, err
+						panic(err)
 					}
 
 					//Make sure that this field is passed as it needs to used. Will be dropped anyway
-					if !strings.Contains(query.IPAPI.Fields,"query") {
-						config.FFSQueries[i].IPAPI.Fields = query.IPAPI.Fields + ",query"
+					if !strings.Contains(config.IPAPI.Fields, "query") {
+						config.IPAPI.Fields = config.IPAPI.Fields + ",query"
 					}
 				}
 
 				//validate lang
-				if query.IPAPI.Lang != "" {
-					_, err = ip_api.ValidateLang(query.IPAPI.Lang)
+				if config.IPAPI.Lang != "" {
+					_, err = ip_api.ValidateLang(config.IPAPI.Lang)
 
 					if err != nil {
-						return config, err
+						panic(err)
+					}
+				}
+
+				//validate local cache
+				if config.IPAPI.LocalCache.Enabled {
+					defaultIPAPISuccessDuration := 8 * time.Hour
+					defaultIPAPIFailedDuration := 30 * time.Minute
+					defaultWriteInterval := 15 * time.Second
+					//Get working directory and set as output location
+					dir, err := os.Getwd()
+					//return any errors
+					if err != nil {
+						panic("error: unable to get working directory for ffs query: " + query.Name)
+					}
+					//check if directory is writable
+					err = utils.IsWritable(dir)
+					//return any errors
+					if err != nil {
+						panic(err)
+					}
+					//update output location to absolute path
+					defaultWriteLocation := dir + utils.DirPath + query.Name
+
+					//validate persist
+					if config.IPAPI.LocalCache.Persist {
+						//validate write interval
+						if config.IPAPI.LocalCache.WriteInterval == "" {
+							config.IPAPI.LocalCache.WriteIntervalDuration = &defaultWriteInterval
+						} else {
+							writeIntervalDuration, err := time.ParseDuration(config.IPAPI.LocalCache.WriteInterval)
+							if err != nil {
+								panic("bad write interval duration provided for IPAPI proxy: " + err.Error())
+							}
+							config.IPAPI.LocalCache.WriteIntervalDuration = &writeIntervalDuration
+						}
+
+						//validate write location
+						if config.IPAPI.LocalCache.WriteLocation == "" {
+							config.IPAPI.LocalCache.WriteLocation = defaultWriteLocation
+						} else {
+							//Validate that output location is a valid path
+							//check that path is writable
+							err = utils.IsWritable(config.IPAPI.LocalCache.WriteLocation)
+							//return any errors
+							if err != nil {
+								panic(err)
+							}
+
+							//Append a / or \\ to end of path if not there
+							lastChar := config.IPAPI.LocalCache.WriteLocation[len(config.IPAPI.LocalCache.WriteLocation)-1:]
+							if lastChar != utils.DirPath {
+								config.IPAPI.LocalCache.WriteLocation = config.IPAPI.LocalCache.WriteLocation + utils.DirPath
+							}
+						}
+					}
+
+					//validate success age
+					if config.IPAPI.LocalCache.SuccessAge == "" {
+						config.IPAPI.LocalCache.SuccessAgeDuration = &defaultIPAPISuccessDuration
+					} else {
+						successAgeDuration, err := time.ParseDuration(config.IPAPI.LocalCache.SuccessAge)
+						if err != nil {
+							panic("bad success age interval duration provided for IPAPI proxy: " + err.Error())
+						}
+						config.IPAPI.LocalCache.SuccessAgeDuration = &successAgeDuration
+					}
+
+					//validate failed age
+					if config.IPAPI.LocalCache.FailedAge == "" {
+						config.IPAPI.LocalCache.FailedAgeDuration = &defaultIPAPIFailedDuration
+					} else {
+						failedAgeDuration, err := time.ParseDuration(config.IPAPI.LocalCache.FailedAge)
+						if err != nil {
+							panic("bad failed age interval duration provided for IPAPI proxy: " + err.Error())
+						}
+						config.IPAPI.LocalCache.FailedAgeDuration = &failedAgeDuration
 					}
 				}
 			}
 		}
 	}
 
-	if config.Debugging != nil && *config.Debugging {
+	if config.Debugging {
 		log.Println("Debugging Enabled.")
 	}
 
-	return config, nil
+	return &config, nil
 }
