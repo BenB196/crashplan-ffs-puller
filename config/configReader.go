@@ -386,13 +386,18 @@ func validateConfigJson(fileBytes []byte) (*Config, error) {
 
 					//Validate elasticUrl
 					//check if empty
-					if query.Elasticsearch.ElasticURL == "" {
+					if query.Elasticsearch.ElasticURL == nil {
 						panic("error: elastic url cannot be blank")
 					} else {
 						//check if valid URI
-						_, err := url.ParseRequestURI(query.Elasticsearch.ElasticURL)
-						if err != nil {
-							panic("error: invalid elastic url provided: " + err.Error())
+						for _, esUrl := range query.Elasticsearch.ElasticURL {
+							if esUrl == "" {
+								panic("error: elastic url cannot be blank")
+							}
+							_, err := url.ParseRequestURI(esUrl)
+							if err != nil {
+								panic("error: invalid elastic url provided: " + err.Error())
+							}
 						}
 					}
 
@@ -440,8 +445,14 @@ func validateConfigJson(fileBytes []byte) (*Config, error) {
 						}
 					}
 
-					if query.Logstash.LogstashURL == "" {
+					if query.Logstash.LogstashURL == nil {
 						panic("error: logstash url cannot be blank")
+					} else {
+						for _, logUrl := range query.Logstash.LogstashURL {
+							if logUrl == "" {
+								panic("error: logstash url cannot be blank")
+							}
+						}
 					}
 				default:
 					panic("unknown output type provide in ffs query: " + query.Name + ", output type provided: " + query.OutputType)
