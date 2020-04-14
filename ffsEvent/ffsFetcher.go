@@ -10,7 +10,6 @@ import (
 	"github.com/BenB196/crashplan-ffs-puller/eventOutput"
 	"github.com/BenB196/crashplan-ffs-puller/promMetrics"
 	ip_api "github.com/BenB196/ip-api-go-pkg"
-	"github.com/google/go-cmp/cmp"
 	"github.com/olivere/elastic/v7"
 	"log"
 	"strconv"
@@ -59,7 +58,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		*inProgressQueries = append(*inProgressQueries, *inProgressQuery)
 
 		//Write in progress queries to file
-		err := eventOutput.WriteInProgressQueries(query, inProgressQueries)
+		err := eventOutput.WriteInProgressQueries(query, *inProgressQueries)
 
 		if err != nil {
 			panic(err)
@@ -883,15 +882,15 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	//Remove from in progress query slice
 	temp := *inProgressQueries
 	tempInProgress := temp[:0]
-	for _, query := range *inProgressQueries {
-		if !cmp.Equal(query, inProgressQuery) {
+	for _, query := range temp {
+		if query.OnOrAfter != inProgressQuery.OnOrAfter && query.OnOrBefore != inProgressQuery.OnOrBefore {
 			tempInProgress = append(tempInProgress, query)
 		}
 	}
 	*inProgressQueries = tempInProgress
 
 	//Write in progress queries to file
-	err = eventOutput.WriteInProgressQueries(query, inProgressQueries)
+	err = eventOutput.WriteInProgressQueries(query, *inProgressQueries)
 
 	removeInProgressQueryTime := time.Now()
 
