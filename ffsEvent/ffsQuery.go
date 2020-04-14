@@ -96,7 +96,7 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 		}
 
 		//get elastic info
-		info, code, err := elasticClient.Ping(query.Elasticsearch.ElasticURL).Do(ctx)
+		info, code, err := elasticClient.Ping(elasticsearch.Balance(query.Elasticsearch.ElasticURL)).Do(ctx)
 
 		if err != nil {
 			//TODO handle error
