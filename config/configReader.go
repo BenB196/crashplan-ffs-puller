@@ -18,31 +18,32 @@ import (
 
 //Configuration File structs
 type Config struct {
-	AuthURI    string      `json:"authURI"`
-	FFSURI     string      `json:"ffsURI"`
-	FFSQueries []FFSQuery  `json:"ffsQueries"`
+	AuthURI    string     `json:"authURI"`
+	FFSURI     string     `json:"ffsURI"`
+	FFSQueries []FFSQuery `json:"ffsQueries"`
 	Prometheus Prometheus `json:"prometheus,omitempty"`
 	Debugging  bool       `json:"debugging,omitempty"`
 	IPAPI      IPAPI      `json:"ip-api,omitempty"`
 }
 
 type FFSQuery struct {
-	Name                 string         `json:"name"`
-	Username             string         `json:"username"`
-	Password             string         `json:"password"`
-	Interval             string         `json:"interval"`
-	TimeGap              string         `json:"timeGap"`
+	Name                 string        `json:"name"`
+	Username             string        `json:"username"`
+	Password             string        `json:"password"`
+	Interval             string        `json:"interval"`
+	TimeGap              string        `json:"timeGap"`
 	Query                ffs.Query     `json:"query"`
-	OutputType           string         `json:"outputType"`
-	OutputLocation       string         `json:"outputLocation,omitempty"`
+	OutputType           string        `json:"outputType"`
+	OutputLocation       string        `json:"outputLocation,omitempty"`
 	Elasticsearch        Elasticsearch `json:"elasticsearch,omitempty"`
 	Logstash             Logstash      `json:"logstash,omitempty"`
-	EsStandardized       string         `json:"esStandardized,omitempty"`
+	EsStandardized       string        `json:"esStandardized,omitempty"`
 	ValidIpAddressesOnly bool          `json:"validIpAddressesOnly"`
+	MaxConcurrentQueries *int           `json:"max_concurrent_queries,omitempty"`
 }
 
 type IPAPI struct {
-	Enabled    bool       `json:"enabled,omitempty"`
+	Enabled    bool        `json:"enabled,omitempty"`
 	URL        string      `json:"url,omitempty"`
 	APIKey     string      `json:"apiKey,omitempty"`
 	Fields     string      `json:"fields,omitempty"`
@@ -51,8 +52,8 @@ type IPAPI struct {
 }
 
 type LocalCache struct {
-	Enabled               bool          `json:"enabled,omitempty"`
-	Persist               bool          `json:"persist,omitempty"`
+	Enabled               bool           `json:"enabled,omitempty"`
+	Persist               bool           `json:"persist,omitempty"`
 	WriteInterval         string         `json:"write_interval,omitempty"`
 	WriteIntervalDuration *time.Duration `json:"write_interval_duration,omitempty"`
 	WriteLocation         string         `json:"write_location,omitempty"`
@@ -65,16 +66,16 @@ type LocalCache struct {
 type Elasticsearch struct {
 	NumberOfShards        int       `json:"numberOfShards,omitempty"`
 	NumberOfReplicas      int       `json:"numberOfReplicas,omitempty"`
-	IndexName             string     `json:"indexName,omitempty"`
-	IndexTimeAppend       string     `json:"indexTimeAppend,omitempty"`
-	IndexTimeGen          string     `json:"indexTimeGen,omitempty"`
-	ElasticURL            string     `json:"elasticUrl,omitempty"`
+	IndexName             string    `json:"indexName,omitempty"`
+	IndexTimeAppend       string    `json:"indexTimeAppend,omitempty"`
+	IndexTimeGen          string    `json:"indexTimeGen,omitempty"`
+	ElasticURL            string    `json:"elasticUrl,omitempty"`
 	UseCustomIndexPattern bool      `json:"useCustomIndexPattern"`
 	BasicAuth             BasicAuth `json:"basicAuth,omitempty"`
 	Sniffing              bool      `json:"sniffing,omitempty"`
 	BestCompression       bool      `json:"bestCompression,omitempty"`
 	RefreshInterval       int       `json:"refreshInterval,omitempty"`
-	Aliases               []string   `json:"aliases,omitempty"`
+	Aliases               []string  `json:"aliases,omitempty"`
 }
 
 type Logstash struct {
@@ -267,6 +268,12 @@ func validateConfigJson(fileBytes []byte) (*Config, error) {
 				if err != nil {
 					panic("error: invalid duration provide in ffs query for time gap: " + query.Name)
 				}
+			}
+
+			//validate max concurrent queries
+			defaultMaxConcurrentQueries := 5
+			if query.MaxConcurrentQueries == nil {
+				config.FFSQueries[i].MaxConcurrentQueries = &defaultMaxConcurrentQueries
 			}
 
 			//TODO figure out how to best validate FFSQueries
