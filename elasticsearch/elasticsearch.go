@@ -14,12 +14,12 @@ func BuildElasticClient(elasticConfig config.Elasticsearch) (*elastic.Client, er
 
 	if elasticConfig.BasicAuth.User != "" {
 		client, err = elastic.NewClient(
-			elastic.SetURL(elasticConfig.ElasticURL),
+			elastic.SetURL(Balance(elasticConfig.ElasticURL)),
 			elastic.SetBasicAuth(elasticConfig.BasicAuth.User,elasticConfig.BasicAuth.Password),
 			elastic.SetSniff(elasticConfig.Sniffing))
 	} else {
 		client, err = elastic.NewClient(
-			elastic.SetURL(elasticConfig.ElasticURL),
+			elastic.SetURL(Balance(elasticConfig.ElasticURL)),
 			elastic.SetSniff(elasticConfig.Sniffing))
 	}
 

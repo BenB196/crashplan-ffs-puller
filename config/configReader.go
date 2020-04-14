@@ -39,7 +39,7 @@ type FFSQuery struct {
 	Logstash             Logstash      `json:"logstash,omitempty"`
 	EsStandardized       string        `json:"esStandardized,omitempty"`
 	ValidIpAddressesOnly bool          `json:"validIpAddressesOnly"`
-	MaxConcurrentQueries *int           `json:"max_concurrent_queries,omitempty"`
+	MaxConcurrentQueries *int          `json:"max_concurrent_queries,omitempty"`
 }
 
 type IPAPI struct {
@@ -69,7 +69,7 @@ type Elasticsearch struct {
 	IndexName             string    `json:"indexName,omitempty"`
 	IndexTimeAppend       string    `json:"indexTimeAppend,omitempty"`
 	IndexTimeGen          string    `json:"indexTimeGen,omitempty"`
-	ElasticURL            string    `json:"elasticUrl,omitempty"`
+	ElasticURL            []string  `json:"elasticUrl,omitempty"`
 	UseCustomIndexPattern bool      `json:"useCustomIndexPattern"`
 	BasicAuth             BasicAuth `json:"basicAuth,omitempty"`
 	Sniffing              bool      `json:"sniffing,omitempty"`
@@ -79,7 +79,7 @@ type Elasticsearch struct {
 }
 
 type Logstash struct {
-	LogstashURL string `json:"logstashURL"`
+	LogstashURL []string `json:"logstashURL"`
 }
 
 type BasicAuth struct {
