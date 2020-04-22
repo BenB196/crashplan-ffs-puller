@@ -73,10 +73,13 @@ type FileEvent struct {
 	IdentifiedExtensionMIMEType string     `json:"identifiedExtensionMimeType,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"currentExtensionMimeType,omitempty"`
 	SuspiciousFileTypeMismatch  *bool      `json:"suspiciousFileTypeMismatch,omitempty"`
+	PrintJobName                string     `json:"printJobName,omitempty"`
+	PrinterName                 string     `json:"printerName,omitempty"`
+	PrintedFilesBackupPath      string     `json:"printedFilesBackupPath,omitempty"`
 }
 
 //Currently recognized csv headers
-var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "Identified Extension Category", "Current Extension Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Names", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients", "Outside Active Hours", "Identified Extension MIME Type", "Current Extension MIME Type", "Suspicious File Type Mismatch"}
+var csvHeaders = []string{"Event ID", "Event type", "Date Observed (UTC)", "Date Inserted (UTC)", "File path", "Filename", "File type", "File Category", "Identified Extension Category", "Current Extension Category", "File size (bytes)", "File Owner", "MD5 Hash", "SHA-256 Hash", "Create Date", "Modified Date", "Username", "Device ID", "User UID", "Hostname", "Fully Qualified Domain Name", "IP address (public)", "IP address (private)", "Actor", "Directory ID", "Source", "URL", "Shared", "Shared With", "File exposure changed to", "Cloud drive ID", "Detection Source Alias", "File Id", "Exposure Type", "Process Owner", "Process Name", "Tab/Window Title", "Tab URL", "Removable Media Vendor", "Removable Media Name", "Removable Media Serial Number", "Removable Media Capacity", "Removable Media Bus Type", "Removable Media Media Name", "Removable Media Volume Name", "Removable Media Partition Id", "Sync Destination", "Email DLP Policy Names", "Email DLP Subject", "Email DLP Sender", "Email DLP From", "Email DLP Recipients", "Outside Active Hours", "Identified Extension MIME Type", "Current Extension MIME Type", "Suspicious File Type Mismatch", "Print Job Name", "Printer Name", "Printed Files Backup Path"}
 
 //Structs of Crashplan FFS API Authentication Token Return
 type AuthData struct {
@@ -515,6 +518,15 @@ func csvLineToFileEvent(csvLine []string) *FileEvent {
 	} else {
 		fileEvent.SuspiciousFileTypeMismatch = nil
 	}
+
+	//set printJobName
+	fileEvent.PrintJobName = csvLine[56]
+
+	//set printerName
+	fileEvent.PrinterName = csvLine[57]
+
+	//set printedFilesBackupPath
+	fileEvent.PrintedFilesBackupPath = csvLine[58]
 
 	return &fileEvent
 }

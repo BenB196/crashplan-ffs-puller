@@ -82,6 +82,9 @@ type SemiElasticFileEvent struct {
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
 	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
+	PrintJobName                string     `json:"print_job_name,omitempty"`
+	PrinterName                 string     `json:"printer_name,omitempty"`
+	PrintedFilesBackupPath      string     `json:"printed_files_backup_path,omitempty"`
 }
 
 type ElasticFileEvent struct {
@@ -95,6 +98,7 @@ type ElasticFileEvent struct {
 	Tab            *Tab            `json:"tab,omitempty"`
 	RemovableMedia *RemovableMedia `json:"removable_media,omitempty"`
 	EmailDlp       *EmailDlp       `json:"email_dlp,omitempty"`
+	Printing       *Printing       `json:"printing,omitempty"`
 }
 
 type Event struct {
@@ -113,7 +117,18 @@ type Hash struct {
 }
 
 type URL struct {
-	Full string `json:"full,omitempty"`
+	Full             string `json:"full,omitempty"`
+	Domain           string `json:"domain,omitempty"`
+	Extension        string `json:"extension,omitempty"`
+	Fragment         string `json:"fragment,omitempty"`
+	Path             string `json:"path,omitempty"`
+	Port             *int   `json:"port,omitempty"`
+	Query            string `json:"query,omitempty"`
+	Scheme           string `json:"scheme,omitempty"`
+	Username         string `json:"username,omitempty"`
+	Password         string `json:"password,omitempty"`
+	RegisteredDomain string `json:"registered_domain,omitempty"`
+	TopLevelDomain   string `json:"top_level_domain,omitempty"`
 }
 
 type File struct {
@@ -201,6 +216,16 @@ type EmailDlp struct {
 	Sender      string   `json:"sender,omitempty"`
 	From        string   `json:"from,omitempty"`
 	Recipients  []string `json:"recipients,omitempty"`
+}
+
+type Printing struct {
+	JobName                string   `json:"job_name,omitempty"`
+	Printer                *Printer `json:"printer,omitempty"`
+	PrintedFilesBackupPath string   `json:"printed_files_backup_path,omitempty"`
+}
+
+type Printer struct {
+	Name string `json:"name,omitempty"`
 }
 
 type Geo struct {
