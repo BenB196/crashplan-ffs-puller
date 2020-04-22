@@ -5,6 +5,12 @@ import (
 	"github.com/BenB196/crashplan-ffs-go-pkg"
 	"github.com/BenB196/crashplan-ffs-puller/config"
 	"github.com/BenB196/crashplan-ffs-puller/eventOutput"
+	"golang.org/x/net/publicsuffix"
+	"log"
+	"net"
+	"net/url"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -161,4 +167,63 @@ func getNewerTimeQuery(lastInProgressQuery eventOutput.InProgressQuery, lastComp
 	} else {
 		return lastCompletedQuery
 	}
+}
+
+func getUrlInfo(urlFull string) *eventOutput.URL {
+	if urlFull == "" {
+		return nil
+	}
+
+	var eventUrl eventOutput.URL
+
+	eventUrl.Full = urlFull
+
+	u, err := url.Parse(urlFull)
+
+	if err != nil {
+		log.Println("Error processing Event URL; error: " + err.Error() + ", URL: " + urlFull)
+	} else {
+		//set scheme
+		eventUrl.Scheme = u.Scheme
+		//set username
+		eventUrl.Username = u.User.Username()
+		//set password
+		eventUrl.Password, _ = u.User.Password()
+		//get host/port
+		host, port, err := net.SplitHostPort(u.Host)
+		if err != nil {
+			log.Println("Error processing host from Event Url; error: " + err.Error() + ", Host: " + u.Host)
+		}
+		//set domain
+		eventUrl.Domain = host
+		//set port
+		if port == "" {
+			eventUrl.Port = nil
+		} else {
+			portNum, err := strconv.Atoi(port)
+			if err != nil {
+				log.Println("Error processing port from Event Url; error: " + err.Error() + ", Port: " + port)
+			}
+			eventUrl.Port = &portNum
+		}
+		//set path
+		eventUrl.Path = u.RawPath
+		//set extension
+		if strings.Contains(eventUrl.Path, ".") {
+			pathParts := strings.Split(eventUrl.Path,".")
+			eventUrl.Extension = pathParts[len(pathParts)-1]
+		}
+		//set fragment
+		eventUrl.Fragment = u.Fragment
+		//set query
+		eventUrl.Query = u.RawQuery
+		//set registered domain
+		eventUrl.RegisteredDomain, err = publicsuffix.EffectiveTLDPlusOne(eventUrl.Domain)
+		if err != nil {
+			log.Println("Error getting Registered Domain; error: " + err.Error() + ", Domain: " + eventUrl.Domain)
+		}
+		//set top level domain
+		eventUrl.TopLevelDomain, _ = publicsuffix.PublicSuffix(eventUrl.Domain)
+	}
+	return &eventUrl
 }

@@ -117,7 +117,18 @@ type Hash struct {
 }
 
 type URL struct {
-	Full string `json:"full,omitempty"`
+	Full             string `json:"full,omitempty"`
+	Domain           string `json:"domain,omitempty"`
+	Extension        string `json:"extension,omitempty"`
+	Fragment         string `json:"fragment,omitempty"`
+	Path             string `json:"path,omitempty"`
+	Port             *int   `json:"port,omitempty"`
+	Query            string `json:"query,omitempty"`
+	Scheme           string `json:"scheme,omitempty"`
+	Username         string `json:"username,omitempty"`
+	Password         string `json:"password,omitempty"`
+	RegisteredDomain string `json:"registered_domain,omitempty"`
+	TopLevelDomain   string `json:"top_level_domain,omitempty"`
 }
 
 type File struct {

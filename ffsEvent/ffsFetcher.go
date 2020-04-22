@@ -154,11 +154,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						hash = nil
 					}
 
-					url := &eventOutput.URL{Full: ffsEvent.Url}
-
-					if *url == (eventOutput.URL{}) {
-						url = nil
-					}
+					url := getUrlInfo(ffsEvent.Url)
 
 					file := &eventOutput.File{
 						Path:                        ffsEvent.FilePath,
@@ -293,11 +289,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						process = nil
 					}
 
-					tabUrl := &eventOutput.URL{Full: ffsEvent.TabUrl}
-
-					if *tabUrl == (eventOutput.URL{}) {
-						tabUrl = nil
-					}
+					tabUrl := getUrlInfo(ffsEvent.TabUrl)
 
 					tab := &eventOutput.Tab{
 						WindowTitle: ffsEvent.TabWindowTitle,
