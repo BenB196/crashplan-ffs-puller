@@ -129,7 +129,7 @@ func FFSQuery(configuration config.Config, query config.FFSQuery) {
 		for {
 			select {
 			case <-queryIntervalTimeTicker.C:
-				if *query.MaxConcurrentQueries == -1 || len(inProgressQueries) < *query.MaxConcurrentQueries {
+				if *query.MaxConcurrentQueries == -1 || len(inProgressQueries) <= *query.MaxConcurrentQueries {
 					go queryFetcher(query, &inProgressQueries, *authData, configuration, &lastCompletedQuery, maxTime, false, elasticClient, ctx, quit, 0, false)
 				} else {
 					log.Println("Rate limiting query: " + query.Name)
