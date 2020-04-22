@@ -189,25 +189,33 @@ func getUrlInfo(urlFull string) *eventOutput.URL {
 		eventUrl.Username = u.User.Username()
 		//set password
 		eventUrl.Password, _ = u.User.Password()
-		//get host/port
-		host, port, err := net.SplitHostPort(u.Host)
-		if err != nil {
-			log.Println("Error processing host from Event Url; error: " + err.Error() + ", Host: " + u.Host)
-		}
-		//set domain
-		eventUrl.Domain = host
-		//set port
-		if port == "" {
-			eventUrl.Port = nil
-		} else {
-			portNum, err := strconv.Atoi(port)
+		//get host/port if : in string
+		if strings.Contains(u.Host,":") {
+			host, port, err := net.SplitHostPort(u.Host)
 			if err != nil {
-				log.Println("Error processing port from Event Url; error: " + err.Error() + ", Port: " + port)
+				log.Println("Error processing host from Event Url; error: " + err.Error() + ", Host: " + u.Host)
 			}
-			eventUrl.Port = &portNum
+			//set domain
+			eventUrl.Domain = host
+			//set port
+			if port == "" {
+				eventUrl.Port = nil
+			} else {
+				portNum, err := strconv.Atoi(port)
+				if err != nil {
+					log.Println("Error processing port from Event Url; error: " + err.Error() + ", Port: " + port)
+				}
+				eventUrl.Port = &portNum
+			}
+		} else {
+			//set domain
+			eventUrl.Domain = u.Host
+			//set port
+			eventUrl.Port = nil
 		}
+
 		//set path
-		eventUrl.Path = u.RawPath
+		eventUrl.Path = u.Path
 		//set extension
 		if strings.Contains(eventUrl.Path, ".") {
 			pathParts := strings.Split(eventUrl.Path,".")
