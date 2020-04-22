@@ -898,7 +898,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		panic(err)
 	}
 
-	promMetrics.IncrementEventsProcessed(len(ffsEvents))
+	promMetrics.IncrementEventsProcessed(len(*fileEvents))
 	promMetrics.DecreaseInProgressQueries()
 	endTime := time.Now()
 	duration := endTime.Sub(startTime)
