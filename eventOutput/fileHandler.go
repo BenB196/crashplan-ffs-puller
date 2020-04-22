@@ -208,7 +208,7 @@ type EmailDlp struct {
 }
 
 type Printing struct {
-	JobName                string   `json:"print_job_name,omitempty"`
+	JobName                string   `json:"job_name,omitempty"`
 	Printer                *Printer `json:"printer,omitempty"`
 	PrintedFilesBackupPath string   `json:"printed_files_backup_path,omitempty"`
 }
