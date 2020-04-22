@@ -118,7 +118,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				//convert to valid IP addresses if enabled
 				if query.ValidIpAddressesOnly && len(ffsEvent.PrivateIpAddresses) > 0 {
 					for x, privateIpAddress := range ffsEvent.PrivateIpAddresses {
-						ffsEvent.PrivateIpAddresses[x] = strings.Split(privateIpAddress,"%")[0]
+						ffsEvent.PrivateIpAddresses[x] = strings.Split(privateIpAddress, "%")[0]
 					}
 				}
 
@@ -335,6 +335,24 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						emailDlp = nil
 					}
 
+					printer := &eventOutput.Printer{
+						Name: ffsEvent.PrinterName,
+					}
+
+					if ffsEvent.PrinterName == "" {
+						printer = nil
+					}
+
+					printing := &eventOutput.Printing{
+						JobName:                ffsEvent.PrintJobName,
+						Printer:                printer,
+						PrintedFilesBackupPath: ffsEvent.PrintedFilesBackupPath,
+					}
+
+					if *printing == (eventOutput.Printing{}) {
+						printing = nil
+					}
+
 					elasticFileEvent := &eventOutput.ElasticFileEvent{
 						Event:          event,
 						Timestamp:      timestamp,
@@ -346,6 +364,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Tab:            tab,
 						RemovableMedia: removableMedia,
 						EmailDlp:       emailDlp,
+						Printing:       printing,
 					}
 
 					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
@@ -408,6 +427,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
 						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
 						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
+						PrintJobName:                ffsEvent.PrintJobName,
+						PrinterName:                 ffsEvent.PrinterName,
+						PrintedFilesBackupPath:      ffsEvent.PrintedFilesBackupPath,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent

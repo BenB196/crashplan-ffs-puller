@@ -154,6 +154,9 @@ FileEvent
     IdentifiedExtensionMIMEType string          (potentially empty)
     CurrentExtensionMIMEType    string          (potentially empty)
     SuspiciousFileTypeMismatch  *bool           (potentially empty)
+    PrintJobName                string          (potentially empty)
+    PrinterName                 string          (potentially empty)
+    PrintedFilesBackupPath      string          (potentially empty)
 ```
 
 - error - Any errors.
