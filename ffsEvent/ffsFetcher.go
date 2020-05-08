@@ -181,6 +181,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
 						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
 						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
+						RemoteActivity: ffsEvent.RemoteActivity,
+						Trusted: ffsEvent.Trusted,
 					}
 
 					var user *eventOutput.User
@@ -422,6 +424,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						PrintJobName:                ffsEvent.PrintJobName,
 						PrinterName:                 ffsEvent.PrinterName,
 						PrintedFilesBackupPath:      ffsEvent.PrintedFilesBackupPath,
+						RemoteActivity: ffsEvent.RemoteActivity,
+						Trusted: ffsEvent.Trusted,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent

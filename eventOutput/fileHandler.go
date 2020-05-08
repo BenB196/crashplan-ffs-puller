@@ -85,6 +85,8 @@ type SemiElasticFileEvent struct {
 	PrintJobName                string     `json:"print_job_name,omitempty"`
 	PrinterName                 string     `json:"printer_name,omitempty"`
 	PrintedFilesBackupPath      string     `json:"printed_files_backup_path,omitempty"`
+	RemoteActivity              string     `json:"remote_activity,omitempty"`
+	Trusted                     *bool      `json:"trusted,omitempty"`
 }
 
 type ElasticFileEvent struct {
@@ -156,6 +158,8 @@ type File struct {
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
 	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
+	RemoteActivity              string     `json:"remote_activity,omitempty"`
+	Trusted                     *bool      `json:"trusted,omitempty"`
 }
 
 type User struct {
