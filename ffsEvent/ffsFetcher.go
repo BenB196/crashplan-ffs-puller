@@ -181,8 +181,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
 						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
 						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
-						RemoteActivity: ffsEvent.RemoteActivity,
-						Trusted: ffsEvent.Trusted,
+						RemoteActivity:              ffsEvent.RemoteActivity,
+						Trusted:                     ffsEvent.Trusted,
 					}
 
 					var user *eventOutput.User
@@ -205,10 +205,19 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						user = nil
 					}
 
+					var hostUser *eventOutput.User
+
+					if ffsEvent.LoggedInOperatingSystemUser != "" && ffsEvent.LoggedInOperatingSystemUser != "NAME_NOT_AVAILABLE" {
+						hostUser = &eventOutput.User{
+							Id: ffsEvent.LoggedInOperatingSystemUser,
+						}
+					}
+
 					host := &eventOutput.Host{
 						Id:       ffsEvent.DeviceUid,
 						Name:     ffsEvent.OsHostname,
 						Hostname: ffsEvent.DomainName,
+						User:     hostUser,
 					}
 
 					if *host == (eventOutput.Host{}) {
@@ -424,8 +433,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						PrintJobName:                ffsEvent.PrintJobName,
 						PrinterName:                 ffsEvent.PrinterName,
 						PrintedFilesBackupPath:      ffsEvent.PrintedFilesBackupPath,
-						RemoteActivity: ffsEvent.RemoteActivity,
-						Trusted: ffsEvent.Trusted,
+						RemoteActivity:              ffsEvent.RemoteActivity,
+						Trusted:                     ffsEvent.Trusted,
+						LoggedInOperatingSystemUser: ffsEvent.LoggedInOperatingSystemUser,
 					}
 
 					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent
