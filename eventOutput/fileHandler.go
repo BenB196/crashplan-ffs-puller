@@ -87,7 +87,7 @@ type SemiElasticFileEvent struct {
 	PrintedFilesBackupPath      string     `json:"printed_files_backup_path,omitempty"`
 	RemoteActivity              string     `json:"remote_activity,omitempty"`
 	Trusted                     *bool      `json:"trusted,omitempty"`
-	LoggedInOperatingSystemUser string     `json:"loggedInOperatingSystemUser,omitempty"`
+	LoggedInOperatingSystemUser string     `json:"logged_in_operating_system_user,omitempty"`
 }
 
 type ElasticFileEvent struct {
