@@ -87,6 +87,7 @@ type SemiElasticFileEvent struct {
 	PrintedFilesBackupPath      string     `json:"printed_files_backup_path,omitempty"`
 	RemoteActivity              string     `json:"remote_activity,omitempty"`
 	Trusted                     *bool      `json:"trusted,omitempty"`
+	LoggedInOperatingSystemUser string     `json:"loggedInOperatingSystemUser,omitempty"`
 }
 
 type ElasticFileEvent struct {
@@ -172,6 +173,7 @@ type Host struct {
 	Id       string `json:"id,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Hostname string `json:"hostname,omitempty"`
+	User     *User  `json:"user,omitempty"`
 }
 
 type Nat struct {
