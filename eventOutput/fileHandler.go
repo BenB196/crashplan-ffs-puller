@@ -73,6 +73,7 @@ type SemiElasticFileEvent struct {
 	RemovableMediaVolumeName    string     `json:"removable_media_volume_name,omitempty"`
 	RemovableMediaPartitionId   string     `json:"removable_media_partition_id,omitempty"`
 	SyncDestination             string     `json:"sync_destination,omitempty"`
+	SyncDestinationUsername     string     `json:"sync_destination_username,omitempty"`
 	EmailDLPPolicyNames         []string   `json:"email_dlp_policy_names,omitempty"`
 	EmailDLPSubject             string     `json:"email_dlp_subject,omitempty"`
 	EmailDLPSender              string     `json:"email_dlp_sender,omitempty"`
@@ -155,6 +156,7 @@ type File struct {
 	CloudDriveId                string     `json:"cloud_drive_id,omitempty"`
 	DetectionSourceAlias        string     `json:"detection_source_alias,omitempty"`
 	SyncDestination             string     `json:"sync_destination,omitempty"`
+	SyncDestinationUser         *User      `json:"sync_destination_user,omitempty"`
 	Id                          string     `json:"id,omitempty"`
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
