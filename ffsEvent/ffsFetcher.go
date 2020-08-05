@@ -156,6 +156,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					url := getUrlInfo(ffsEvent.Url)
 
+					var syncDestinationUser *eventOutput.User
+
+					if ffsEvent.SyncDestinationUsername != "" && ffsEvent.SyncDestinationUsername != "NAME_NOT_AVAILABLE" {
+						syncDestinationUser = &eventOutput.User{
+							Id: ffsEvent.SyncDestinationUsername,
+						}
+					}
+
 					file := &eventOutput.File{
 						Path:                        ffsEvent.FilePath,
 						Name:                        ffsEvent.FileName,
@@ -177,6 +185,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						CloudDriveId:                ffsEvent.CloudDriveId,
 						DetectionSourceAlias:        ffsEvent.DetectionSourceAlias,
 						SyncDestination:             ffsEvent.SyncDestination,
+						SyncDestinationUser:         syncDestinationUser,
 						Id:                          ffsEvent.FileId,
 						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
 						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
@@ -421,6 +430,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						RemovableMediaVolumeName:    ffsEvent.RemovableMediaVolumeName,
 						RemovableMediaPartitionId:   ffsEvent.RemovableMediaPartitionId,
 						SyncDestination:             ffsEvent.SyncDestination,
+						SyncDestinationUsername:     ffsEvent.SyncDestinationUsername,
 						EmailDLPPolicyNames:         ffsEvent.EmailDLPPolicyNames,
 						EmailDLPSubject:             ffsEvent.EmailDLPSubject,
 						EmailDLPSender:              ffsEvent.EmailDLPSender,
