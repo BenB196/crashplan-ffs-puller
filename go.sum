@@ -42,6 +42,8 @@ github.com/BenB196/crashplan-ffs-go-pkg v0.2.0 h1:yv97A+svLeWW6TJYmnzp/K9EZb/+0I
 github.com/BenB196/crashplan-ffs-go-pkg v0.2.0/go.mod h1:8ikK7PskHvmZupmN1uUnL3+z/CeIsa+7ibvfPuY34Dg=
 github.com/BenB196/crashplan-ffs-go-pkg v0.2.1 h1:QTbMQ6IMryZqDtHL9bYTCrrkQH2RdKn1RlmOVt2SPJw=
 github.com/BenB196/crashplan-ffs-go-pkg v0.2.1/go.mod h1:8ikK7PskHvmZupmN1uUnL3+z/CeIsa+7ibvfPuY34Dg=
+github.com/BenB196/crashplan-ffs-go-pkg v0.2.2 h1:m3KVthWXH8X6/tosfdb+kga1b9LVHcBFxqof05AW7fU=
+github.com/BenB196/crashplan-ffs-go-pkg v0.2.2/go.mod h1:8ikK7PskHvmZupmN1uUnL3+z/CeIsa+7ibvfPuY34Dg=
 github.com/BenB196/ip-api-go-pkg v0.0.3 h1:FWmM7FkhT1N55jd4jPW7W9LVOQrG89DLlrgwMb5fosw=
 github.com/BenB196/ip-api-go-pkg v0.0.3/go.mod h1:ccPdkBNnzf/uvuk7qXgEO06TCS/qILNJQP/KETQG4jU=
 github.com/BenB196/ip-api-go-pkg v0.0.4 h1:BbWELxooG6l2gaXQ4i4gm6NsyikdbhalF+TKg08gDPQ=
@@ -50,6 +52,8 @@ github.com/BenB196/ip-api-go-pkg v0.0.7 h1:zK3wzLeG+LcTYnN1kmCQtjqzIqWfZYN6a6I++
 github.com/BenB196/ip-api-go-pkg v0.0.7/go.mod h1:7jrJ3EOHIp9ptgW0TKvV3GkDqRALqJ0X7R+jVLfLJ4U=
 github.com/BenB196/ip-api-go-pkg v0.0.8 h1:9aAe6phdxhdvVDB4oFkeeBPFzm1I51PDduCR14+jNWU=
 github.com/BenB196/ip-api-go-pkg v0.0.8/go.mod h1:sul9j3Roa5uR1Y37kAX1fnVQJIUDYA85KclkMXzBHIU=
+github.com/BenB196/ip-api-go-pkg v0.0.9 h1:Dn/Aul5FOcuz61znxbhVRHWz6faHh7/DfPjtD7E/Hmk=
+github.com/BenB196/ip-api-go-pkg v0.0.9/go.mod h1:831msK2GDv4XkhCDidO+h3owb0RpJ7UjtJHwrjH5vv0=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
