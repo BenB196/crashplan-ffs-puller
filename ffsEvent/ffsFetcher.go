@@ -12,6 +12,7 @@ import (
 	ip_api "github.com/BenB196/ip-api-go-pkg"
 	"github.com/olivere/elastic/v7"
 	"log"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -121,29 +122,34 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 				}
 
-				if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "full") {
-					event := &eventOutput.Event{
-						Id:                 ffsEvent.EventId,
-						Type:               ffsEvent.EventType,
-						Ingested:           ffsEvent.InsertionTimestamp,
-						Created:            ffsEvent.EventTimestamp,
-						Module:             ffsEvent.Source,
-						Dataset:            ffsEvent.Exposure,
-						OutsideActiveHours: ffsEvent.OutsideActiveHours,
+				if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "ecs") {
+
+					//Event processing
+					eventType := "info"
+					if strings.EqualFold(ffsEvent.EventType, "created") {
+						eventType = "creation"
+					} else if strings.EqualFold(ffsEvent.EventType, "modified") {
+						eventType = "change"
+					} else if strings.EqualFold(ffsEvent.EventType, "deleted") {
+						eventType = "deletion"
 					}
 
+					event := &eventOutput.Event{
+						Action:   ffsEvent.EventType,
+						Category: "file",
+						Created:  ffsEvent.EventTimestamp,
+						Dataset:  "code42.ffs",
+						Id:       ffsEvent.EventId,
+						Ingested: ffsEvent.InsertionTimestamp,
+						Kind:     "event",
+						Module:   "code42",
+						Type:     eventType,
+					}
+
+					//@timestamp
 					timestamp := ffsEvent.EventTimestamp
 
-					var extensions []string
-
-					if ffsEvent.IdentifiedExtensionCategory != "" {
-						extensions = append(extensions, ffsEvent.IdentifiedExtensionCategory)
-					}
-
-					if ffsEvent.CurrentExtensionCategory != "" {
-						extensions = append(extensions, ffsEvent.CurrentExtensionCategory)
-					}
-
+					//file fields
 					hash := &eventOutput.Hash{
 						Md5:    ffsEvent.Md5Checksum,
 						Sha256: ffsEvent.Sha256Checksum,
@@ -153,92 +159,72 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						hash = nil
 					}
 
-					url := getUrlInfo(ffsEvent.Url)
-
-					var syncDestinationUser *eventOutput.User
-
-					if ffsEvent.SyncDestinationUsername != "" && ffsEvent.SyncDestinationUsername != "NAME_NOT_AVAILABLE" {
-						syncDestinationUser = &eventOutput.User{
-							Id: ffsEvent.SyncDestinationUsername,
-						}
+					fileType := "unknown"
+					if strings.EqualFold(ffsEvent.FileType, "file") || strings.EqualFold(ffsEvent.FileType, "win_nds") || strings.EqualFold(ffsEvent.FileType, "mac_rsrc") || strings.EqualFold(ffsEvent.FileType, "fifo") || strings.EqualFold(ffsEvent.FileType, "bundle") {
+						fileType = "file"
+					} else if strings.EqualFold(ffsEvent.FileType, "dir") || strings.EqualFold(ffsEvent.FileType, "block_device") || strings.EqualFold(ffsEvent.FileType, "char_device") {
+						fileType = "dir"
+					} else if strings.EqualFold(ffsEvent.FileType, "symlink") {
+						fileType = "symlink"
 					}
 
 					file := &eventOutput.File{
-						Path:                        ffsEvent.FilePath,
-						Name:                        ffsEvent.FileName,
-						Type:                        ffsEvent.FileType,
-						Category:                    ffsEvent.FileCategory,
-						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
-						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
-						Extension:                   extensions,
-						Size:                        ffsEvent.FileSize,
-						Owner:                       ffsEvent.FileOwner,
-						Hash:                        hash,
-						Created:                     ffsEvent.CreatedTimestamp,
-						Mtime:                       ffsEvent.ModifyTimestamp,
-						Directory:                   ffsEvent.DirectoryId,
-						URL:                         url,
-						Shared:                      ffsEvent.Shared,
-						SharedWith:                  ffsEvent.SharedWith,
-						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
-						CloudDriveId:                ffsEvent.CloudDriveId,
-						DetectionSourceAlias:        ffsEvent.DetectionSourceAlias,
-						SyncDestination:             ffsEvent.SyncDestination,
-						SyncDestinationUser:         syncDestinationUser,
-						Id:                          ffsEvent.FileId,
-						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
-						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
-						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
-						RemoteActivity:              ffsEvent.RemoteActivity,
-						Trusted:                     ffsEvent.Trusted,
+						Path:      ffsEvent.FilePath,
+						Name:      ffsEvent.FileName,
+						Type:      fileType,
+						Extension: filepath.Ext(ffsEvent.FileName),
+						Size:      ffsEvent.FileSize,
+						Owner:     ffsEvent.FileOwner,
+						Hash:      hash,
+						Created:   ffsEvent.CreatedTimestamp,
+						Mtime:     ffsEvent.ModifyTimestamp,
+						Directory: ffsEvent.DirectoryId,
+						MimeType:  ffsEvent.CurrentExtensionMIMEType,
 					}
 
+					//user fields
 					var user *eventOutput.User
 
 					if ffsEvent.DeviceUsername == "NAME_NOT_AVAILABLE" {
+						name := ""
+						domain := ""
+						if strings.Contains(ffsEvent.Actor, "@") {
+							name = strings.Split(ffsEvent.Actor, "@")[0]
+							domain = strings.Split(ffsEvent.DeviceUsername, "@")[1]
+						}
+
 						user = &eventOutput.User{
-							Email: ffsEvent.Actor,
-							Id:    ffsEvent.UserUid,
-							Actor: ffsEvent.Actor,
+							Email:  ffsEvent.Actor,
+							Id:     ffsEvent.UserUid,
+							Name:   name,
+							Domain: domain,
 						}
 					} else {
-						user = &eventOutput.User{
-							Email: ffsEvent.DeviceUsername,
-							Id:    ffsEvent.UserUid,
-							Actor: ffsEvent.Actor,
+						name := ""
+						domain := ""
+						if strings.Contains(ffsEvent.DeviceUsername, "@") {
+							name = strings.Split(ffsEvent.DeviceUsername, "@")[0]
+							domain = strings.Split(ffsEvent.DeviceUsername, "@")[1]
 						}
+						user = &eventOutput.User{
+							Email:  ffsEvent.DeviceUsername,
+							Id:     ffsEvent.UserUid,
+							Name:   name,
+							Domain: domain,
+						}
+					}
+
+					if ffsEvent.LoggedInOperatingSystemUser != "" && ffsEvent.LoggedInOperatingSystemUser != "NAME_NOT_AVAILABLE" {
+						user.Id = ffsEvent.LoggedInOperatingSystemUser
 					}
 
 					if *user == (eventOutput.User{}) {
 						user = nil
 					}
 
-					var hostUser *eventOutput.User
-
-					if ffsEvent.LoggedInOperatingSystemUser != "" && ffsEvent.LoggedInOperatingSystemUser != "NAME_NOT_AVAILABLE" {
-						hostUser = &eventOutput.User{
-							Id: ffsEvent.LoggedInOperatingSystemUser,
-						}
-					}
-
-					host := &eventOutput.Host{
-						Id:       ffsEvent.DeviceUid,
-						Name:     ffsEvent.OsHostname,
-						Hostname: ffsEvent.DomainName,
-						User:     hostUser,
-					}
-
-					if *host == (eventOutput.Host{}) {
-						host = nil
-					}
-
-					var nat *eventOutput.Nat
-
-					if ffsEvent.PrivateIpAddresses != nil {
-						nat = &eventOutput.Nat{Ip: ffsEvent.PrivateIpAddresses}
-					} else {
-						nat = nil
-					}
+					//host ips
+					ips := ffsEvent.PrivateIpAddresses
+					ips = append(ips, ffsEvent.PublicIpAddress)
 
 					var geo *eventOutput.Geo
 					var as *eventOutput.AS
@@ -288,94 +274,120 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						geo = nil
 					}
 
-					client := &eventOutput.Client{
-						Ip:  ffsEvent.PublicIpAddress,
-						Nat: nat,
-						Geo: geo,
-						AS:  as,
-					}
-
-					if *client == (eventOutput.Client{}) {
-						client = nil
+					host := &eventOutput.Host{
+						Id:       ffsEvent.DeviceUid,
+						Name:     ffsEvent.OsHostname,
+						Hostname: ffsEvent.DomainName,
+						User:     user,
+						IP:       ips,
+						Geo:      geo,
+						AS:       as,
 					}
 
 					process := &eventOutput.Process{
-						ProcessOwner: ffsEvent.ProcessOwner,
-						ProcessName:  ffsEvent.ProcessName,
+						Owner: ffsEvent.ProcessOwner,
+						Name:  ffsEvent.ProcessName,
 					}
 
 					if *process == (eventOutput.Process{}) {
 						process = nil
 					}
 
-					tabUrl := getUrlInfo(ffsEvent.TabUrl)
-
-					tab := &eventOutput.Tab{
-						WindowTitle: ffsEvent.TabWindowTitle,
-						URL:         tabUrl,
+					//code 42 fields
+					code42Event := &eventOutput.Code42Event{
+						Id:        ffsEvent.EventId,
+						Type:      ffsEvent.EventType,
+						Timestamp: ffsEvent.EventTimestamp,
 					}
 
-					if *tab == (eventOutput.Tab{}) {
-						tab = nil
+					code42File := &eventOutput.Code42File{
+						Path:                        ffsEvent.FilePath,
+						Name:                        ffsEvent.FileName,
+						Type:                        ffsEvent.FileType,
+						Category:                    ffsEvent.FileCategory,
+						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
+						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
+						Size:                        ffsEvent.FileSize,
+						Owner:                       ffsEvent.FileOwner,
+						Hash:                        hash,
+						CreatedTimestamp:            ffsEvent.CreatedTimestamp,
+						ModifyTimestamp:             ffsEvent.ModifyTimestamp,
+						Id:                          ffsEvent.FileId,
+						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
+						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
+						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
 					}
 
-					removableMedia := &eventOutput.RemovableMedia{
-						Vendor:       ffsEvent.RemovableMediaVendor,
-						Name:         ffsEvent.RemovableMediaName,
-						SerialNumber: ffsEvent.RemovableMediaSerialNumber,
-						Capacity:     ffsEvent.RemovableMediaCapacity,
-						BusType:      ffsEvent.RemovableMediaBusType,
-						MediaName:    ffsEvent.RemovableMediaMediaName,
-						VolumeName:   ffsEvent.RemovableMediaVolumeName,
-						PartitionId:  ffsEvent.RemovableMediaPartitionId,
+					code42Device := &eventOutput.Code42Device{
+						Username: ffsEvent.DeviceUsername,
+						Uid:      ffsEvent.DeviceUid,
 					}
 
-					if *removableMedia == (eventOutput.RemovableMedia{}) {
-						removableMedia = nil
-					}
-
-					emailDlp := &eventOutput.EmailDlp{
-						PolicyNames: ffsEvent.EmailDLPPolicyNames,
-						Subject:     ffsEvent.EmailDLPSubject,
-						Sender:      ffsEvent.EmailDLPSender,
-						From:        ffsEvent.EmailDLPFrom,
-						Recipients:  ffsEvent.EmailDLPRecipients,
-					}
-
-					if ffsEvent.EmailDLPPolicyNames == nil && ffsEvent.EmailDLPSubject == "" && ffsEvent.EmailDLPSender == "" && ffsEvent.EmailDLPFrom == "" && ffsEvent.EmailDLPRecipients == nil {
-						emailDlp = nil
-					}
-
-					printer := &eventOutput.Printer{
-						Name: ffsEvent.PrinterName,
-					}
-
-					if ffsEvent.PrinterName == "" {
-						printer = nil
-					}
-
-					printing := &eventOutput.Printing{
-						JobName:                ffsEvent.PrintJobName,
-						Printer:                printer,
-						PrintedFilesBackupPath: ffsEvent.PrintedFilesBackupPath,
-					}
-
-					if *printing == (eventOutput.Printing{}) {
-						printing = nil
+					code42 := &eventOutput.Code42{
+						Event:                code42Event,
+						InsertionTimestamp:   ffsEvent.InsertionTimestamp,
+						File:                 code42File,
+						Device:               code42Device,
+						OsHostName:           ffsEvent.OsHostname,
+						DomainName:           ffsEvent.DomainName,
+						PublicIpAddress:      ffsEvent.PublicIpAddress,
+						PrivateIpAddresses:   ffsEvent.PrivateIpAddresses,
+						Actor:                ffsEvent.Actor,
+						DirectoryId:          ffsEvent.DirectoryId,
+						Source:               ffsEvent.Source,
+						Url:                  getUrlInfo(ffsEvent.Url),
+						Shared:               ffsEvent.Shared,
+						SharedWith:           ffsEvent.SharedWith,
+						SharingTypeAdded:     ffsEvent.SharingTypeAdded,
+						CloudDriveId:         ffsEvent.CloudDriveId,
+						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
+						Exposure:             ffsEvent.Exposure,
+						Process:              process,
+						Tab: &eventOutput.Code42Tab{
+							WindowTitle: ffsEvent.TabWindowTitle,
+							Url:         getUrlInfo(ffsEvent.TabUrl),
+						},
+						RemovableMedia: &eventOutput.Code42RemovableMedia{
+							Vendor:       ffsEvent.RemovableMediaVendor,
+							Name:         ffsEvent.RemovableMediaName,
+							SerialNumber: ffsEvent.RemovableMediaSerialNumber,
+							Capacity:     ffsEvent.RemovableMediaCapacity,
+							BusType:      ffsEvent.RemovableMediaBusType,
+							MediaName:    ffsEvent.RemovableMediaMediaName,
+							VolumeName:   ffsEvent.RemovableMediaVolumeName,
+							PartitionId:  ffsEvent.RemovableMediaPartitionId,
+						},
+						SyncDestination:         ffsEvent.SyncDestination,
+						SyncDestinationUsername: ffsEvent.SyncDestinationUsername,
+						EmailDlp: &eventOutput.Code42EmailDlp{
+							PolicyNames: ffsEvent.EmailDLPPolicyNames,
+							Subject:     ffsEvent.EmailDLPSubject,
+							Sender:      ffsEvent.EmailDLPSender,
+							From:        ffsEvent.EmailDLPFrom,
+							Recipients:  ffsEvent.EmailDLPRecipients,
+						},
+						OutsideActiveHours: ffsEvent.OutsideActiveHours,
+						Print: &eventOutput.Code42Print{
+							JobName:                ffsEvent.PrintJobName,
+							PrinterName:            ffsEvent.PrinterName,
+							PrintedFilesBackupPath: ffsEvent.PrintedFilesBackupPath,
+						},
+						RemoteActivity:              ffsEvent.RemoteActivity,
+						Trusted:                     ffsEvent.Trusted,
+						LoggedInOperatingSystemUser: ffsEvent.LoggedInOperatingSystemUser,
+						Destination: &eventOutput.Code42Destination{
+							Category: ffsEvent.DestinationCategory,
+							Name:     ffsEvent.DetectionSourceAlias,
+						},
 					}
 
 					elasticFileEvent := &eventOutput.ElasticFileEvent{
-						Event:          event,
-						Timestamp:      timestamp,
-						File:           file,
-						User:           user,
-						Host:           host,
-						Client:         client,
-						Process:        process,
-						Tab:            tab,
-						RemovableMedia: removableMedia,
-						EmailDlp:       emailDlp,
-						Printing:       printing,
+						Event:     event,
+						Timestamp: timestamp,
+						File:      file,
+						Host:      host,
+						Process:   process,
+						Code42:    code42,
 					}
 
 					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
@@ -391,7 +403,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 		case "file":
 			if query.EsStandardized == "" {
 				err = eventOutput.WriteEvents(ffsEvents, query)
-			} else if query.EsStandardized == "full" {
+			} else if query.EsStandardized == "ecs" {
 				err = eventOutput.WriteEvents(elasticFFSEvents, query)
 			}
 
@@ -453,7 +465,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							elasticWg.Done()
 						}
 					}()
-				} else if query.EsStandardized == "full" {
+				} else if query.EsStandardized == "ecs" {
 					elasticWg.Add(len(elasticFFSEvents))
 					go func() {
 						for _, elasticFileEvent := range elasticFFSEvents {
@@ -496,7 +508,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							elasticWg.Done()
 						}
 					}()
-				} else if query.EsStandardized == "full" {
+				} else if query.EsStandardized == "ecs" {
 					elasticWg.Add(len(elasticFFSEvents))
 					go func() {
 						for _, elasticFileEvent := range elasticFFSEvents {
@@ -577,7 +589,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							elasticWg.Done()
 						}
 					}()
-				} else if query.EsStandardized == "full" {
+				} else if query.EsStandardized == "ecs" {
 					elasticWg.Add(len(elasticFFSEvents))
 					go func() {
 						for _, elasticFileEvent := range elasticFFSEvents {
@@ -656,7 +668,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						logstashWg.Done()
 					}
 				}()
-			} else if query.EsStandardized == "full" {
+			} else if query.EsStandardized == "ecs" {
 				logstashWg.Add(len(elasticFFSEvents))
 				go func() {
 					for _, elasticFileEvent := range elasticFFSEvents {

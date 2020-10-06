@@ -20,28 +20,124 @@ type FFSEvent struct {
 	GeoLocation      *Location `json:"geoPoint,omitempty"`
 }
 
+type Code42 struct {
+	Event                       *Code42Event          `json:"event,omitempty"`
+	InsertionTimestamp          *time.Time            `json:"insertion_timestamp,omitempty"`
+	File                        *Code42File           `json:"file,omitempty"`
+	Device                      *Code42Device         `json:"device,omitempty"`
+	OsHostName                  string                `json:"os_host_name,omitempty"`
+	DomainName                  string                `json:"domain_name,omitempty"`
+	PublicIpAddress             string                `json:"public_ip_address,omitempty"`
+	PrivateIpAddresses          []string              `json:"private_ip_addresses,omitempty"`
+	Actor                       string                `json:"actor,omitempty"`
+	DirectoryId                 []string              `json:"directory_id,omitempty"`
+	Source                      string                `json:"source,omitempty"`
+	Url                         *URL                  `json:"url,omitempty"`
+	Shared                      *bool                 `json:"shared,omitempty"`
+	SharedWith                  []string              `json:"shared_with,omitempty"`
+	SharingTypeAdded            []string              `json:"sharing_type_added,omitempty"`
+	CloudDriveId                string                `json:"cloud_drive_id,omitempty"`
+	DetectionSourceAlias        string                `json:"detection_source_alias,omitempty"`
+	Exposure                    []string              `json:"exposure,omitempty"`
+	Process                     *Process              `json:"process,omitempty"`
+	Tab                         *Code42Tab            `json:"tab,omitempty"`
+	RemovableMedia              *Code42RemovableMedia `json:"removable_media,omitempty"`
+	SyncDestination             string                `json:"sync_destination,omitempty"`
+	SyncDestinationUsername     string                `json:"sync_destination_username,omitempty"`
+	EmailDlp                    *Code42EmailDlp       `json:"email_dlp,omitempty"`
+	OutsideActiveHours          *bool                 `json:"outside_active_hours,omitempty"`
+	Print                       *Code42Print          `json:"print,omitempty"`
+	RemoteActivity              string                `json:"remote_activity,omitempty"`
+	Trusted                     *bool                 `json:"trusted,omitempty"`
+	LoggedInOperatingSystemUser string                `json:"logged_in_operating_system_user,omitempty"`
+	Destination                 *Code42Destination    `json:"destination,omitempty"`
+}
+
+type Code42Event struct {
+	Id        string     `json:"id,omitempty"`
+	Type      string     `json:"type,omitempty"`
+	Timestamp *time.Time `json:"timestamp,omitempty"`
+}
+
+type Code42File struct {
+	Path                        string     `json:"path,omitempty"`
+	Name                        string     `json:"name,omitempty"`
+	Type                        string     `json:"type,omitempty"`
+	Category                    string     `json:"category,omitempty"`
+	IdentifiedExtensionCategory string     `json:"identified_extension_category,omitempty"`
+	CurrentExtensionCategory    string     `json:"current_extension_category,omitempty"`
+	Size                        *int       `json:"size,omitempty"`
+	Owner                       []string   `json:"owner,omitempty"`
+	Hash                        *Hash      `json:"hash,omitempty"`
+	CreatedTimestamp            *time.Time `json:"created_timestamp,omitempty"`
+	ModifyTimestamp             *time.Time `json:"modify_timestamp,omitempty"`
+	Id                          string     `json:"id,omitempty"`
+	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
+	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
+	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
+}
+
+type Code42Device struct {
+	Username string `json:"username,omitempty"`
+	Uid      string `json:"uid,omitempty"`
+}
+
+type Code42Tab struct {
+	WindowTitle string `json:"window_title,omitempty"`
+	Url         *URL   `json:"url,omitempty"`
+}
+
+type Code42RemovableMedia struct {
+	Vendor       string `json:"vendor,omitempty"`
+	Name         string `json:"name,omitempty"`
+	SerialNumber string `json:"serial_number,omitempty"`
+	Capacity     *int   `json:"capacity,omitempty"`
+	BusType      string `json:"bus_type,omitempty"`
+	MediaName    string `json:"media_name,omitempty"`
+	VolumeName   string `json:"volume_name,omitempty"`
+	PartitionId  string `json:"partition_id,omitempty"`
+}
+
+type Code42EmailDlp struct {
+	PolicyNames []string `json:"policy_names,omitempty"`
+	Subject     string   `json:"subject,omitempty"`
+	Sender      string   `json:"sender,omitempty"`
+	From        string   `json:"from,omitempty"`
+	Recipients  []string `json:"recipients,omitempty"`
+}
+
+type Code42Print struct {
+	JobName                string `json:"job_name,omitempty"`
+	PrinterName            string `json:"name,omitempty"`
+	PrintedFilesBackupPath string `json:"printed_files_backup_path,omitempty"`
+}
+
+type Code42Destination struct {
+	Category string `json:"category,omitempty"`
+	Name     string `json:"name,omitempty"`
+}
+
 type ElasticFileEvent struct {
-	Event          *Event          `json:"event,omitempty"`
-	Timestamp      *time.Time      `json:"@timestamp,omitempty"`
-	File           *File           `json:"file,omitempty"`
-	User           *User           `json:"user,omitempty"`
-	Host           *Host           `json:"host,omitempty"`
-	Client         *Client         `json:"client,omitempty"`
-	Process        *Process        `json:"process,omitempty"`
-	Tab            *Tab            `json:"tab,omitempty"`
-	RemovableMedia *RemovableMedia `json:"removable_media,omitempty"`
-	EmailDlp       *EmailDlp       `json:"email_dlp,omitempty"`
-	Printing       *Printing       `json:"printing,omitempty"`
+	Event     *Event     `json:"event,omitempty"`
+	Timestamp *time.Time `json:"@timestamp,omitempty"`
+	File      *File      `json:"file,omitempty"`
+	Host      *Host      `json:"host,omitempty"`
+	Process   *Process   `json:"process,omitempty"`
+	Code42    *Code42    `json:"code_42,omitempty"`
 }
 
 type Event struct {
-	Id                 string     `json:"id,omitempty"`
-	Type               string     `json:"type,omitempty"`
-	Ingested           *time.Time `json:"ingested,omitempty"`
-	Created            *time.Time `json:"created,omitempty"`
-	Module             string     `json:"module,omitempty"`
-	Dataset            []string   `json:"dataset,omitempty"`
-	OutsideActiveHours *bool      `json:"outside_active_hours,omitempty"`
+	Action   string     `json:"action,omitempty"`
+	Category string     `json:"category,omitempty"`
+	Created  *time.Time `json:"created,omitempty"`
+	Dataset  string     `json:"dataset,omitempty"`
+	Id       string     `json:"id,omitempty"`
+	Ingested *time.Time `json:"ingested,omitempty"`
+	Kind     string     `json:"kind,omitempty"`
+	Module   string     `json:"module,omitempty"`
+	Outcome  string     `json:"outcome,omitempty"`
+	Provider string     `json:"provider,omitempty"`
+	Type     string     `json:"type,omitempty"`
 }
 
 type Hash struct {
@@ -65,50 +161,24 @@ type URL struct {
 }
 
 type File struct {
-	Path                        string     `json:"path,omitempty"`
-	Name                        string     `json:"name,omitempty"`
-	Type                        string     `json:"type,omitempty"`
-	Category                    string     `json:"category,omitempty"`
-	IdentifiedExtensionCategory string     `json:"identified_extension_category,omitempty"`
-	CurrentExtensionCategory    string     `json:"current_extension_category,omitempty"`
-	Extension                   []string   `json:"extension,omitempty"` //Array of extensions
-	Size                        *int       `json:"size,omitempty"`
-	Owner                       []string   `json:"owner,omitempty"` //Array of owners
-	Hash                        *Hash      `json:"hash,omitempty"`
-	Created                     *time.Time `json:"created,omitempty"`
-	Mtime                       *time.Time `json:"mtime,omitempty"`
-	Directory                   []string   `json:"directory,omitempty"`
-	URL                         *URL       `json:"url,omitempty"`
-	Shared                      *bool      `json:"shared,omitempty"`
-	SharedWith                  []string   `json:"shared_with,omitempty"`
-	SharingTypeAdded            []string   `json:"sharing_type_added,omitempty"`
-	CloudDriveId                string     `json:"cloud_drive_id,omitempty"`
-	DetectionSourceAlias        string     `json:"detection_source_alias,omitempty"`
-	SyncDestination             string     `json:"sync_destination,omitempty"`
-	SyncDestinationUser         *User      `json:"sync_destination_user,omitempty"`
-	Id                          string     `json:"id,omitempty"`
-	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
-	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
-	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
-	RemoteActivity              string     `json:"remote_activity,omitempty"`
-	Trusted                     *bool      `json:"trusted,omitempty"`
+	Created   *time.Time `json:"created,omitempty"`
+	Directory []string   `json:"directory,omitempty"`
+	Extension string     `json:"extension,omitempty"`
+	MimeType  string     `json:"mime_type,omitempty"`
+	Mtime     *time.Time `json:"mtime,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	Owner     []string   `json:"owner,omitempty"`
+	Path      string     `json:"path,omitempty"`
+	Size      *int       `json:"size,omitempty"`
+	Type      string     `json:"type,omitempty"`
+	Hash      *Hash      `json:"hash,omitempty"`
 }
 
 type User struct {
-	Email string `json:"email,omitempty"`
-	Id    string `json:"id,omitempty"`
-	Actor string `json:"actor,omitempty"`
-}
-
-type Host struct {
-	Id       string `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Hostname string `json:"hostname,omitempty"`
-	User     *User  `json:"user,omitempty"`
-}
-
-type Nat struct {
-	Ip []string `json:"ip,omitempty"`
+	Email  string `json:"email,omitempty"`
+	Id     string `json:"id,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Domain string `json:"domain,omitempty"`
 }
 
 type Organization struct {
@@ -119,50 +189,19 @@ type AS struct {
 	Organization *Organization `json:"organization,omitempty"`
 }
 
-type Client struct {
-	Ip  string `json:"ip,omitempty"`
-	Nat *Nat   `json:"nat,omitempty"`
-	Geo *Geo   `json:"geo,omitempty"`
-	AS  *AS    `json:"as,omitempty"`
+type Host struct {
+	Id       string   `json:"id,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Hostname string   `json:"hostname,omitempty"`
+	User     *User    `json:"user,omitempty"`
+	IP       []string `json:"ip,omitempty"`
+	Geo      *Geo     `json:"geo,omitempty"`
+	AS       *AS      `json:"as,omitempty"`
 }
 
 type Process struct {
-	ProcessOwner string `json:"owner,omitempty"`
-	ProcessName  string `json:"name,omitempty"`
-}
-
-type Tab struct {
-	WindowTitle string `json:"window_title,omitempty"`
-	URL         *URL   `json:"url,omitempty"`
-}
-
-type RemovableMedia struct {
-	Vendor       string `json:"vendor,omitempty"`
-	Name         string `json:"name,omitempty"`
-	SerialNumber string `json:"serial_number,omitempty"`
-	Capacity     *int   `json:"capacity,omitempty"`
-	BusType      string `json:"bus_type,omitempty"`
-	MediaName    string `json:"media_name,omitempty"`
-	VolumeName   string `json:"volume_name,omitempty"`
-	PartitionId  string `json:"partition_id,omitempty"`
-}
-
-type EmailDlp struct {
-	PolicyNames []string `json:"policy_names,omitempty"`
-	Subject     string   `json:"subject,omitempty"`
-	Sender      string   `json:"sender,omitempty"`
-	From        string   `json:"from,omitempty"`
-	Recipients  []string `json:"recipients,omitempty"`
-}
-
-type Printing struct {
-	JobName                string   `json:"job_name,omitempty"`
-	Printer                *Printer `json:"printer,omitempty"`
-	PrintedFilesBackupPath string   `json:"printed_files_backup_path,omitempty"`
-}
-
-type Printer struct {
-	Name string `json:"name,omitempty"`
+	Owner string `json:"owner,omitempty"`
+	Name  string `json:"name,omitempty"`
 }
 
 type Geo struct {
