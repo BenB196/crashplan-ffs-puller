@@ -104,7 +104,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 	if len(*fileEvents) > 0 {
 		//remap ffsEvents to ElasticFFSEvent
 		var elasticFFSEvents []eventOutput.ElasticFileEvent
-		var semiElasticFFSEvents []eventOutput.SemiElasticFFSEvent
 		var remapWg sync.WaitGroup
 		remapWg.Add(len(*fileEvents))
 		go func() {
@@ -381,125 +380,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					elasticFFSEvents = append(elasticFFSEvents, *elasticFileEvent)
 					remapWg.Done()
-				} else if query.EsStandardized != "" && strings.EqualFold(query.EsStandardized, "half") {
-					semiElasticFileEvent := eventOutput.SemiElasticFileEvent{
-						EventId:                     ffsEvent.EventId,
-						EventType:                   ffsEvent.EventType,
-						EventTimestamp:              ffsEvent.EventTimestamp,
-						InsertionTimestamp:          ffsEvent.InsertionTimestamp,
-						FilePath:                    ffsEvent.FilePath,
-						FileName:                    ffsEvent.FileName,
-						FileType:                    ffsEvent.FileType,
-						FileCategory:                ffsEvent.FileCategory,
-						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
-						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
-						FileSize:                    ffsEvent.FileSize,
-						FileOwner:                   ffsEvent.FileOwner,
-						Md5Checksum:                 ffsEvent.Md5Checksum,
-						Sha256Checksum:              ffsEvent.Sha256Checksum,
-						CreatedTimestamp:            ffsEvent.CreatedTimestamp,
-						ModifyTimestamp:             ffsEvent.ModifyTimestamp,
-						DeviceUsername:              ffsEvent.DeviceUsername,
-						DeviceUid:                   ffsEvent.DeviceUid,
-						UserUid:                     ffsEvent.UserUid,
-						OsHostname:                  ffsEvent.OsHostname,
-						DomainName:                  ffsEvent.DomainName,
-						PublicIpAddress:             ffsEvent.PublicIpAddress,
-						PrivateIpAddresses:          ffsEvent.PrivateIpAddresses,
-						Actor:                       ffsEvent.Actor,
-						DirectoryId:                 ffsEvent.DirectoryId,
-						Source:                      ffsEvent.Source,
-						Url:                         ffsEvent.Url,
-						Shared:                      ffsEvent.Shared,
-						SharedWith:                  ffsEvent.SharedWith,
-						SharingTypeAdded:            ffsEvent.SharingTypeAdded,
-						CloudDriveId:                ffsEvent.CloudDriveId,
-						DetectionSourceAlias:        ffsEvent.DetectionSourceAlias,
-						FileId:                      ffsEvent.FileId,
-						Exposure:                    ffsEvent.Exposure,
-						ProcessOwner:                ffsEvent.ProcessOwner,
-						ProcessName:                 ffsEvent.ProcessName,
-						TabWindowTitle:              ffsEvent.TabWindowTitle,
-						TabUrl:                      ffsEvent.TabUrl,
-						RemovableMediaVendor:        ffsEvent.RemovableMediaVendor,
-						RemovableMediaName:          ffsEvent.RemovableMediaName,
-						RemovableMediaSerialNumber:  ffsEvent.RemovableMediaSerialNumber,
-						RemovableMediaCapacity:      ffsEvent.RemovableMediaCapacity,
-						RemovableMediaBusType:       ffsEvent.RemovableMediaBusType,
-						RemovableMediaMediaName:     ffsEvent.RemovableMediaMediaName,
-						RemovableMediaVolumeName:    ffsEvent.RemovableMediaVolumeName,
-						RemovableMediaPartitionId:   ffsEvent.RemovableMediaPartitionId,
-						SyncDestination:             ffsEvent.SyncDestination,
-						SyncDestinationUsername:     ffsEvent.SyncDestinationUsername,
-						EmailDLPPolicyNames:         ffsEvent.EmailDLPPolicyNames,
-						EmailDLPSubject:             ffsEvent.EmailDLPSubject,
-						EmailDLPSender:              ffsEvent.EmailDLPSender,
-						EmailDLPFrom:                ffsEvent.EmailDLPSender,
-						EmailDLPRecipients:          ffsEvent.EmailDLPRecipients,
-						OutsideActiveHours:          ffsEvent.OutsideActiveHours,
-						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
-						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
-						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
-						PrintJobName:                ffsEvent.PrintJobName,
-						PrinterName:                 ffsEvent.PrinterName,
-						PrintedFilesBackupPath:      ffsEvent.PrintedFilesBackupPath,
-						RemoteActivity:              ffsEvent.RemoteActivity,
-						Trusted:                     ffsEvent.Trusted,
-						LoggedInOperatingSystemUser: ffsEvent.LoggedInOperatingSystemUser,
-					}
-
-					var semiElasticFFSEvent eventOutput.SemiElasticFFSEvent
-					var geo *eventOutput.Geo
-					if location != nil {
-						geo = &eventOutput.Geo{
-							Status:        location.Status,
-							Message:       location.Message,
-							Continent:     location.Continent,
-							ContinentCode: location.ContinentCode,
-							Country:       location.Country,
-							CountryCode:   location.CountryCode,
-							Region:        location.Region,
-							RegionName:    location.RegionName,
-							City:          location.City,
-							District:      location.District,
-							ZIP:           location.ZIP,
-							Lat:           location.Lat,
-							Lon:           location.Lon,
-							Timezone:      location.Timezone,
-							Currency:      location.Currency,
-							ISP:           location.ISP,
-							Org:           location.Org,
-							AS:            location.AS,
-							ASName:        location.ASName,
-							Reverse:       location.Reverse,
-							Mobile:        location.Mobile,
-							Proxy:         location.Proxy,
-							Hosting:       location.Hosting,
-							Query:         location.Query,
-						}
-
-						if (location.Lat != nil && *location.Lat != 0) && (location.Lon != nil && *location.Lon != 0) {
-							geo.Location = &eventOutput.Location{
-								Lat: location.Lat,
-								Lon: location.Lon,
-							}
-						} else {
-							geo.Location = nil
-						}
-					}
-
-					semiElasticFFSEvent = eventOutput.SemiElasticFFSEvent{
-						FileEvent: semiElasticFileEvent,
-					}
-
-					if location != nil && location.Status == "" {
-						semiElasticFFSEvent.Geo = nil
-					} else {
-						semiElasticFFSEvent.Geo = geo
-					}
-
-					semiElasticFFSEvents = append(semiElasticFFSEvents, semiElasticFFSEvent)
-					remapWg.Done()
 				}
 			}
 		}()
@@ -513,8 +393,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				err = eventOutput.WriteEvents(ffsEvents, query)
 			} else if query.EsStandardized == "full" {
 				err = eventOutput.WriteEvents(elasticFFSEvents, query)
-			} else if query.EsStandardized == "half" {
-				err = eventOutput.WriteEvents(semiElasticFFSEvents, query)
 			}
 
 			if err != nil {
@@ -584,15 +462,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							elasticWg.Done()
 						}
 					}()
-				} else if query.EsStandardized == "half" {
-					elasticWg.Add(len(semiElasticFFSEvents))
-					go func() {
-						for _, elasticFileEvent := range semiElasticFFSEvents {
-							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
-							processor.Add(r)
-							elasticWg.Done()
-						}
-					}()
 				}
 
 				elasticWg.Wait()
@@ -636,25 +505,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.Event.Created.Format(query.Elasticsearch.IndexTimeAppend))
-							}
-
-							requiredIndexMutex.RLock()
-							if _, found := requiredIndexTimestamps[indexTime]; !found {
-								requiredIndexTimestamps[indexTime] = nil
-							}
-							requiredIndexMutex.RUnlock()
-							elasticWg.Done()
-						}
-					}()
-				} else if query.EsStandardized == "half" {
-					elasticWg.Add(len(semiElasticFFSEvents))
-					go func() {
-						for _, elasticFileEvent := range semiElasticFFSEvents {
-							var indexTime time.Time
-							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -743,22 +593,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							elasticWg.Done()
 						}
 					}()
-				} else if query.EsStandardized == "half" {
-					elasticWg.Add(len(semiElasticFFSEvents))
-					go func() {
-						for _, elasticFileEvent := range semiElasticFFSEvents {
-							var indexTime time.Time
-							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, elasticFileEvent.FileEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
-							}
-							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
-							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(elasticFileEvent)
-							processor.Add(r)
-							elasticWg.Done()
-						}
-					}()
 				}
 				elasticWg.Wait()
 
@@ -826,37 +660,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				logstashWg.Add(len(elasticFFSEvents))
 				go func() {
 					for _, elasticFileEvent := range elasticFFSEvents {
-						event, err := json.Marshal(elasticFileEvent)
-
-						if err != nil {
-							//TODO handle error
-							log.Println("error marshaling ffs event")
-							log.Println(elasticFileEvent)
-							panic(err)
-						}
-
-						_, err = writer.Write(event)
-
-						if err != nil {
-							//TODO handle error
-							log.Println("error writing ffs event")
-							log.Println(string(event))
-							panic(err)
-						}
-						_, err = writer.Write([]byte("\n"))
-						if err != nil {
-							//TODO handle error
-							log.Println("error writing ffs event")
-							log.Println(string(event))
-							panic(err)
-						}
-						logstashWg.Done()
-					}
-				}()
-			} else if query.EsStandardized == "half" {
-				logstashWg.Add(len(semiElasticFFSEvents))
-				go func() {
-					for _, elasticFileEvent := range semiElasticFFSEvents {
 						event, err := json.Marshal(elasticFileEvent)
 
 						if err != nil {
