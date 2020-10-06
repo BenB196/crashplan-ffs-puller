@@ -460,8 +460,8 @@ func validateConfigJson(fileBytes []byte) (*Config, error) {
 			}
 
 			//validate esStandardized
-			if query.EsStandardized != "" && !strings.EqualFold(query.EsStandardized, "full") && !strings.EqualFold(query.EsStandardized, "half") {
-				panic("unknown value for esStandardized, values can either be full, half, or \"\"")
+			if query.EsStandardized != "" && !strings.EqualFold(query.EsStandardized, "ecs") {
+				panic("unknown value for esStandardized, values can either be ecs or \"\"")
 			}
 
 			//Validate ip-api
