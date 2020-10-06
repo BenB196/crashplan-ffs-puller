@@ -39,7 +39,7 @@ type Code42 struct {
 	CloudDriveId                string                `json:"cloud_drive_id,omitempty"`
 	DetectionSourceAlias        string                `json:"detection_source_alias,omitempty"`
 	Exposure                    []string              `json:"exposure,omitempty"`
-	Process                     *Process              `json:"process,omitempty"`
+	Process                     *Code42Process        `json:"process,omitempty"`
 	Tab                         *Code42Tab            `json:"tab,omitempty"`
 	RemovableMedia              *Code42RemovableMedia `json:"removable_media,omitempty"`
 	SyncDestination             string                `json:"sync_destination,omitempty"`
@@ -122,7 +122,6 @@ type ElasticFileEvent struct {
 	Timestamp *time.Time `json:"@timestamp,omitempty"`
 	File      *File      `json:"file,omitempty"`
 	Host      *Host      `json:"host,omitempty"`
-	Process   *Process   `json:"process,omitempty"`
 	Code42    *Code42    `json:"code_42,omitempty"`
 }
 
@@ -181,14 +180,6 @@ type User struct {
 	Domain string `json:"domain,omitempty"`
 }
 
-type Organization struct {
-	Name string `json:"name,omitempty"`
-}
-
-type AS struct {
-	Organization *Organization `json:"organization,omitempty"`
-}
-
 type Host struct {
 	Id       string   `json:"id,omitempty"`
 	Name     string   `json:"name,omitempty"`
@@ -196,10 +187,9 @@ type Host struct {
 	User     *User    `json:"user,omitempty"`
 	IP       []string `json:"ip,omitempty"`
 	Geo      *Geo     `json:"geo,omitempty"`
-	AS       *AS      `json:"as,omitempty"`
 }
 
-type Process struct {
+type Code42Process struct {
 	Owner string `json:"owner,omitempty"`
 	Name  string `json:"name,omitempty"`
 }

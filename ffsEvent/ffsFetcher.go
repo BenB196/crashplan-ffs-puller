@@ -227,7 +227,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					ips = append(ips, ffsEvent.PublicIpAddress)
 
 					var geo *eventOutput.Geo
-					var as *eventOutput.AS
 					if location != nil {
 						geo = &eventOutput.Geo{
 							Status:        location.Status,
@@ -264,12 +263,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						} else {
 							geo.Location = nil
 						}
-
-						if geo.ISP != "" {
-							as = &eventOutput.AS{Organization: &eventOutput.Organization{Name: geo.ISP}}
-						} else {
-							as = nil
-						}
 					} else {
 						geo = nil
 					}
@@ -281,15 +274,14 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						User:     user,
 						IP:       ips,
 						Geo:      geo,
-						AS:       as,
 					}
 
-					process := &eventOutput.Process{
+					process := &eventOutput.Code42Process{
 						Owner: ffsEvent.ProcessOwner,
 						Name:  ffsEvent.ProcessName,
 					}
 
-					if *process == (eventOutput.Process{}) {
+					if *process == (eventOutput.Code42Process{}) {
 						process = nil
 					}
 
@@ -386,7 +378,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Timestamp: timestamp,
 						File:      file,
 						Host:      host,
-						Process:   process,
 						Code42:    code42,
 					}
 
