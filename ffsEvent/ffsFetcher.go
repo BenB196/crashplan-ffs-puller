@@ -223,8 +223,20 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 
 					//host ips
-					ips := ffsEvent.PrivateIpAddresses
-					ips = append(ips, ffsEvent.PublicIpAddress)
+
+					var ips []string
+
+					if ffsEvent.PrivateIpAddresses != nil && len(ffsEvent.PrivateIpAddresses) != 0 {
+						ips = append(ips, ffsEvent.PrivateIpAddresses...)
+					}
+
+					if ffsEvent.PublicIpAddress != "" {
+						ips = append(ips, ffsEvent.PublicIpAddress)
+					}
+
+					if ips != nil && len(ips) == 0 {
+						ips = nil
+					}
 
 					var geo *eventOutput.Geo
 					if location != nil {
@@ -708,6 +720,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				panic(err)
 			}
 		}
+	} else {
+		enrichmentTime = time.Now()
 	}
 	outputTime := time.Now()
 
