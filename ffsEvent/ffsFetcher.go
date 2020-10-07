@@ -720,6 +720,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 				panic(err)
 			}
 		}
+	} else {
+		enrichmentTime = time.Now()
 	}
 	outputTime := time.Now()
 
