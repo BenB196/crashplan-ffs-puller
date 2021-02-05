@@ -83,8 +83,10 @@ type Code42Device struct {
 }
 
 type Code42Tab struct {
-	WindowTitle string `json:"window_title,omitempty"`
-	Url         *URL   `json:"url,omitempty"`
+	WindowTitle string   `json:"window_title,omitempty"`
+	Url         *URL     `json:"url,omitempty"`
+	Titles      []string `json:"titles,omitempty"`
+	Urls        []URL    `json:"urls,omitempty"`
 }
 
 type Code42RemovableMedia struct {
