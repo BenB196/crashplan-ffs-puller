@@ -327,6 +327,26 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Uid:      ffsEvent.DeviceUid,
 					}
 
+					//code 42 tab fields
+					var tabURLs []eventOutput.URL
+
+					if ffsEvent.TabURLs != nil && len(ffsEvent.TabURLs) != 0 {
+						for _, tabUrl := range ffsEvent.TabURLs {
+							tabURLs = append(tabURLs, *getUrlInfo(tabUrl))
+						}
+					}
+
+					if tabURLs != nil && len(tabURLs) == 0 {
+						tabURLs = nil
+					}
+
+					code42Tab := &eventOutput.Code42Tab{
+						WindowTitle: ffsEvent.TabWindowTitle,
+						Url:         getUrlInfo(ffsEvent.TabUrl),
+						Titles:      ffsEvent.TabTitles,
+						Urls:        tabURLs,
+					}
+
 					code42 := &eventOutput.Code42{
 						Event:                code42Event,
 						InsertionTimestamp:   ffsEvent.InsertionTimestamp,
@@ -347,10 +367,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
 						Exposure:             ffsEvent.Exposure,
 						Process:              process,
-						Tab: &eventOutput.Code42Tab{
-							WindowTitle: ffsEvent.TabWindowTitle,
-							Url:         getUrlInfo(ffsEvent.TabUrl),
-						},
+						Tab:                  code42Tab,
 						RemovableMedia: &eventOutput.Code42RemovableMedia{
 							Vendor:       ffsEvent.RemovableMediaVendor,
 							Name:         ffsEvent.RemovableMediaName,
