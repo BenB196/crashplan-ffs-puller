@@ -34,7 +34,7 @@ type Code42 struct {
 	Source                  string                `json:"source,omitempty"`
 	Url                     *URL                  `json:"url,omitempty"`
 	Shared                  string                `json:"shared,omitempty"`
-	SharedWith              []ffs.SharedWith      `json:"shared_with,omitempty"`
+	SharedWith              []Code42SharedWith    `json:"shared_with,omitempty"`
 	SharingTypeAdded        []string              `json:"sharing_type_added,omitempty"`
 	CloudDriveId            string                `json:"cloud_drive_id,omitempty"`
 	DetectionSourceAlias    string                `json:"detection_source_alias,omitempty"`
@@ -58,6 +58,10 @@ type Code42TabTab struct {
 	Url   *URL   `json:"url,omitempty"`
 }
 
+type Code42SharedWith struct {
+	CloudUsername *string `json:"cloud_username,omitempty"`
+}
+
 type Code42Event struct {
 	Id        string     `json:"id,omitempty"`
 	Type      string     `json:"type,omitempty"`
@@ -77,8 +81,6 @@ type Code42File struct {
 	CreateTimestamp             *time.Time `json:"create_timestamp,omitempty"`
 	ModifyTimestamp             *time.Time `json:"modify_timestamp,omitempty"`
 	Id                          string     `json:"id,omitempty"`
-	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
-	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
 	MimeTypeMismatch            *bool      `json:"mime_type_mismatch,omitempty"`
 }
 
@@ -88,8 +90,8 @@ type Code42Device struct {
 }
 
 type Code42Tab struct {
-	WindowTitle string   `json:"window_title,omitempty"`
-	Url         *URL     `json:"url,omitempty"`
+	WindowTitle string `json:"window_title,omitempty"`
+	Url         *URL   `json:"url,omitempty"`
 }
 
 type Code42RemovableMedia struct {
