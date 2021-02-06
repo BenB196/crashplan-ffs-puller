@@ -226,12 +226,16 @@ func getUrlInfo(urlFull string) *eventOutput.URL {
 		//set query
 		eventUrl.Query = u.RawQuery
 		//set registered domain
-		eventUrl.RegisteredDomain, err = publicsuffix.EffectiveTLDPlusOne(eventUrl.Domain)
-		if err != nil {
-			log.Println("Error getting Registered Domain; error: " + err.Error() + ", Domain: " + eventUrl.Domain)
+		if eventUrl.Domain != "" {
+			eventUrl.RegisteredDomain, err = publicsuffix.EffectiveTLDPlusOne(eventUrl.Domain)
+			if err != nil {
+				log.Println("Error getting Registered Domain; error: " + err.Error() + ", Domain: " + eventUrl.Domain)
+			}
 		}
 		//set top level domain
-		eventUrl.TopLevelDomain, _ = publicsuffix.PublicSuffix(eventUrl.Domain)
+		if eventUrl.Domain != "" {
+			eventUrl.TopLevelDomain, _ = publicsuffix.PublicSuffix(eventUrl.Domain)
+		}
 	}
 	return &eventUrl
 }
