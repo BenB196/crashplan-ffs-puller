@@ -15,42 +15,42 @@ import (
 )
 
 type FFSEvent struct {
-	ffs.FileEvent
+	ffs.JsonFileEvent
 	*ip_api.Location `json:",omitempty"`
 	GeoLocation      *Location `json:"geoPoint,omitempty"`
 }
 
 type Code42 struct {
-	Event                       *Code42Event          `json:"event,omitempty"`
-	InsertionTimestamp          *time.Time            `json:"insertion_timestamp,omitempty"`
-	File                        *Code42File           `json:"file,omitempty"`
-	Device                      *Code42Device         `json:"device,omitempty"`
-	OsHostName                  string                `json:"os_host_name,omitempty"`
-	DomainName                  string                `json:"domain_name,omitempty"`
-	PublicIpAddress             string                `json:"public_ip_address,omitempty"`
-	PrivateIpAddresses          []string              `json:"private_ip_addresses,omitempty"`
-	Actor                       string                `json:"actor,omitempty"`
-	DirectoryId                 []string              `json:"directory_id,omitempty"`
-	Source                      string                `json:"source,omitempty"`
-	Url                         *URL                  `json:"url,omitempty"`
-	Shared                      *bool                 `json:"shared,omitempty"`
-	SharedWith                  []string              `json:"shared_with,omitempty"`
-	SharingTypeAdded            []string              `json:"sharing_type_added,omitempty"`
-	CloudDriveId                string                `json:"cloud_drive_id,omitempty"`
-	DetectionSourceAlias        string                `json:"detection_source_alias,omitempty"`
-	Exposure                    []string              `json:"exposure,omitempty"`
-	Process                     *Code42Process        `json:"process,omitempty"`
-	Tab                         *Code42Tab            `json:"tab,omitempty"`
-	RemovableMedia              *Code42RemovableMedia `json:"removable_media,omitempty"`
-	SyncDestination             string                `json:"sync_destination,omitempty"`
-	SyncDestinationUsername     string                `json:"sync_destination_username,omitempty"`
-	EmailDlp                    *Code42EmailDlp       `json:"email_dlp,omitempty"`
-	OutsideActiveHours          *bool                 `json:"outside_active_hours,omitempty"`
-	Print                       *Code42Print          `json:"print,omitempty"`
-	RemoteActivity              string                `json:"remote_activity,omitempty"`
-	Trusted                     *bool                 `json:"trusted,omitempty"`
-	LoggedInOperatingSystemUser string                `json:"logged_in_operating_system_user,omitempty"`
-	Destination                 *Code42Destination    `json:"destination,omitempty"`
+	Event                   *Code42Event          `json:"event,omitempty"`
+	InsertionTimestamp      *time.Time            `json:"insertion_timestamp,omitempty"`
+	File                    *Code42File           `json:"file,omitempty"`
+	Device                  *Code42Device         `json:"device,omitempty"`
+	OsHostName              string                `json:"os_host_name,omitempty"`
+	DomainName              string                `json:"domain_name,omitempty"`
+	PublicIpAddress         string                `json:"public_ip_address,omitempty"`
+	PrivateIpAddresses      []string              `json:"private_ip_addresses,omitempty"`
+	Actor                   string                `json:"actor,omitempty"`
+	DirectoryId             []string              `json:"directory_id,omitempty"`
+	Source                  string                `json:"source,omitempty"`
+	Url                     *URL                  `json:"url,omitempty"`
+	Shared                  string                `json:"shared,omitempty"`
+	SharedWith              *ffs.SharedWith       `json:"shared_with,omitempty"`
+	SharingTypeAdded        []string              `json:"sharing_type_added,omitempty"`
+	CloudDriveId            string                `json:"cloud_drive_id,omitempty"`
+	DetectionSourceAlias    string                `json:"detection_source_alias,omitempty"`
+	Exposure                []string              `json:"exposure,omitempty"`
+	Process                 *Code42Process        `json:"process,omitempty"`
+	RemovableMedia          *Code42RemovableMedia `json:"removable_media,omitempty"`
+	SyncDestination         string                `json:"sync_destination,omitempty"`
+	SyncDestinationUsername string                `json:"sync_destination_username,omitempty"`
+	EmailDlp                *Code42EmailDlp       `json:"email_dlp,omitempty"`
+	OutsideActiveHours      *bool                 `json:"outside_active_hours,omitempty"`
+	Print                   *Code42Print          `json:"print,omitempty"`
+	RemoteActivity          string                `json:"remote_activity,omitempty"`
+	Trusted                 *bool                 `json:"trusted,omitempty"`
+	OperatingSystemUser     string                `json:"operating_system_user,omitempty"`
+	Destination             *Code42Destination    `json:"destination,omitempty"`
+	Tabs                    []ffs.Tab             `json:"tabs,omitempty"`
 }
 
 type Code42Event struct {
@@ -64,17 +64,17 @@ type Code42File struct {
 	Name                        string     `json:"name,omitempty"`
 	Type                        string     `json:"type,omitempty"`
 	Category                    string     `json:"category,omitempty"`
-	IdentifiedExtensionCategory string     `json:"identified_extension_category,omitempty"`
-	CurrentExtensionCategory    string     `json:"current_extension_category,omitempty"`
-	Size                        *int       `json:"size,omitempty"`
-	Owner                       []string   `json:"owner,omitempty"`
+	MimeTypeByBytes             string     `json:"mime_type_by_bytes,omitempty"`
+	MimeTypeByExtension         string     `json:"mime_type_by_extension,omitempty"`
+	Size                        *int64     `json:"size,omitempty"`
+	Owner                       string     `json:"owner,omitempty"`
 	Hash                        *Hash      `json:"hash,omitempty"`
-	CreatedTimestamp            *time.Time `json:"created_timestamp,omitempty"`
+	CreateTimestamp             *time.Time `json:"create_timestamp,omitempty"`
 	ModifyTimestamp             *time.Time `json:"modify_timestamp,omitempty"`
 	Id                          string     `json:"id,omitempty"`
 	IdentifiedExtensionMIMEType string     `json:"identified_extension_mime_type,omitempty"`
 	CurrentExtensionMIMEType    string     `json:"current_extension_mime_type,omitempty"`
-	SuspiciousFileTypeMismatch  *bool      `json:"suspicious_file_type_mismatch,omitempty"`
+	MimeTypeMismatch            *bool      `json:"mime_type_mismatch,omitempty"`
 }
 
 type Code42Device struct {
@@ -90,14 +90,14 @@ type Code42Tab struct {
 }
 
 type Code42RemovableMedia struct {
-	Vendor       string `json:"vendor,omitempty"`
-	Name         string `json:"name,omitempty"`
-	SerialNumber string `json:"serial_number,omitempty"`
-	Capacity     *int   `json:"capacity,omitempty"`
-	BusType      string `json:"bus_type,omitempty"`
-	MediaName    string `json:"media_name,omitempty"`
-	VolumeName   string `json:"volume_name,omitempty"`
-	PartitionId  string `json:"partition_id,omitempty"`
+	Vendor       string   `json:"vendor,omitempty"`
+	Name         string   `json:"name,omitempty"`
+	SerialNumber string   `json:"serial_number,omitempty"`
+	Capacity     *int64   `json:"capacity,omitempty"`
+	BusType      string   `json:"bus_type,omitempty"`
+	MediaName    string   `json:"media_name,omitempty"`
+	VolumeName   []string `json:"volume_name,omitempty"`
+	PartitionId  []string `json:"partition_id,omitempty"`
 }
 
 type Code42EmailDlp struct {
@@ -109,9 +109,8 @@ type Code42EmailDlp struct {
 }
 
 type Code42Print struct {
-	JobName                string `json:"job_name,omitempty"`
-	PrinterName            string `json:"name,omitempty"`
-	PrintedFilesBackupPath string `json:"printed_files_backup_path,omitempty"`
+	JobName     string `json:"job_name,omitempty"`
+	PrinterName string `json:"name,omitempty"`
 }
 
 type Code42Destination struct {
@@ -165,12 +164,12 @@ type File struct {
 	Created   *time.Time `json:"created,omitempty"`
 	Directory []string   `json:"directory,omitempty"`
 	Extension string     `json:"extension,omitempty"`
-	MimeType  string     `json:"mime_type,omitempty"`
+	MimeType  []string   `json:"mime_type,omitempty"`
 	Mtime     *time.Time `json:"mtime,omitempty"`
 	Name      string     `json:"name,omitempty"`
-	Owner     []string   `json:"owner,omitempty"`
+	Owner     string     `json:"owner,omitempty"`
 	Path      string     `json:"path,omitempty"`
-	Size      *int       `json:"size,omitempty"`
+	Size      *int64     `json:"size,omitempty"`
 	Type      string     `json:"type,omitempty"`
 	Hash      *Hash      `json:"hash,omitempty"`
 }

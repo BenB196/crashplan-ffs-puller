@@ -9,7 +9,7 @@ import (
 	"github.com/BenB196/crashplan-ffs-puller/elasticsearch"
 	"github.com/BenB196/crashplan-ffs-puller/eventOutput"
 	"github.com/BenB196/crashplan-ffs-puller/promMetrics"
-	ip_api "github.com/BenB196/ip-api-go-pkg"
+	"github.com/BenB196/ip-api-go-pkg"
 	"github.com/olivere/elastic/v7"
 	"log"
 	"path/filepath"
@@ -68,7 +68,9 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	notInProgressTime := time.Now()
 
-	fileEvents, err := ffs.GetFileEvents(authData, configuration.FFSURI, query.Query)
+	pgToken := ""
+
+	fileEvents, _, err := ffs.GetJsonFileEvents(authData, configuration.FFSURI, query.Query, &pgToken)
 
 	getFileEventsTime := time.Now()
 
@@ -134,20 +136,65 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						eventType = "deletion"
 					}
 
+					//eventTimestamp
+					eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+
+					if err != nil {
+						panic(err)
+					}
+
+					//insertionTimestamp
+
+					insertionTimeSplit := strings.Split(ffsEvent.InsertionTimestamp, ".")
+					insertionTimestampLength := len(insertionTimeSplit[1])
+					if insertionTimestampLength > 4 {
+						ffsEvent.InsertionTimestamp = insertionTimeSplit[0] + "." + insertionTimeSplit[1][0:3]
+					}
+
+					insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", " ", -1))
+					if err != nil {
+						panic(err)
+					}
+
+					//creationTimestamp
+					var createTimestamp *time.Time
+					if ffsEvent.CreateTimestamp != "" {
+						*createTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.CreateTimestamp, "T", " ", -1), "Z", " ", -1))
+
+						if err != nil {
+							panic(err)
+						}
+					} else {
+						createTimestamp = nil
+					}
+
+					//modifyTimestamp
+					var modifyTimestamp *time.Time
+					if ffsEvent.CreateTimestamp != "" {
+						*modifyTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.ModifyTimestamp, "T", " ", -1), "Z", " ", -1))
+
+						if err != nil {
+							panic(err)
+						}
+					} else {
+						modifyTimestamp = nil
+					}
+
+
 					event := &eventOutput.Event{
 						Action:   ffsEvent.EventType,
 						Category: "file",
-						Created:  ffsEvent.EventTimestamp,
+						Created:  &eventTimestamp,
 						Dataset:  "code42.ffs",
 						Id:       ffsEvent.EventId,
-						Ingested: ffsEvent.InsertionTimestamp,
+						Ingested: &insertionTimestamp,
 						Kind:     "event",
 						Module:   "code42",
 						Type:     eventType,
 					}
 
 					//@timestamp
-					timestamp := ffsEvent.EventTimestamp
+					timestamp := eventTimestamp
 
 					//file fields
 					hash := &eventOutput.Hash{
@@ -176,21 +223,21 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Size:      ffsEvent.FileSize,
 						Owner:     ffsEvent.FileOwner,
 						Hash:      hash,
-						Created:   ffsEvent.CreatedTimestamp,
-						Mtime:     ffsEvent.ModifyTimestamp,
+						Created:   createTimestamp,
+						Mtime:     modifyTimestamp,
 						Directory: ffsEvent.DirectoryId,
-						MimeType:  ffsEvent.CurrentExtensionMIMEType,
+						MimeType:  []string{ffsEvent.MimeTypeByBytes, ffsEvent.MimeTypeByExtension},
 					}
 
 					//user fields
 					var user *eventOutput.User
 
-					if ffsEvent.DeviceUsername == "NAME_NOT_AVAILABLE" {
+					if ffsEvent.DeviceUserName == "NAME_NOT_AVAILABLE" {
 						name := ""
 						domain := ""
 						if strings.Contains(ffsEvent.Actor, "@") {
 							name = strings.Split(ffsEvent.Actor, "@")[0]
-							domain = strings.Split(ffsEvent.DeviceUsername, "@")[1]
+							domain = strings.Split(ffsEvent.DeviceUserName, "@")[1]
 						}
 
 						user = &eventOutput.User{
@@ -202,20 +249,20 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					} else {
 						name := ""
 						domain := ""
-						if strings.Contains(ffsEvent.DeviceUsername, "@") {
-							name = strings.Split(ffsEvent.DeviceUsername, "@")[0]
-							domain = strings.Split(ffsEvent.DeviceUsername, "@")[1]
+						if strings.Contains(ffsEvent.DeviceUserName, "@") {
+							name = strings.Split(ffsEvent.DeviceUserName, "@")[0]
+							domain = strings.Split(ffsEvent.DeviceUserName, "@")[1]
 						}
 						user = &eventOutput.User{
-							Email:  ffsEvent.DeviceUsername,
+							Email:  ffsEvent.DeviceUserName,
 							Id:     ffsEvent.UserUid,
 							Name:   name,
 							Domain: domain,
 						}
 					}
 
-					if ffsEvent.LoggedInOperatingSystemUser != "" && ffsEvent.LoggedInOperatingSystemUser != "NAME_NOT_AVAILABLE" {
-						user.Id = ffsEvent.LoggedInOperatingSystemUser
+					if ffsEvent.OperatingSystemUser != "" && ffsEvent.OperatingSystemUser != "NAME_NOT_AVAILABLE" {
+						user.Id = ffsEvent.OperatingSystemUser
 					}
 
 					if *user == (eventOutput.User{}) {
@@ -281,7 +328,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					host := &eventOutput.Host{
 						Id:       ffsEvent.DeviceUid,
-						Name:     ffsEvent.OsHostname,
+						Name:     ffsEvent.OsHostName,
 						Hostname: ffsEvent.DomainName,
 						User:     user,
 						IP:       ips,
@@ -301,58 +348,36 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					code42Event := &eventOutput.Code42Event{
 						Id:        ffsEvent.EventId,
 						Type:      ffsEvent.EventType,
-						Timestamp: ffsEvent.EventTimestamp,
+						Timestamp: &eventTimestamp,
 					}
 
 					code42File := &eventOutput.Code42File{
-						Path:                        ffsEvent.FilePath,
-						Name:                        ffsEvent.FileName,
-						Type:                        ffsEvent.FileType,
-						Category:                    ffsEvent.FileCategory,
-						IdentifiedExtensionCategory: ffsEvent.IdentifiedExtensionCategory,
-						CurrentExtensionCategory:    ffsEvent.CurrentExtensionCategory,
-						Size:                        ffsEvent.FileSize,
-						Owner:                       ffsEvent.FileOwner,
-						Hash:                        hash,
-						CreatedTimestamp:            ffsEvent.CreatedTimestamp,
-						ModifyTimestamp:             ffsEvent.ModifyTimestamp,
-						Id:                          ffsEvent.FileId,
-						IdentifiedExtensionMIMEType: ffsEvent.IdentifiedExtensionMIMEType,
-						CurrentExtensionMIMEType:    ffsEvent.CurrentExtensionMIMEType,
-						SuspiciousFileTypeMismatch:  ffsEvent.SuspiciousFileTypeMismatch,
+						Path:                ffsEvent.FilePath,
+						Name:                ffsEvent.FileName,
+						Type:                ffsEvent.FileType,
+						Category:            ffsEvent.FileCategory,
+						MimeTypeByBytes:     ffsEvent.MimeTypeByBytes,
+						MimeTypeByExtension: ffsEvent.MimeTypeByExtension,
+						Size:                ffsEvent.FileSize,
+						Owner:               ffsEvent.FileOwner,
+						Hash:                hash,
+						CreateTimestamp:     createTimestamp,
+						ModifyTimestamp:     modifyTimestamp,
+						Id:                  ffsEvent.FileId,
+						MimeTypeMismatch:    ffsEvent.MimeTypeMismatch,
 					}
 
 					code42Device := &eventOutput.Code42Device{
-						Username: ffsEvent.DeviceUsername,
+						Username: ffsEvent.DeviceUserName,
 						Uid:      ffsEvent.DeviceUid,
-					}
-
-					//code 42 tab fields
-					var tabURLs []eventOutput.URL
-
-					if ffsEvent.TabURLs != nil && len(ffsEvent.TabURLs) != 0 {
-						for _, tabUrl := range ffsEvent.TabURLs {
-							tabURLs = append(tabURLs, *getUrlInfo(tabUrl))
-						}
-					}
-
-					if tabURLs != nil && len(tabURLs) == 0 {
-						tabURLs = nil
-					}
-
-					code42Tab := &eventOutput.Code42Tab{
-						WindowTitle: ffsEvent.TabWindowTitle,
-						Url:         getUrlInfo(ffsEvent.TabUrl),
-						Titles:      ffsEvent.TabTitles,
-						Urls:        tabURLs,
 					}
 
 					code42 := &eventOutput.Code42{
 						Event:                code42Event,
-						InsertionTimestamp:   ffsEvent.InsertionTimestamp,
+						InsertionTimestamp:   &insertionTimestamp,
 						File:                 code42File,
 						Device:               code42Device,
-						OsHostName:           ffsEvent.OsHostname,
+						OsHostName:           ffsEvent.OsHostName,
 						DomainName:           ffsEvent.DomainName,
 						PublicIpAddress:      ffsEvent.PublicIpAddress,
 						PrivateIpAddresses:   ffsEvent.PrivateIpAddresses,
@@ -367,7 +392,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
 						Exposure:             ffsEvent.Exposure,
 						Process:              process,
-						Tab:                  code42Tab,
 						RemovableMedia: &eventOutput.Code42RemovableMedia{
 							Vendor:       ffsEvent.RemovableMediaVendor,
 							Name:         ffsEvent.RemovableMediaName,
@@ -381,30 +405,30 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						SyncDestination:         ffsEvent.SyncDestination,
 						SyncDestinationUsername: ffsEvent.SyncDestinationUsername,
 						EmailDlp: &eventOutput.Code42EmailDlp{
-							PolicyNames: ffsEvent.EmailDLPPolicyNames,
-							Subject:     ffsEvent.EmailDLPSubject,
-							Sender:      ffsEvent.EmailDLPSender,
-							From:        ffsEvent.EmailDLPFrom,
-							Recipients:  ffsEvent.EmailDLPRecipients,
+							PolicyNames: ffsEvent.EmailDlpPolicyNames,
+							Subject:     ffsEvent.EmailSubject,
+							Sender:      ffsEvent.EmailSender,
+							From:        ffsEvent.EmailFrom,
+							Recipients:  ffsEvent.EmailRecipients,
 						},
 						OutsideActiveHours: ffsEvent.OutsideActiveHours,
 						Print: &eventOutput.Code42Print{
-							JobName:                ffsEvent.PrintJobName,
-							PrinterName:            ffsEvent.PrinterName,
-							PrintedFilesBackupPath: ffsEvent.PrintedFilesBackupPath,
+							JobName:     ffsEvent.PrintJobName,
+							PrinterName: ffsEvent.PrinterName,
 						},
-						RemoteActivity:              ffsEvent.RemoteActivity,
-						Trusted:                     ffsEvent.Trusted,
-						LoggedInOperatingSystemUser: ffsEvent.LoggedInOperatingSystemUser,
+						RemoteActivity:      ffsEvent.RemoteActivity,
+						Trusted:             ffsEvent.Trusted,
+						OperatingSystemUser: ffsEvent.OperatingSystemUser,
 						Destination: &eventOutput.Code42Destination{
 							Category: ffsEvent.DestinationCategory,
 							Name:     ffsEvent.DetectionSourceAlias,
 						},
+						Tabs: ffsEvent.Tabs,
 					}
 
 					elasticFileEvent := &eventOutput.ElasticFileEvent{
 						Event:     event,
-						Timestamp: timestamp,
+						Timestamp: &timestamp,
 						File:      file,
 						Host:      host,
 						Code42:    code42,
@@ -514,10 +538,18 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					go func() {
 						for _, ffsEvent := range ffsEvents {
 							var indexTime time.Time
+
+							//eventTimestamp
+							eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+
+							if err != nil {
+								panic(err)
+							}
+
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, eventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, eventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 
 							requiredIndexMutex.RLock()
@@ -599,9 +631,23 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						for _, ffsEvent := range ffsEvents {
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.InsertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								//eventTimestamp
+								insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", " ", -1))
+
+								if err != nil {
+									panic(err)
+								}
+
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, insertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
-								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, ffsEvent.EventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
+								//eventTimestamp
+								eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+
+								if err != nil {
+									panic(err)
+								}
+
+								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, eventTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							}
 							indexName := elasticsearch.BuildIndexNameWithTime(query.Elasticsearch, indexTime)
 							r := elastic.NewBulkIndexRequest().Index(indexName).Doc(ffsEvent)
