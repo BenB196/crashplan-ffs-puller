@@ -34,7 +34,7 @@ type Code42 struct {
 	Source                  string                `json:"source,omitempty"`
 	Url                     *URL                  `json:"url,omitempty"`
 	Shared                  string                `json:"shared,omitempty"`
-	SharedWith              *ffs.SharedWith       `json:"shared_with,omitempty"`
+	SharedWith              []ffs.SharedWith      `json:"shared_with,omitempty"`
 	SharingTypeAdded        []string              `json:"sharing_type_added,omitempty"`
 	CloudDriveId            string                `json:"cloud_drive_id,omitempty"`
 	DetectionSourceAlias    string                `json:"detection_source_alias,omitempty"`
@@ -42,7 +42,7 @@ type Code42 struct {
 	Process                 *Code42Process        `json:"process,omitempty"`
 	RemovableMedia          *Code42RemovableMedia `json:"removable_media,omitempty"`
 	SyncDestination         string                `json:"sync_destination,omitempty"`
-	SyncDestinationUsername string                `json:"sync_destination_username,omitempty"`
+	SyncDestinationUsername []string              `json:"sync_destination_username,omitempty"`
 	EmailDlp                *Code42EmailDlp       `json:"email_dlp,omitempty"`
 	OutsideActiveHours      *bool                 `json:"outside_active_hours,omitempty"`
 	Print                   *Code42Print          `json:"print,omitempty"`
@@ -50,7 +50,12 @@ type Code42 struct {
 	Trusted                 *bool                 `json:"trusted,omitempty"`
 	OperatingSystemUser     string                `json:"operating_system_user,omitempty"`
 	Destination             *Code42Destination    `json:"destination,omitempty"`
-	Tabs                    []ffs.Tab             `json:"tabs,omitempty"`
+	Tabs                    []Code42TabTab        `json:"tabs,omitempty"`
+}
+
+type Code42TabTab struct {
+	Title string `json:"title,omitempty"`
+	Url   *URL   `json:"url,omitempty"`
 }
 
 type Code42Event struct {
@@ -85,8 +90,6 @@ type Code42Device struct {
 type Code42Tab struct {
 	WindowTitle string   `json:"window_title,omitempty"`
 	Url         *URL     `json:"url,omitempty"`
-	Titles      []string `json:"titles,omitempty"`
-	Urls        []URL    `json:"urls,omitempty"`
 }
 
 type Code42RemovableMedia struct {

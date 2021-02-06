@@ -68,9 +68,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 	notInProgressTime := time.Now()
 
-	pgToken := ""
-
-	fileEvents, _, err := ffs.GetJsonFileEvents(authData, configuration.FFSURI, query.Query, &pgToken)
+	fileEvents, _, err := ffs.GetJsonFileEvents(authData, configuration.FFSURI, query.Query, "", configuration.Debugging)
 
 	getFileEventsTime := time.Now()
 
@@ -137,7 +135,10 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 
 					//eventTimestamp
-					eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+					if len(strings.Split(ffsEvent.EventTimestamp, ".")) != 2 {
+						ffsEvent.EventTimestamp = ffsEvent.EventTimestamp + ".000"
+					}
+					eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", "", -1))
 
 					if err != nil {
 						panic(err)
@@ -145,39 +146,47 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 
 					//insertionTimestamp
 
+					if len(strings.Split(ffsEvent.InsertionTimestamp, ".")) != 2 {
+						ffsEvent.InsertionTimestamp = ffsEvent.InsertionTimestamp + ".000"
+					}
+
 					insertionTimeSplit := strings.Split(ffsEvent.InsertionTimestamp, ".")
 					insertionTimestampLength := len(insertionTimeSplit[1])
 					if insertionTimestampLength > 4 {
 						ffsEvent.InsertionTimestamp = insertionTimeSplit[0] + "." + insertionTimeSplit[1][0:3]
 					}
 
-					insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", " ", -1))
+					insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", "", -1))
 					if err != nil {
 						panic(err)
 					}
 
 					//creationTimestamp
-					var createTimestamp *time.Time
+					var createTimestamp time.Time
 					if ffsEvent.CreateTimestamp != "" {
-						*createTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.CreateTimestamp, "T", " ", -1), "Z", " ", -1))
+						if len(strings.Split(ffsEvent.CreateTimestamp, ".")) != 2 {
+							ffsEvent.CreateTimestamp = ffsEvent.CreateTimestamp + ".000"
+						}
+
+						createTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.CreateTimestamp, "T", " ", -1), "Z", "", -1))
 
 						if err != nil {
 							panic(err)
 						}
-					} else {
-						createTimestamp = nil
 					}
 
 					//modifyTimestamp
-					var modifyTimestamp *time.Time
-					if ffsEvent.CreateTimestamp != "" {
-						*modifyTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.ModifyTimestamp, "T", " ", -1), "Z", " ", -1))
+					var modifyTimestamp time.Time
+					if ffsEvent.ModifyTimestamp != "" {
+						if len(strings.Split(ffsEvent.ModifyTimestamp, ".")) != 2 {
+							ffsEvent.ModifyTimestamp = ffsEvent.ModifyTimestamp + ".000"
+						}
+
+						modifyTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.ModifyTimestamp, "T", " ", -1), "Z", "", -1))
 
 						if err != nil {
 							panic(err)
 						}
-					} else {
-						modifyTimestamp = nil
 					}
 
 
@@ -223,8 +232,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Size:      ffsEvent.FileSize,
 						Owner:     ffsEvent.FileOwner,
 						Hash:      hash,
-						Created:   createTimestamp,
-						Mtime:     modifyTimestamp,
+						Created:   &createTimestamp,
+						Mtime:     &modifyTimestamp,
 						Directory: ffsEvent.DirectoryId,
 						MimeType:  []string{ffsEvent.MimeTypeByBytes, ffsEvent.MimeTypeByExtension},
 					}
@@ -361,8 +370,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Size:                ffsEvent.FileSize,
 						Owner:               ffsEvent.FileOwner,
 						Hash:                hash,
-						CreateTimestamp:     createTimestamp,
-						ModifyTimestamp:     modifyTimestamp,
+						CreateTimestamp:     &createTimestamp,
+						ModifyTimestamp:     &modifyTimestamp,
 						Id:                  ffsEvent.FileId,
 						MimeTypeMismatch:    ffsEvent.MimeTypeMismatch,
 					}
@@ -370,6 +379,21 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					code42Device := &eventOutput.Code42Device{
 						Username: ffsEvent.DeviceUserName,
 						Uid:      ffsEvent.DeviceUid,
+					}
+
+					//tabs to tabs
+					var tabs []eventOutput.Code42TabTab
+					if ffsEvent.Tabs != nil && len(ffsEvent.Tabs) > 0 {
+						for _, tab := range ffsEvent.Tabs {
+							code42Tab := eventOutput.Code42TabTab{
+								Title: tab.Title,
+								Url:   getUrlInfo(tab.Url),
+							}
+
+							tabs = append(tabs, code42Tab)
+						}
+					} else {
+						tabs = nil
 					}
 
 					code42 := &eventOutput.Code42{
@@ -423,7 +447,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							Category: ffsEvent.DestinationCategory,
 							Name:     ffsEvent.DetectionSourceAlias,
 						},
-						Tabs: ffsEvent.Tabs,
+						Tabs: tabs,
 					}
 
 					elasticFileEvent := &eventOutput.ElasticFileEvent{
@@ -540,7 +564,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							var indexTime time.Time
 
 							//eventTimestamp
-							eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+							eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", "", -1))
 
 							if err != nil {
 								panic(err)
@@ -632,7 +656,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 							var indexTime time.Time
 							if query.Elasticsearch.IndexTimeGen == "insertionTimestamp" {
 								//eventTimestamp
-								insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", " ", -1))
+								insertionTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.InsertionTimestamp, "T", " ", -1), "Z", "", -1))
 
 								if err != nil {
 									panic(err)
@@ -641,7 +665,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 								indexTime, _ = time.Parse(query.Elasticsearch.IndexTimeAppend, insertionTimestamp.Format(query.Elasticsearch.IndexTimeAppend))
 							} else {
 								//eventTimestamp
-								eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", " ", -1))
+								eventTimestamp, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.EventTimestamp, "T", " ", -1), "Z", "", -1))
 
 								if err != nil {
 									panic(err)
