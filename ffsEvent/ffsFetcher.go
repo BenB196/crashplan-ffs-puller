@@ -232,6 +232,13 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						fileType = "symlink"
 					}
 
+					var mimeType []string
+					if ffsEvent.MimeTypeByBytes != ffsEvent.MimeTypeByExtension {
+						mimeType = []string{ffsEvent.MimeTypeByBytes, ffsEvent.MimeTypeByExtension}
+					} else {
+						mimeType = []string{ffsEvent.MimeTypeByBytes}
+					}
+
 					file := &eventOutput.File{
 						Path:      ffsEvent.FilePath,
 						Name:      ffsEvent.FileName,
@@ -243,7 +250,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Created:   createTimestamp,
 						Mtime:     modifyTimestamp,
 						Directory: ffsEvent.DirectoryId,
-						MimeType:  []string{ffsEvent.MimeTypeByBytes, ffsEvent.MimeTypeByExtension},
+						MimeType:  mimeType,
 					}
 
 					//user fields
