@@ -6,7 +6,7 @@ The goal of this application is to allow the user to pull FFS logs from Code42's
 
 ## Important Notes:
 
-- This application, while working, is still considered under development, as it has not be thoroughly tested. There are likely bugs and random errors/panics which may occur. If they do, please report them so that they can be fixed.
+- This application, while working, is still considered under development, as it has not been thoroughly tested. There are likely bugs and random errors/panics which may occur. If they do, please report them so that they can be fixed.
 - The slowest part of this application is the downloading of the logs. You should try to optimize your queries as much as possible.
 
 Limitations:
@@ -14,8 +14,8 @@ Limitations:
 Code42 Crashplan FFS API has limitations like most APIs, these limitations affect the functionality of the application as followed:
 
 1. 120 Queries per minute, any additional queries will be dropped. (never actually bothered to test if/how this limit is actually enforced)
-1. 200,000 results returned per query. This limitation is kind of annoying to handle as there is no easy way to handle it. The API does not support paging and the only way to figure out how many results there is for a query is to first query, count, then if over 200,000 results, break up the query into smaller time increments and perform multiple queries to get all of the results.
-1. The application only supports the /v1/fileevent/export API endpoint currently. This has to do with how the highly limited functionality of the /v1/fileevent endpoint which isn't well documented.
+   1. It is recommended to set the page size of the query to at least 1000, but less than 10000 to reduce the number of queries required
+1. The application only supports the use of the /v1/fileevent API endpoint, which provides a JSON formatted output. 
 
 
 ## Install
@@ -33,7 +33,7 @@ $ /path/to/output/location/crashplan-ffs-puller --config=/path/to/config.json
 
 ### Precompiled Binaries
 
-These are found attached to each official release. Currently only Windows amd64 and Linux amd64 binaries will be released. As the application progresses, or more needs come up, more binaries will be added.
+These are found attached to each official release. Currently, only Windows amd64 and Linux amd64 binaries will be released. As the application progresses or more needs arise, more binaries will be added.
 
 ### Docker
 
@@ -73,7 +73,7 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
 ```
 {
   "authURI": "https://www.crashplan.com/c42api/v3/auth/jwt?useBody=true",                                                   #This is the URI which has the Code42 authentication endpoint.
-  "ffsURI": "https://forensicsearch-default.prod.ffs.us2.code42.com/forensic-search/queryservice/api/v1/fileevent/export",  #This is the URI which exposes the FFS API. Note: Currently only supports the fileevent/export endpoint.
+  "ffsURI": "https://forensicsearch-default.prod.ffs.us2.code42.com/forensic-search/queryservice/api/v1/fileevent",         #This is the URI which exposes the FFS API. Note: Currently only supports the /fileevent endpoint.
   "ffsQueries": [{                                                                                                          #This is an area of FFS Queries + additional information.
     "name": "example_query_1",                                                                                              #Query name, must be unique.
     "username": "example@example.com",                                                                                      #Username, must be an email address.
@@ -103,7 +103,8 @@ Currently, only JSON formatted configuration files are accepted, in the future Y
           ],
           "filterClause": "AND"
         }
-      ]
+      ],
+      "pgSize": 1000
     },
     "outputType": "elastic",                                                                                                #Output type, supports either file, elastic, logstash
     "outputLocation": "/path/to/output",                                                                                    #This is needed even if not using file output type, as there are stateful files which need to be written and stored.
@@ -193,7 +194,7 @@ In the above configuration there are some important notes to know about the FFS 
    
 Note: I have not tested out all possible queries in this application, if you come across a query which does not work, let me know and I will try to get it working.
 
-### Elasticsearch Integration
+### Elasticsearch Integration (WIP)
 
 If you are using the elastic output type there are a few important things to understand.
 
@@ -256,5 +257,4 @@ If you have any ideas for other metrics you feel may be useful, feel free to ope
 ##TODOs (Maybe)
 
 1. Add ability to use yaml/yml configuration files.
-2. Add the ability to use the regular json FFS API endpoint (/fileevent).
 3. Add some sort of file hash lookup that could provide threat intelligence (tried this with [OTX](https://www.alienvault.com/open-threat-exchange) before and failed pretty bad, may look at revisiting).
