@@ -162,31 +162,39 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 					}
 
 					//creationTimestamp
-					var createTimestamp time.Time
+					var createTimestamp *time.Time
 					if ffsEvent.CreateTimestamp != "" {
 						if len(strings.Split(ffsEvent.CreateTimestamp, ".")) != 2 {
 							ffsEvent.CreateTimestamp = ffsEvent.CreateTimestamp + ".000"
 						}
 
-						createTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.CreateTimestamp, "T", " ", -1), "Z", "", -1))
+						createTimestampTime, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.CreateTimestamp, "T", " ", -1), "Z", "", -1))
 
 						if err != nil {
 							panic(err)
 						}
+
+						createTimestamp = &createTimestampTime
+					} else {
+						createTimestamp = nil
 					}
 
 					//modifyTimestamp
-					var modifyTimestamp time.Time
+					var modifyTimestamp *time.Time
 					if ffsEvent.ModifyTimestamp != "" {
 						if len(strings.Split(ffsEvent.ModifyTimestamp, ".")) != 2 {
 							ffsEvent.ModifyTimestamp = ffsEvent.ModifyTimestamp + ".000"
 						}
 
-						modifyTimestamp, err = time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.ModifyTimestamp, "T", " ", -1), "Z", "", -1))
+						modifyTimestampTime, err := time.Parse("2006-01-02 15:04:05.000", strings.Replace(strings.Replace(ffsEvent.ModifyTimestamp, "T", " ", -1), "Z", "", -1))
 
 						if err != nil {
 							panic(err)
 						}
+
+						modifyTimestamp = &modifyTimestampTime
+					} else {
+						modifyTimestamp = nil
 					}
 
 
@@ -232,8 +240,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Size:      ffsEvent.FileSize,
 						Owner:     ffsEvent.FileOwner,
 						Hash:      hash,
-						Created:   &createTimestamp,
-						Mtime:     &modifyTimestamp,
+						Created:   createTimestamp,
+						Mtime:     modifyTimestamp,
 						Directory: ffsEvent.DirectoryId,
 						MimeType:  []string{ffsEvent.MimeTypeByBytes, ffsEvent.MimeTypeByExtension},
 					}
@@ -370,8 +378,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Size:                ffsEvent.FileSize,
 						Owner:               ffsEvent.FileOwner,
 						Hash:                hash,
-						CreateTimestamp:     &createTimestamp,
-						ModifyTimestamp:     &modifyTimestamp,
+						CreateTimestamp:     createTimestamp,
+						ModifyTimestamp:     modifyTimestamp,
 						Id:                  ffsEvent.FileId,
 						MimeTypeMismatch:    ffsEvent.MimeTypeMismatch,
 					}
