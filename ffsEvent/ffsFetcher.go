@@ -228,7 +228,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Path:      ffsEvent.FilePath,
 						Name:      ffsEvent.FileName,
 						Type:      fileType,
-						Extension: filepath.Ext(ffsEvent.FileName),
+						Extension: strings.Replace(filepath.Ext(ffsEvent.FileName),".","",-1),
 						Size:      ffsEvent.FileSize,
 						Owner:     ffsEvent.FileOwner,
 						Hash:      hash,
