@@ -396,6 +396,16 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						tabs = nil
 					}
 
+					var sharedWith []eventOutput.Code42SharedWith
+
+					if ffsEvent.SharedWith != nil && len(ffsEvent.SharedWith) != 0 {
+						for _, shared := range ffsEvent.SharedWith {
+							sharedWith = append(sharedWith, eventOutput.Code42SharedWith{CloudUsername: shared.CloudUsername})
+						}
+					} else {
+						sharedWith = nil
+					}
+
 					code42 := &eventOutput.Code42{
 						Event:                code42Event,
 						InsertionTimestamp:   &insertionTimestamp,
@@ -410,7 +420,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Source:               ffsEvent.Source,
 						Url:                  getUrlInfo(ffsEvent.Url),
 						Shared:               ffsEvent.Shared,
-						SharedWith:           ffsEvent.SharedWith,
+						SharedWith:           sharedWith,
 						SharingTypeAdded:     ffsEvent.SharingTypeAdded,
 						CloudDriveId:         ffsEvent.CloudDriveId,
 						DetectionSourceAlias: ffsEvent.DetectionSourceAlias,
