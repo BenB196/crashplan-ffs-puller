@@ -69,19 +69,21 @@ type Code42Event struct {
 }
 
 type Code42File struct {
-	Path                        string     `json:"path,omitempty"`
-	Name                        string     `json:"name,omitempty"`
-	Type                        string     `json:"type,omitempty"`
-	Category                    string     `json:"category,omitempty"`
-	MimeTypeByBytes             string     `json:"mime_type_by_bytes,omitempty"`
-	MimeTypeByExtension         string     `json:"mime_type_by_extension,omitempty"`
-	Size                        *int64     `json:"size,omitempty"`
-	Owner                       string     `json:"owner,omitempty"`
-	Hash                        *Hash      `json:"hash,omitempty"`
-	CreateTimestamp             *time.Time `json:"create_timestamp,omitempty"`
-	ModifyTimestamp             *time.Time `json:"modify_timestamp,omitempty"`
-	Id                          string     `json:"id,omitempty"`
-	MimeTypeMismatch            *bool      `json:"mime_type_mismatch,omitempty"`
+	Path                string     `json:"path,omitempty"`
+	Name                string     `json:"name,omitempty"`
+	Type                string     `json:"type,omitempty"`
+	Category            string     `json:"category,omitempty"`
+	MimeTypeByBytes     string     `json:"mime_type_by_bytes,omitempty"`
+	MimeTypeByExtension string     `json:"mime_type_by_extension,omitempty"`
+	Size                *int64     `json:"size,omitempty"`
+	Owner               string     `json:"owner,omitempty"`
+	Hash                *Hash      `json:"hash,omitempty"`
+	CreateTimestamp     *time.Time `json:"create_timestamp,omitempty"`
+	ModifyTimestamp     *time.Time `json:"modify_timestamp,omitempty"`
+	Id                  string     `json:"id,omitempty"`
+	MimeTypeMismatch    *bool      `json:"mime_type_mismatch,omitempty"`
+	CategoryByBytes     string     `json:"category_by_bytes,omitempty"`
+	CategoryByExtension string     `json:"category_by_extension,omitempty"`
 }
 
 type Code42Device struct {
