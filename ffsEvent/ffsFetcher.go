@@ -197,7 +197,6 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						modifyTimestamp = nil
 					}
 
-
 					event := &eventOutput.Event{
 						Action:   ffsEvent.EventType,
 						Category: "file",
@@ -243,7 +242,7 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						Path:      ffsEvent.FilePath,
 						Name:      ffsEvent.FileName,
 						Type:      fileType,
-						Extension: strings.Replace(filepath.Ext(ffsEvent.FileName),".","",-1),
+						Extension: strings.Replace(filepath.Ext(ffsEvent.FileName), ".", "", -1),
 						Size:      ffsEvent.FileSize,
 						Owner:     ffsEvent.FileOwner,
 						Hash:      hash,
@@ -389,6 +388,8 @@ func queryFetcher(query config.FFSQuery, inProgressQueries *[]eventOutput.InProg
 						ModifyTimestamp:     modifyTimestamp,
 						Id:                  ffsEvent.FileId,
 						MimeTypeMismatch:    ffsEvent.MimeTypeMismatch,
+						CategoryByBytes:     ffsEvent.FileCategoryByBytes,
+						CategoryByExtension: ffsEvent.FileCategoryByExtension,
 					}
 
 					code42Device := &eventOutput.Code42Device{
