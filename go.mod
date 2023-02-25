@@ -8,5 +8,5 @@ require (
 	github.com/VictoriaMetrics/fastcache v1.5.7
 	github.com/olivere/elastic/v7 v7.0.22
 	github.com/prometheus/client_golang v1.9.0
-	golang.org/x/net v0.0.0-20200625001655-4c5254603344
+	golang.org/x/net v0.7.0
 )
